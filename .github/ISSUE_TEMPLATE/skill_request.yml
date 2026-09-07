@@ -1,0 +1,39 @@
+name: Skill or workflow request
+description: Suggest a UVCS workflow that agents should learn
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: The workflow
+      description: What do you want an agent to be able to do with UVCS?
+      placeholder: "Summarize everything merged into /main since a given label."
+    validations:
+      required: true
+  - type: textarea
+    id: how-you-do-it
+    attributes:
+      label: How you do it today
+      description: |
+        The `cm` commands you actually run, in order, and what you look at in the output.
+        This is the most useful part of the request — it's most of the skill.
+    validations:
+      required: true
+  - type: textarea
+    id: gotchas
+    attributes:
+      label: Gotchas
+      description: |
+        Where does this go wrong? Confusing flags, quoting traps, platform differences,
+        error messages and their fix, things a newcomer gets backwards.
+    validations:
+      required: false
+  - type: textarea
+    id: why-agents-fail
+    attributes:
+      label: What an agent gets wrong without help
+      description: |
+        If you've tried asking an agent to do this, what did it do instead? Helps us encode
+        only what the model can't infer.
+    validations:
+      required: false

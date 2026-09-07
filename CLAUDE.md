@@ -29,21 +29,22 @@ real `cm`, and stay portable across agents.
    already handles it, do not write it down.
 4. **Verified, not invented.** Every `cm` command, flag, and output shape must be checked against
    a real `cm` before it lands.
-5. **Assume public.** See `README.md`: making this repo public needs Legal approval, so write as
-   if it already were. No credentials, internal server URLs, org/user names, customer data, or
-   internal-only links in skill content. Use placeholders (`<server>`, `<repo>`, `<branch>`).
+5. **Public repository.** Everything here is public and Apache-2.0 licensed. No credentials,
+   internal hostnames or links, org/user names, or customer data — anywhere, including examples
+   and commit messages. Use placeholders (`<server>`, `<repo>`, `<branch>`, `<user>`).
 
 ## Layout (fixed by the spec — do not relocate)
 
 ```
-plugin.json                  # $schema + name required; version/description/author/... optional
-skills/<skill-name>/SKILL.md # one skill per immediate subdirectory; nothing deeper is scanned
-skills/<skill-name>/references/  # detail loaded on demand
-skills/<skill-name>/scripts/     # optional executables
-skills/<skill-name>/assets/      # optional templates/data
-mcp.json                     # only if we ever ship an MCP server; root only
-com.example.client/          # client-specific extras, reverse-domain namespaced
-README.md, CLAUDE.md, LICENSE
+plugin.json                       # $schema + name required; other metadata optional
+skills/uvcs-<name>/SKILL.md       # one skill per immediate subdirectory; nothing deeper is scanned
+skills/uvcs-<name>/references/    # detail loaded on demand
+skills/uvcs-<name>/scripts/       # optional executables
+skills/uvcs-<name>/assets/        # optional templates/data
+mcp.json                          # only if we ever ship an MCP server; root only
+com.unity/                        # our client-specific extras, reverse-domain namespaced
+README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md CHANGELOG.md LICENSE NOTICE
+.github/                          # issue and PR templates
 ```
 
 Rules that bite:
@@ -129,12 +130,12 @@ start with `./` and stay inside the plugin root.
 
 ## Skill composition: the `cm` hub
 
-- **Command syntax lives in exactly one place**: the `cm` reference skill. Higher-level skills
-  describe *workflow and judgement*, and point at the hub for syntax.
+- **Command syntax lives in exactly one place**: the `uvcs-cm` reference skill. Higher-level
+  skills describe *workflow and judgement*, and point at the hub for syntax.
 - Cross-skill *file* paths are fragile — clients differ in how skills are installed and whether
   one skill can invoke another. So: name the dependency explicitly in the body (e.g. "This
-  workflow uses the `<cm-skill-name>` skill for all `cm` invocations; load it first"), and let
-  the agent resolve it.
+  workflow uses the `uvcs-cm` skill for all `cm` invocations; load it first"), and let the agent
+  resolve it.
 - Pragmatic exception: a higher-level skill may inline the **one or two exact invocations** it
   needs to stay usable standalone. It must never copy tables, flag lists, or reference material —
   that duplication rots.
@@ -163,7 +164,7 @@ analyses should stay read-only end to end.
 1. **Use a skill-creator skill** to scaffold or refactor a skill rather than hand-rolling
    structure — in Claude Code, `example-skills:skill-creator`. It gets frontmatter, layout, and
    description shape right, and can evaluate triggering.
-2. Validate the format: `skills-ref validate ./skills/<skill-name>`
+2. Validate the format: `skills-ref validate ./skills/uvcs-<name>`
    (see https://github.com/agentskills/agentskills/tree/main/skills-ref), plus the `plugin.json`
    / `mcp.json` schemas.
 3. Test triggering with realistic user phrasings, including ones that should *not* fire it.
@@ -185,12 +186,19 @@ so keep skills independent and self-contained.
 - [ ] Every `cm` command verified against a real CLI; read-only vs mutating labelled.
 - [ ] No secrets, internal URLs, real user/customer/org data.
 - [ ] Tried in ≥2 agents.
+- [ ] `CHANGELOG.md` updated if a skill was added, renamed, or its triggering changed.
+
+## Settled conventions
+
+- Plugin `name`: `unity-version-control`. License: Apache-2.0.
+- Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
+  Planned set: `uvcs-cm` (hub), `uvcs-review-branch`, `uvcs-root-cause`, `uvcs-links`.
+- Our reverse-domain namespace for non-portable extras is `com.unity`.
 
 ## Open decisions
 
 Do not silently invent answers to these — ask, then record the answer here.
 
-- Final name of the `cm` reference skill, and whether skills carry a shared prefix
-  (e.g. `uvcs-*`) for global distinguishability.
-- Plugin `name` in `plugin.json` and the reverse-domain namespace we use for client extras.
 - Whether we ever ship an MCP server alongside the skills, or stay skills-only.
+- Verified per-client install instructions for `README.md` (currently generic — fill in as each
+  client is tested).

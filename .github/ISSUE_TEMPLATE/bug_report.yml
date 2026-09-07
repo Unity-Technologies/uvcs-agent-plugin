@@ -1,0 +1,72 @@
+name: Bug report
+description: A skill gave wrong commands, didn't trigger, or behaved differently in one agent
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please don't report security issues here — see
+        [SECURITY.md](https://github.com/Unity-Technologies/unity-version-control-plugin/blob/main/SECURITY.md).
+  - type: input
+    id: skill
+    attributes:
+      label: Which skill
+      placeholder: uvcs-cm
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and version
+      description: The AI client you were using.
+      placeholder: Claude Code 2.1.0 / Codex CLI 0.9 / Cursor 1.7
+    validations:
+      required: true
+  - type: input
+    id: cm-version
+    attributes:
+      label: cm version
+      description: Output of `cm version`.
+      placeholder: "11.0.16.8101"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS 15.2 / Windows 11 / Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: what-you-asked
+    attributes:
+      label: What you asked the agent
+      description: The prompt, verbatim if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What the agent did
+      description: |
+        Commands it ran and output it produced. Trim and anonymize — replace real server names,
+        repo names, and user names with placeholders.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+    validations:
+      required: true
+  - type: dropdown
+    id: other-agents
+    attributes:
+      label: Does it also happen in another agent?
+      description: Portability is a feature here — a one-client failure is a real bug.
+      options:
+        - "Yes — same failure elsewhere"
+        - "No — works in another agent"
+        - "Haven't tried"
+    validations:
+      required: true
