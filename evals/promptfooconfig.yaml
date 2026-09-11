@@ -1,4 +1,4 @@
-# Eval suite for the uvcs-cli-reference skill.
+# Eval suite for the UVCS plugin skills.
 #
 # Design goals (see evals/README.md):
 # - FAST and CHEAP: one small evaluated model, temperature 0, mostly deterministic
@@ -6,7 +6,7 @@
 # - Green = the skill still teaches the behaviors that matter; red = something broke
 #   (a renamed section, a deleted gotcha, a regressed instruction).
 
-description: "uvcs-cli-reference skill evals"
+description: "UVCS plugin skill evals"
 
 providers:
   # Evaluated model: cheap and fast on purpose — the skill must carry the knowledge,
@@ -29,6 +29,7 @@ defaultTest:
         max_tokens: 2048
         apiKeyRequired: false
   vars:
+    # Default is the hub skill; uvcs-merge tests override skill_content per test.
     skill_content: file://../skills/uvcs-cli-reference/SKILL.md
     reference_content: ""
 
@@ -53,3 +54,4 @@ prompts:
 tests:
   - file://tests/queries.yaml
   - file://tests/commands.yaml
+  - file://tests/merge.yaml

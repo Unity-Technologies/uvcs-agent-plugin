@@ -92,6 +92,23 @@ cm merge cs:42 --merge --cherrypicking           # cherry-pick a single changese
   `--keepdestination` (take one contributor whole, per path or globally) and, on newer `cm`
   builds, `--conflict-markers` — see `merge-conflict-markers.md`.
 
+### Reading the preview
+
+`cm merge <src> --machinereadable` prefixes every line with a stable token. The ones that
+decide what to do next:
+
+| Line | Meaning |
+|---|---|
+| `STATUS NO_MERGES_DETECTED` | Nothing to merge (human text: `No merges detected`). |
+| `FILE_CONFLICT <path> <baseCs> <srcCs> <dstCs> <itemId>` | Both contributors changed this file, so its content must be merged. |
+| `ADD` / `RM` / `MV` / `CHG` `<path> ...` | Operation the merge will apply on its own. |
+| `DIR_CONFLICT`, `EVIL`, `CHG_RM`, `RM_CHG`, `MV_RM`, `DIV_MV`, `CYCLE`, `ADD_MV`, `MV_ADD`, `TWICE`, `MV_EVIL`, `XLINK` | Directory-level conflicts, resolvable with `--automaticresolution=<type>-src\|-dst`. |
+
+`FILE_CONFLICT` means "both sides touched it", **not** "this will conflict": most such files
+merge automatically. Whether any region truly collides is only known once the merge runs. In
+human output the same thing reads `The file <path> needs to be merged from <src> to <dst> base
+<base>. Changed by <user>`.
+
 ## No rebase
 
 There is **no rebase command**. The idiomatic ways to get up-to-date parent code into a task

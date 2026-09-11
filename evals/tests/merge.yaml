@@ -1,0 +1,94 @@
+# uvcs-merge: workflow and judgement, not cm syntax.
+# These tests load the uvcs-merge skill instead of the hub; reference_content carries the
+# hub reference the skill points at, as a client would have loaded it.
+
+- description: "Merge is previewed before it is applied, and FILE_CONFLICT is not called a conflict"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    user_message: "Merge /main into the branch my workspace is on."
+  assert:
+    - type: icontains
+      value: "cm merge"
+    - type: llm-rubric
+      value: >-
+        The response must run the read-only preview (cm merge <source> with no --merge)
+        before applying the merge. Jumping straight to an applying merge as the first and
+        only step is a failure. It must not propose launching, waiting on, or relying on a
+        GUI merge tool.
+
+- description: "A user who wants their own merge tool gets the command, not an agent-run merge"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    user_message: >-
+      Merge /main/task001 into my branch. If anything conflicts I want to sort it out myself
+      in Beyond Compare, which is what I have configured as my merge tool.
+  assert:
+    - type: not-icontains
+      value: "--conflict-markers"
+    - type: llm-rubric
+      value: >-
+        The response must hand the merge command to the user to run themselves rather than
+        running it on their behalf, and say why (an agent-run merge blocks on the tool
+        window). Running the merge itself, or quietly substituting conflict markers for the
+        merge tool the user named, is a failure; offering markers as an alternative the
+        user can decline is fine.
+
+- description: "A contributor named by the user maps to the right side (incoming = source)"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    user_message: >-
+      Merge /main/task001 into the branch I'm on, and wherever the two versions clash just
+      take task001's version — mine is the one that's wrong.
+  assert:
+    - type: icontains
+      value: "--keepsource"
+    - type: llm-rubric
+      value: >-
+        The merge command the response actually runs must use --keepsource, because the
+        branch being merged in (/main/task001) is the source and the workspace is the
+        destination. Running --keepdestination is a failure; naming it while explaining
+        the distinction is fine.
+
+- description: "Unity YAML assets take a contributor instead of conflict markers"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    user_message: >-
+      Merge /main into my branch and resolve whatever conflicts show up. Heads up: both
+      sides edited Assets/Scenes/Main.unity as well as a few C# files.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must not leave Assets/Scenes/Main.unity resolved by diff3 conflict
+        markers: marker mode bypasses UnityYAMLMerge, so that file needs one whole side
+        taken — either by naming --keepsource/--keepdestination, or by asking the user
+        which side wins. Using --conflict-markers for the C# files is correct and expected.
+
+- description: "Check-in is offered, not run, as the step that finishes the merge"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    user_message: >-
+      I'm on /main/task055. Bring in the latest /main so I'm up to date, there will probably
+      be conflicts in the combat code.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must stop short of checking in: cm checkin may appear only as an
+        explicitly offered next step awaiting the user's go-ahead, never as a command the
+        response runs as part of the sequence. Omitting checkin entirely is acceptable.
+
+- description: "A merge from a shelve ends in pending changes, with no check-in offered"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    user_message: >-
+      A teammate shelved their fix as sh:41. Pull it into my workspace so I can keep working
+      on top of it.
+  assert:
+    - type: not-icontains
+      value: "cm checkin"
+    - type: llm-rubric
+      value: >-
+        Bringing a shelve into the workspace must end with the changes pending so the user
+        can carry on editing. Proposing, offering, or running a check-in is a failure.
