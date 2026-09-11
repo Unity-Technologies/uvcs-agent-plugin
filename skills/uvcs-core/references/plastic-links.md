@@ -9,6 +9,8 @@ directly on the target object — useful in review comments, tickets, chat, and 
 |---|---|
 | Code review (default tab) | `plastic://<server>/repos/<repo>/code-reviews/<id>` |
 | Code review (Review Changes tab) | `plastic://<server>/repos/<repo>/code-reviews/<id>/reviewchanges` |
+| Merge request (default tab) | `plastic://<server>/repos/<repo>/merge-requests/<id>` |
+| Merge request (Review Changes tab) | `plastic://<server>/repos/<repo>/merge-requests/<id>/reviewchanges` |
 | Branch | `plastic://<server>/repos/<repo>/branches/<branch-path>/diff` |
 | Changeset | `plastic://<server>/repos/<repo>/changesets/<id>/diff` |
 | Changeset range | `plastic://<server>/repos/<repo>/changesets/<src>..<dst>/diff` |
@@ -16,9 +18,13 @@ directly on the target object — useful in review comments, tickets, chat, and 
 | Label range | `plastic://<server>/repos/<repo>/labels/<src>..<dst>/diff` |
 | Shelveset | `plastic://<server>/repos/<repo>/shelvesets/<positive-id>/diff` |
 
-Trailing `/diff` is **required** for branches, changesets, labels, and shelvesets; code
-reviews take none. Shelvesets use the **positive** id even where an API exposed a negative
-changeset id.
+Trailing `/diff` is **required** for branches, changesets, labels, and shelvesets; code reviews
+and merge requests take none. Shelvesets use the **positive** id even where an API exposed a
+negative changeset id.
+
+A merge request and the code review it wraps share one id, so the two URLs differ only in the
+segment. Use `merge-requests` when the object is a merge request — the GUI opens the merge
+request window, with its merge actions, instead of the plain review.
 
 ## Server segment: `@` becomes `.`
 
@@ -41,10 +47,12 @@ The URL server form differs from the `cm` CLI form:
 
 ## Worked example
 
-Branch `/main/task001` in repo `mygame` on `myorg@cloud`, head `cs:4207`, review `311`:
+Branch `/main/task001` in repo `mygame` on `myorg@cloud`, head `cs:4207`, review `311`,
+merge request `312`:
 
 ```
 plastic://myorg.cloud/repos/mygame/branches/main/task001/diff
 plastic://myorg.cloud/repos/mygame/changesets/4207/diff
 plastic://myorg.cloud/repos/mygame/code-reviews/311
+plastic://myorg.cloud/repos/mygame/merge-requests/312
 ```
