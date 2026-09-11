@@ -116,12 +116,19 @@ cm attribute set att:status br:/main/task001 RESOLVED
 cm find attribute "where srcobj='br:/main/task001'"        # reading = cm find, never cm attribute
 ```
 
-## Code reviews
+## Merge requests and code reviews
 
-The CLI cannot add inline comments.
+A merge request is the UVCS pull request: it proposes merging a branch into another one. Code
+reviews cover changesets and shelves. Both carry reviewers and a comment thread, inline comments
+included. **Read `reviews-and-merge-requests.md` before any of this** — the subcommand groups
+have their own grammar, comments are addressed by GUID, and `--status` means a different field
+on create than on edit.
 
 ```
-cm codereview br:/main/task001 "Review title" --assignee=<user>
-cm codereview -e <id> --status=Reviewed          # statuses: "Under review", "Reviewed", "Rework required"
-cm find review "where assignee='me' and status='Under review'" --nototal
+cm mergerequest create br:/main/task001 "MR title" --destination=br:/main --users=<user>
+cm mr <id> reviewer status --status=Reviewed -c="LGTM"
+cm mr <id> comment add -c="Rename this" --path=/src/Player.cs --line=42
+cm codereview cs:4207 "Review title" --users=<user>      # changesets and shelves (sh:)
+cm find mergerequest "where target='br:/main/task001'" --format="{id} {title}" --nototal
+cm find changereviewcomment "where reviewid=<id>" --format="{guid} {type} {comment}" --nototal
 ```
