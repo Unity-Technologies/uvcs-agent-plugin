@@ -23,6 +23,14 @@ triggers.
   gets markers, and the check-in guard. Verified against the implementation and its
   `cm help merge`; the flags are **not** in `cm` 11.0.16 or any released client yet, and the
   reference says so and tells agents to probe first.
+- **`uvcs-merge`** — workflow skill for merging with `cm`, driving a merge from preview to
+  check-in without a merge tool window ever opening: establish the destination, preview
+  read-only, pick the mode (conflict markers, a whole contributor, or handing the command to
+  the user when they want their own tool), resolve with judgement, verify, and treat the
+  check-in as the point of no return. Depends on `uvcs-cli-reference` for all `cm` syntax.
+  Also adds the preview output tokens (`STATUS NO_MERGES_DETECTED`, `FILE_CONFLICT`, the
+  directory-conflict codes) to the hub's `references/branches-and-merge.md`, with the caveat
+  that `FILE_CONFLICT` means "both sides changed it", not "this will conflict".
 - CI quality gates: skill format validation on every PR
   (`Flash-Brew-Digital/validate-skill` + `plugin.json` schema check) and a promptfoo eval
   suite (`evals/`) that runs when skill content changes, authenticated to the Claude API via
