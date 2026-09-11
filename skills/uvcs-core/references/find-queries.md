@@ -57,7 +57,7 @@ cm find changeset "where branch='/main/task001' order by changesetid desc limit 
 | `branch` | `date`, `branchname` |
 | `changeset` | `date`, `changesetid` |
 | `label` | `date`, `labelname` |
-| `review` | `date`, `modifieddate`, `status` |
+| `review` / `mergerequest` | `date`, `modifieddate`, `status`, `mergerequeststatus` |
 
 To find a branch head, prefer `order by changesetid desc limit 1` over `date` (dates can tie
 within a second).
@@ -72,7 +72,8 @@ All objects also have `GUID` and `ID` (internal object id — not the user-visib
 | `changeset` | `branch`, `changesetid`, `date`, `owner`, `comment`, `attribute`, `attrvalue`, `parent` (cset id), `returnparent` (`'true'` returns the parent instead), `onlywithrevisions`, `ignorehidden` |
 | `label` | `name`, `date`, `owner`, `branch`, `changeset` (cset id), `comment`, `attribute`, `attrvalue` |
 | `shelve` | `shelveid`, `owner`, `date`, `comment`, `parent`, `attribute`, `attrvalue` |
-| `review` | `status`, `assignee`, `title`, `target` (objspec), `targetid`, `targettype` (`'branch'`/`'changeset'`), `date`, `owner` |
+| `review` / `mergerequest` | `status` (= `codereviewstatus`), `assignee` (= `reviewer`), `title`, `comment`, `target` (objspec), `targetid`, `targettype` (`'branch'`/`'changeset'`), `mergerequeststatus` (`'Draft'`/`'Open'`/`'Closed'`/`'Merged'`), `destination` (brspec), `date`, `modifieddate`, `owner` |
+| `changereviewcomment` | `reviewid` (= `review`), `type`, `line`, `location`, `parent`, `changeset`, `appliedinchangeset`, `revisionid`, `comment`, `owner`, `date`, `modifieddate` |
 | `attribute` | `type`, `value`, `date`, `owner`, `comment`, `srcobj` (objspec of the object holding the attribute) |
 | `attributetype` | `name`, `value`, `date`, `owner`, `comment`, `source` |
 | `revision` | `branch`, `changeset`, `item` (path), `itemid`, `date`, `owner`, `size`, `type` (`'txt'`/`'bin'`/`'dir'`), `parent`, `returnparent`, `shelve`, `archived`, `comment` |
@@ -82,8 +83,27 @@ All objects also have `GUID` and `ID` (internal object id — not the user-visib
 Useful `--format` tokens (per object; unknown tokens print literally, so verify):
 branch `{name} {date} {owner} {comment} {parent}` · changeset `{changesetid} {branch} {date}
 {owner} {comment} {guid} {parent}` · label `{name} {date} {owner} {changeset} {comment}` ·
-shelve `{shelveid} {date} {owner} {comment} {parent}` · review `{id} {status} {assignee}
-{target} {date}` · revision `{id} {item} {changeset} {branch} {size} {type}`.
+shelve `{shelveid} {date} {owner} {comment} {parent}` · review/mergerequest `{id} {title}
+{status} {codereviewstatus} {mergerequeststatus} {assignee} {target} {targettype} {destination}
+{owner} {date}` · changereviewcomment `{id} {guid} {reviewid} {type} {line} {location} {parent}
+{changeset} {appliedinchangeset} {revisionid} {comment} {owner} {date}` · revision `{id} {item}
+{changeset} {branch} {size} {type}`.
+
+### Review and merge request quirks
+
+- `mergerequest` is the **same object** as `review`, filtered to the reviews that are merge
+  requests. Everything above applies to both names.
+- `{mergerequeststatus}` and `{status}` print their field name inline — `MergeRequestStatus Open`,
+  `Status Reviewed` — not a bare value. Strip the prefix when parsing.
+- `{target}` prints an internal `id:<n>`, **not** a branch name or spec, so it is useless as
+  output; as a *filter* it takes a normal spec (`target='br:/main/task001'`) and is the reliable
+  way to find the merge request for a branch.
+- `{guid}` is **not** a valid format token here, though `guid` works in a `where`.
+- `changereviewcomment`'s `location` is the **0-based** stored position, kept as text — quote it
+  (`location='105'`). `line` is its **1-based** alias, matching the `--line` flag and text
+  editors; it accepts only `=` and `!=`, rejects values below 1, and is empty when the comment is
+  not anchored to a line. `reviewcomment` is an older object exposing a subset of the same
+  comments — prefer `changereviewcomment`.
 
 ## Recipes
 
@@ -110,7 +130,13 @@ cm find attribute "where srcobj='br:/main/task001'" --nototal
 cm find shelve "where owner='me'" --format="{shelveid} {date} {comment}" --nototal
 
 # Reviews waiting on me
-cm find review "where assignee='me' and status='Under review'" --format="{id} {target} {title}" --nototal
+cm find review "where assignee='me' and status='Under review'" --format="{id} {title}" --nototal
+
+# The merge request for a branch (target filters on the source branch; don't print it)
+cm find mergerequest "where target='br:/main/task001'" --format="{id} {title} {destination}" --nototal
+
+# Pending change requests on a review, with the 1-based line they sit on
+cm find changereviewcomment "where reviewid=311 and type='change'" --format="{guid} {line} {comment}" --nototal
 
 # Recent merges into /main via changeset comments (fast at any repo size)
 cm find changeset "where branch='/main' and comment like 'merged%' order by changesetid desc limit 30" --format="{changesetid} {date} {comment}" --nototal

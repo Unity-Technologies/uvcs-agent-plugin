@@ -5,11 +5,12 @@ description: >-
   how UVCS concepts differ from git, object specs (br:, cs:, lb:, sh:, serverpath:), which cm
   command answers which question, read-only vs mutating vs irreversible commands, how to name
   UVCS objects and build plastic:// deep links when reporting results, and curated cm recipes for
-  status, find queries, diff and patch, history, branches, checkin and shelves. Use whenever
-  composing or running any cm command, or when the user mentions UVCS, Unity Version Control,
-  Plastic SCM, cm, changeset, cset, workspace, selector, branch, label, shelve, shelveset,
-  checkin, annotate, code review, xlink, or plastic:// links. Every UVCS workflow skill builds on
-  this one — load it first.
+  status, find queries, diff and patch, history, branches, checkin, shelves, merge requests and
+  code reviews. Use whenever composing or running any cm command, or when the user mentions UVCS,
+  Unity Version Control, Plastic SCM, cm, changeset, cset, workspace, selector, branch, label,
+  shelve, shelveset, checkin, annotate, merge request, MR, pull request, PR, code review,
+  reviewer, xlink, or plastic:// links. Every UVCS workflow skill builds on this one — load it
+  first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
@@ -50,6 +51,8 @@ Verified against `cm` 11.0.16. Anything version-sensitive is marked.
 | Label | tag | First-class object attached to one changeset. |
 | Attribute | (none) | Typed key/value metadata settable on branches, changesets, labels (e.g. `status=RESOLVED`). |
 | Xlink | submodule | Directory link mounting another repo at a specific changeset inside the parent repo. |
+| Merge request (MR) | pull request | Server object proposing a merge of a source branch into a destination branch, with reviewers and a comment thread. Same object as a code review, plus the merge proposal. |
+| Code review | PR review | Reviewers, statuses, and inline/conversation comments on a **changeset or shelve**. For a branch, the merge request is the workflow. |
 | Merge | merge | Creates a merge changeset on the destination branch. There is **no rebase command** (see `references/branches-and-merge.md`). |
 
 ## Object specs
@@ -106,11 +109,14 @@ Read-only — no effect on the repository or workspace:
 Mutating — they change the workspace or the server-side repository:
 `add`, `checkin`/`ci`, `checkout`/`co`, `switch`, `update`, `move`, `remove`, `branch`,
 `label`, `attribute`, `shelveset`, `merge`, `undo`, `undochange`, `undocheckout`, `revert`,
-`undelete`, `changeset`, `codereview`, `xlink`, `patch --apply`.
+`undelete`, `changeset`, `codereview`, `mergerequest`/`mr`, `xlink`, `patch --apply`.
+`cm mergerequest`/`cm codereview` mutate even when they only add a comment or a reviewer — those
+are visible to everyone on the review. Their one read-only verb is `reviewer list`.
 
 Irreversible — no `cm` command can recover what these discard:
 `undo` / `undochange` / `undocheckout` (uncommitted work), `branch delete`, `label delete`,
-`shelveset delete`.
+`shelveset delete`, `codereview -d` / `mergerequest delete` (the review and its whole comment
+thread), `mergerequest <id> comment delete`.
 
 When and whether to confirm a mutating command with the user is workflow policy, owned by the
 higher-level skill (or agent) driving the task — not by this skill.
@@ -169,6 +175,7 @@ Nothing else ships yet: for any other task, this skill plus judgement is the who
 | File | Read it when |
 |---|---|
 | `references/commands.md` | Running anything beyond the orientation commands above: the verified invocation for status, branches, checkin, shelves, merge, diff, cat, history, labels, attributes, reviews. |
+| `references/reviews-and-merge-requests.md` | Anything touching a merge request or a code review: creating one, reviewers, statuses, inline and conversation comments, reading the thread. |
 | `references/find-queries.md` | Composing any `cm find` query: objects, fields, sort names, date constants, limits. |
 | `references/status-and-checkin.md` | Parsing `cm status`, checkin/checkout/undo semantics, ignore/hidden/cloaked conf files. |
 | `references/diff-and-patch.md` | Listing changed files, unified patches, `--integration`, extracting revisions, failure modes. |
@@ -176,4 +183,4 @@ Nothing else ships yet: for any other task, this skill plus judgement is the who
 | `references/merge-conflict-markers.md` | Resolving a conflicted merge headlessly: `--conflict-markers`, exit codes, marker format, the check-in guard. |
 | `references/history-and-annotate.md` | File history, blame tokens, `cm log` formats, walking `/main` history. |
 | `references/shell-gotchas.md` | Running `cm` from PowerShell / Git Bash / POSIX shells; quoting and comment pitfalls. |
-| `references/plastic-links.md` | Building `plastic://` deep links to branches, changesets, labels, shelves, code reviews. |
+| `references/plastic-links.md` | Building `plastic://` deep links to branches, changesets, labels, shelves, code reviews, merge requests. |
