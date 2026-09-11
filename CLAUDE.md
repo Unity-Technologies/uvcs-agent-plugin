@@ -265,10 +265,10 @@ finished skills.
 
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
-  Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-review-branch`,
-  `uvcs-root-cause`, `uvcs-links` (see Open decisions). The hub was named `uvcs-cli-reference`
-  until it grew into a real hub; the name now describes the body and the `cm` reference sits in
-  its `references/`.
+  Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-merge-request`,
+  `uvcs-review-branch`, `uvcs-root-cause`, `uvcs-links` (see Open decisions). The hub was named
+  `uvcs-cli-reference` until it grew into a real hub; the name now describes the body and the
+  `cm` reference sits in its `references/`.
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
