@@ -162,6 +162,13 @@ shelving before an undo, never presenting a destructive command as a casual next
 reviews and analyses read-only end to end) are workflow guidance and belong to the higher-level
 skills that perform those operations — every workflow skill that mutates must carry them.
 
+`uvcs-merge` is the worked example: the hub states what each merge mode does mechanically, and
+`uvcs-merge` owns the decision (preview first; markers unless the user asked for their own merge
+tool; a contributor when they named a side; ask before resolving what is genuinely ambiguous;
+treat the check-in as the point of no return). Never gate that on detecting a headless session —
+an agent cannot drive a merge tool window whatever the machine is, and there is no portable
+signal to detect one.
+
 ## Workflow for changes here
 
 1. **Use a skill-creator skill** to scaffold or refactor a skill rather than hand-rolling
@@ -185,6 +192,26 @@ skills that perform those operations — every workflow skill that mutates must 
 Failures should degrade gracefully: per the spec, one broken skill must not take down the others,
 so keep skills independent and self-contained.
 
+## Commit history
+
+The log is the story of how this plugin was built. `git log --oneline --stat` should show where
+the direction changed, what was hard, and what got reverted — none of which is visible in the
+finished skills.
+
+- **One coherent change per commit**, at a natural stopping point. Not one commit per file, not
+  one commit per week. If a message needs "and", consider two commits.
+- **Subject: one line, specific, in the imperative.** "Rescope cross-agent testing to
+  triggering-surface changes only", never "update docs" or "minor edits". Say what actually
+  changed, not which files moved.
+- **Body: why it mattered.** The constraint behind the change, what you rejected and why, what a
+  review or an eval caught. Skip the body only when the subject truly says everything.
+- **Be honest.** Reversals, dead ends, and corrections from review are the most useful entries in
+  the log. A commit that undoes an earlier decision should say that it does, and why.
+- **Write it while the work is fresh**, after reviewing the diff (`git diff --word-diff`) — the
+  message is the record of what happened, so it is worth the minute it costs.
+- **Tag milestones** (`git tag -a v0.1.0 -m "..."`): the message records the day's work, the tag
+  records the landmark.
+
 ## Review checklist
 
 - [ ] `name` matches the directory; frontmatter valid per Agent Skills 1.0.
@@ -201,7 +228,8 @@ so keep skills independent and self-contained.
 
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
-  Set: `uvcs-cli-reference` (hub, shipped), `uvcs-review-branch`, `uvcs-root-cause`, `uvcs-links`.
+  Set: `uvcs-cli-reference` (hub, shipped), `uvcs-merge` (shipped), `uvcs-review-branch`,
+  `uvcs-root-cause`, `uvcs-links`.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
 
 ## Open decisions
