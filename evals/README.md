@@ -1,21 +1,23 @@
 # Skill evals
 
-[Promptfoo](https://www.promptfoo.dev/) suite for `skills/uvcs-cli-reference`. It checks that a
-model with the skill loaded composes correct `cm` commands and respects the safety rules.
+[Promptfoo](https://www.promptfoo.dev/) suite for the plugin's skills. It checks that a model
+with a skill loaded composes correct `cm` commands, reports results the way `uvcs-core`
+prescribes, and respects the safety rules.
 
 ## Design principles
 
 - **Fast and cheap.** One small evaluated model (Claude Haiku), `temperature: 0`,
-  `max_tokens: 1024`, and 13 tests. Most assertions are deterministic string checks
+  `max_tokens: 1024`, and 25 tests. Most assertions are deterministic string checks
   (`icontains` / `not-icontains`); `llm-rubric` is used only where a string match cannot
-  express the requirement (a few assertions, judged by one Sonnet call each).
+  express the requirement (a minority of assertions, judged by one Sonnet call each).
 - **Green means minimum quality; red means something broke.** Every test pins a behavior the
-  skill exists to teach (query grammar rules, flag names, output formats) — not stylistic
-  preferences. If you edit the skill and a test goes red, the edit removed or weakened one of
-  those behaviors. CI allows a single failure (`fail-on-threshold: 90`) to absorb rare judge
-  flakiness; two or more failures fail the PR.
+  skill exists to teach (query grammar rules, flag names, output formats, reporting notation)
+  — not stylistic preferences. If you edit the skill and a test goes red, the edit removed or
+  weakened one of those behaviors. CI requires a 90% pass rate
+  (`fail-on-threshold: 90`) so rare judge flakiness does not block a PR.
 - Tests load the same files an agent would: `SKILL.md` always, plus the one reference the task
-  calls for.
+  calls for. `uvcs-merge` tests override `skill_content` with the workflow skill and pass the
+  hub reference it points at — which is also how the hub/workflow split gets exercised.
 
 ## Running locally
 
@@ -59,7 +61,7 @@ suite.
 
 ## Adding tests
 
-Add cases to `tests/*.yaml` (grouped by theme: `queries`, `commands`). Prefer
+Add cases to `tests/*.yaml` (grouped by theme: `queries`, `commands`, `reporting`, `merge`). Prefer
 deterministic assertions; reserve `llm-rubric` for semantics. Every test should encode a fact
 verified against a real `cm` — the same bar as the skill content itself. Keep the suite small:
 each test costs tokens on every PR, so a new test must guard a behavior whose silent regression

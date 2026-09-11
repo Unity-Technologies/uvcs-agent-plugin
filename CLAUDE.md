@@ -128,19 +128,41 @@ installed. Detect it (e.g. via a `cm` status/version check), and state what to d
 missing. When referring to plugin-relative paths in the spec's configuration fields, they must
 start with `./` and stay inside the plugin root.
 
-## Skill composition: the `cm` hub
+## Skill composition: the `uvcs-core` hub
 
-- **Command syntax lives in exactly one place**: the `uvcs-cli-reference` skill. Higher-level
-  skills describe *workflow and judgement*, and point at the hub for syntax.
+`uvcs-core` is the hub, and it is the **parent** of the `cm` reference, not its sibling. Its body
+holds only what every UVCS task needs — the domain model, object specs, object naming and
+`plastic://` reporting conventions, read-only / mutating / irreversible labels, how to route a
+question to the right command, and the catalogue of workflow skills. All `cm` syntax lives one
+level down in `references/`, with `references/commands.md` as the curated everyday set.
+
+This shape was chosen deliberately over a separate `uvcs-core` + `uvcs-cli-reference` pair: two
+always-on descriptions covering the same vocabulary cannot be made mutually exclusive, a workflow
+skill would face a four-level chain to reach a flag, and an agent that loaded the CLI half alone
+would get every mutating command with none of the conventions.
+
+- **Command syntax lives in exactly one place**: `uvcs-core`'s `references/`. Higher-level skills
+  describe *workflow and judgement*, and point at the hub for syntax.
 - Cross-skill *file* paths are fragile — clients differ in how skills are installed and whether
   one skill can invoke another. So: name the dependency explicitly in the body (e.g. "This
-  workflow uses the `uvcs-cli-reference` skill for all `cm` invocations; load it first"), and let the agent
-  resolve it.
-- Pragmatic exception: a higher-level skill may inline the **one or two exact invocations** it
-  needs to stay usable standalone. It must never copy tables, flag lists, or reference material —
-  that duplication rots.
+  workflow uses the `uvcs-core` skill for all `cm` invocations; load it first"), and let the agent
+  resolve it. Name the hub *reference* the same way — "read **merge-conflict-markers**" — never a
+  path into another skill's directory.
+- **Inline the invocation, never the explanation.** A workflow skill prints the exact command it
+  runs, on the line where it runs it — that keeps it executable in one step and usable when the
+  hub is absent. It must never carry flag tables, output-token glossaries, exit-code contracts,
+  availability caveats, or format specs; those are hub facts and that duplication rots. The test
+  is not a command count: `cm merge <src> --merge --conflict-markers` on the step that applies
+  the merge is right, and a paragraph explaining what `--conflict-markers` does is wrong.
+- Replacing a command with a prose pointer ("see the hub for merge syntax") is **not** the fix for
+  duplication and was rejected: it costs a lookup hop per step, and an agent that fails the lookup
+  invents a flag — the exact failure this plugin exists to prevent. A stale pointer also reads
+  fine while giving nothing, where a stale command is at least caught by an eval.
 - If two skills keep needing the same block of text, that block belongs in the hub's
   `references/`, not in both.
+
+Reference files are named by the question they answer, unprefixed: inside
+`skills/uvcs-core/references/`, a `cm-` prefix or a `-reference` suffix carries no information.
 
 ## Verifying `cm` content
 
@@ -155,9 +177,11 @@ Before claiming a command works:
 **Mark every command read-only or mutating.** Read-only (`cm find`, `cm log`, `cm diff`,
 `cm status`, `cm cat`) can be run freely. Mutating operations (`cm checkin`, `cm merge`,
 `cm undo`, `cm rm`, `cm branch -d`, `cm switch`, `cm shelve`, anything touching a server) affect
-real repositories and other people's work. Division of responsibility (settled): the
-`uvcs-cli-reference` hub labels commands as plain facts — read-only / mutating / irreversible —
-and stays policy-free. The confirmation rules (when to ask the user first, when to suggest
+real repositories and other people's work. Division of responsibility (settled): the `uvcs-core`
+hub labels commands as plain facts — read-only / mutating / irreversible — and stays policy-free.
+Its reporting conventions cover *notation and rendering* only (how to name `cs:42`, when to emit
+a `plastic://` link, never inventing an id) for the same reason. The confirmation rules (when to
+ask the user first, when to suggest
 shelving before an undo, never presenting a destructive command as a casual next step, keeping
 reviews and analyses read-only end to end) are workflow guidance and belong to the higher-level
 skills that perform those operations — every workflow skill that mutates must carry them.
@@ -228,8 +252,12 @@ finished skills.
 
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
-  Set: `uvcs-cli-reference` (hub, shipped), `uvcs-merge` (shipped), `uvcs-review-branch`,
-  `uvcs-root-cause`, `uvcs-links`.
+  Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-review-branch`,
+  `uvcs-root-cause`, `uvcs-links` (see Open decisions). The hub was named `uvcs-cli-reference`
+  until it grew into a real hub; the name now describes the body and the `cm` reference sits in
+  its `references/`.
+- Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
+  Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
 
 ## Open decisions
@@ -239,3 +267,7 @@ Do not silently invent answers to these — ask, then record the answer here.
 - Whether we ever ship an MCP server alongside the skills, or stay skills-only.
 - Verified per-client install instructions for `README.md` (currently generic — fill in as each
   client is tested).
+- Whether `uvcs-links` still needs to exist as a skill. Building `plastic://` links is now hub
+  material — the reporting conventions in `uvcs-core` plus `references/plastic-links.md` — so a
+  dedicated skill would either duplicate that or be a thin wrapper. Left in the planned set until
+  decided; do not ship it without answering this.

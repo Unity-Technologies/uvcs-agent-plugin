@@ -5,7 +5,7 @@
     user_message: >-
       Show me what branch /main/task009 would contribute if merged into its parent right
       now — like a GitHub pull request diff, without the merge noise from the parent.
-    reference_content: file://../skills/uvcs-cli-reference/references/diff-and-patch.md
+    reference_content: file://../skills/uvcs-core/references/diff-and-patch.md
   assert:
     - type: icontains
       value: "--integration"
@@ -19,7 +19,7 @@
     user_message: >-
       I need to parse the list of pending changes in a script, including each file's base
       revision id. What do I run?
-    reference_content: file://../skills/uvcs-cli-reference/references/status-and-checkin.md
+    reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
   assert:
     - type: icontains
       value: "--machinereadable"
@@ -29,7 +29,7 @@
 - description: "Per-line attribution uses cm annotate with the {changeset} token"
   vars:
     user_message: "Which changeset last modified line 120 of Assets/Player.cs, and who wrote it?"
-    reference_content: file://../skills/uvcs-cli-reference/references/history-and-annotate.md
+    reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
   assert:
     - type: icontains
       value: "cm annotate"
@@ -43,6 +43,7 @@
 - description: "File content at a branch uses serverpath: with a #br: qualifier"
   vars:
     user_message: "Get me the content of /src/Enemy.cs as it currently is on branch /main/ai-fixes."
+    reference_content: file://../skills/uvcs-core/references/commands.md
   assert:
     - type: icontains
       value: "serverpath:"
@@ -54,7 +55,7 @@
     user_message: >-
       I'm on Windows using Git Bash. cm switch /main/task001 fails saying the branch
       doesn't exist, but cm find branch shows it exists. What's wrong?
-    reference_content: file://../skills/uvcs-cli-reference/references/shell-gotchas.md
+    reference_content: file://../skills/uvcs-core/references/shell-gotchas.md
   assert:
     - type: icontains-any
       value:
@@ -70,18 +71,22 @@
 - description: "No git fallback in a UVCS workspace"
   vars:
     user_message: "Show me the last 10 commits on this project. It's in a UVCS workspace."
+    reference_content: file://../skills/uvcs-core/references/commands.md
   assert:
-    - type: not-icontains
-      value: "git log"
     - type: icontains
       value: "cm find changeset"
+    - type: llm-rubric
+      value: >-
+        Every command the response proposes running must be a cm command. Proposing git log
+        (or any other git command) as something to run in the workspace is a failure; naming
+        git only as an analogy while explaining the UVCS equivalent is fine.
 
 - description: "plastic:// changeset link: server @ becomes . and /diff suffix is required"
   vars:
     user_message: >-
       Build a plastic:// link to changeset 4207 in the repo mygame on the server
       myorg@cloud so I can paste it in a ticket.
-    reference_content: file://../skills/uvcs-cli-reference/references/plastic-links.md
+    reference_content: file://../skills/uvcs-core/references/plastic-links.md
   assert:
     - type: icontains
       value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
@@ -91,7 +96,7 @@
     user_message: >-
       I'm an automated agent with no GUI. Merge /main/task001 into the branch my workspace is
       on. It will almost certainly conflict, and no merge tool window can ever open.
-    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    reference_content: file://../skills/uvcs-core/references/merge-conflict-markers.md
   assert:
     - type: icontains
       value: "--conflict-markers"
@@ -108,7 +113,7 @@
       cm checkin refuses to run: it says tests/MarkerParserTests.cs was merged with conflict
       markers and still contains them. That file is a fixture — the <<<<<<< text is supposed
       to be there. How do I check in?
-    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    reference_content: file://../skills/uvcs-core/references/merge-conflict-markers.md
   assert:
     - type: icontains
       value: "--mark-resolved"

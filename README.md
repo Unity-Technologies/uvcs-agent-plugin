@@ -32,12 +32,18 @@ skills/              One directory per skill, each with a SKILL.md
 
 | Skill | Purpose | Status |
 | ----- | ------- | ------ |
-| `uvcs-cli-reference` | The `cm` CLI reference: concepts, object specs, `cm find` queries, output formats, gotchas. The hub every other skill builds on. | ✅ Available |
+| `uvcs-core` | The hub: UVCS concepts vs git, object specs, how to report changesets and build `plastic://` links, read-only vs mutating commands — plus the full `cm` reference in its `references/`. Every other skill builds on it. | ✅ Available |
+| `uvcs-merge` | Merge a branch, changeset, label, or shelve and drive it to a resolved workspace without a merge tool window. | ✅ Available |
 | `uvcs-review-branch` | Review the changes on a branch: scope, risk, per-changeset walkthrough. | Planned |
 | `uvcs-root-cause` | Root cause analysis: trace a symptom to the changeset that introduced it. | Planned |
-| `uvcs-links` | Build `plastic://` links so branches, changesets, and diffs are clickable. | Planned |
 
 Skill names are `uvcs-`prefixed so they stay unambiguous when installed alongside other plugins.
+
+The shape is deliberate: **one hub, and workflow skills that own judgement.** `uvcs-core`'s body
+carries only what every UVCS task needs, with `cm` syntax one level down in
+`references/commands.md` and friends. A workflow skill like `uvcs-merge` decides *what to do and
+in what order* and prints the exact command it runs — it never restates the hub's flag tables or
+output formats, so there is a single place to fix a command when `cm` changes.
 
 ## Requirements
 

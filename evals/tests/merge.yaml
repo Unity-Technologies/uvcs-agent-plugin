@@ -19,7 +19,7 @@
 - description: "A user who wants their own merge tool gets the command, not an agent-run merge"
   vars:
     skill_content: file://../skills/uvcs-merge/SKILL.md
-    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    reference_content: file://../skills/uvcs-core/references/merge-conflict-markers.md
     user_message: >-
       Merge /main/task001 into my branch. If anything conflicts I want to sort it out myself
       in Beyond Compare, which is what I have configured as my merge tool.
@@ -53,7 +53,7 @@
 - description: "Unity YAML assets take a contributor instead of conflict markers"
   vars:
     skill_content: file://../skills/uvcs-merge/SKILL.md
-    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    reference_content: file://../skills/uvcs-core/references/merge-conflict-markers.md
     user_message: >-
       Merge /main into my branch and resolve whatever conflicts show up. Heads up: both
       sides edited Assets/Scenes/Main.unity as well as a few C# files.
@@ -68,7 +68,7 @@
 - description: "Check-in is offered, not run, as the step that finishes the merge"
   vars:
     skill_content: file://../skills/uvcs-merge/SKILL.md
-    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+    reference_content: file://../skills/uvcs-core/references/merge-conflict-markers.md
     user_message: >-
       I'm on /main/task055. Bring in the latest /main so I'm up to date, there will probably
       be conflicts in the combat code.

@@ -30,7 +30,7 @@ defaultTest:
         apiKeyRequired: false
   vars:
     # Default is the hub skill; uvcs-merge tests override skill_content per test.
-    skill_content: file://../skills/uvcs-cli-reference/SKILL.md
+    skill_content: file://../skills/uvcs-core/SKILL.md
     reference_content: ""
 
 prompts:
@@ -54,4 +54,5 @@ prompts:
 tests:
   - file://tests/queries.yaml
   - file://tests/commands.yaml
+  - file://tests/reporting.yaml
   - file://tests/merge.yaml

@@ -3,7 +3,7 @@
 - description: "Shelve queries must not use 'order by' (shelve rejects sorting)"
   vars:
     user_message: "Find my most recent shelves."
-    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
   assert:
     - type: icontains
       value: "find shelve"
@@ -14,7 +14,7 @@
 - description: "Branch sort field is 'branchname', not 'name'"
   vars:
     user_message: "List all branches sorted alphabetically by name."
-    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
   assert:
     - type: icontains
       value: "branchname"
@@ -29,7 +29,7 @@
 - description: "Branch head lookup sorts by changesetid desc limit 1"
   vars:
     user_message: "Give me the GUID of the head changeset of branch /main/task007."
-    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
   assert:
     - type: icontains
       value: "changesetid desc"
@@ -52,7 +52,7 @@
     user_message: >-
       My workspace is on repo mygame@myorg@cloud, but I need the changesets of branch
       /main/task001 in the repo otherlib@myorg@cloud without switching workspaces.
-    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
   assert:
     - type: icontains
       value: "on repository"
