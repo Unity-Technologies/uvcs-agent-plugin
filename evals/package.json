@@ -1,0 +1,12 @@
+{
+  "name": "uvcs-skill-evals",
+  "private": true,
+  "description": "Promptfoo eval suite for the uvcs-cli-reference skill",
+  "scripts": {
+    "eval": "promptfoo eval --max-concurrency 4",
+    "view": "promptfoo view"
+  },
+  "devDependencies": {
+    "promptfoo": "0.122.2"
+  }
+}

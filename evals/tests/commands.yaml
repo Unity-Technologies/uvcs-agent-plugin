@@ -1,0 +1,119 @@
+# Command selection, flags, and output formats.
+
+- description: "PR-style branch diff uses --integration"
+  vars:
+    user_message: >-
+      Show me what branch /main/task009 would contribute if merged into its parent right
+      now — like a GitHub pull request diff, without the merge noise from the parent.
+    reference_content: file://../skills/uvcs-cli-reference/references/diff-and-patch.md
+  assert:
+    - type: icontains
+      value: "--integration"
+    - type: icontains-any
+      value:
+        - "cm patch"
+        - "cm diff"
+
+- description: "Machine-parseable pending changes uses --machinereadable + --includeRevId"
+  vars:
+    user_message: >-
+      I need to parse the list of pending changes in a script, including each file's base
+      revision id. What do I run?
+    reference_content: file://../skills/uvcs-cli-reference/references/status-and-checkin.md
+  assert:
+    - type: icontains
+      value: "--machinereadable"
+    - type: icontains
+      value: "--includeRevId"
+
+- description: "Per-line attribution uses cm annotate with the {changeset} token"
+  vars:
+    user_message: "Which changeset last modified line 120 of Assets/Player.cs, and who wrote it?"
+    reference_content: file://../skills/uvcs-cli-reference/references/history-and-annotate.md
+  assert:
+    - type: icontains
+      value: "cm annotate"
+    - type: llm-rubric
+      value: >-
+        If the response passes a --format to cm annotate, the changeset token must be
+        {changeset}. Using {changesetid} inside the cm annotate format string is a
+        failure ({changesetid} is only valid in cm find, which may legitimately appear
+        as a follow-up command).
+
+- description: "File content at a branch uses serverpath: with a #br: qualifier"
+  vars:
+    user_message: "Get me the content of /src/Enemy.cs as it currently is on branch /main/ai-fixes."
+  assert:
+    - type: icontains
+      value: "serverpath:"
+    - type: icontains
+      value: "#br:/main/ai-fixes"
+
+- description: "Git Bash /main path mangling is diagnosed as MSYS path conversion"
+  vars:
+    user_message: >-
+      I'm on Windows using Git Bash. cm switch /main/task001 fails saying the branch
+      doesn't exist, but cm find branch shows it exists. What's wrong?
+    reference_content: file://../skills/uvcs-cli-reference/references/shell-gotchas.md
+  assert:
+    - type: icontains-any
+      value:
+        - "MSYS_NO_PATHCONV"
+        - "br:/main/task001"
+        - "PowerShell"
+    - type: llm-rubric
+      value: >-
+        The response must attribute the failure to MSYS/Git Bash rewriting arguments that
+        start with "/" into Windows paths (path conversion), not to a server or
+        permissions problem.
+
+- description: "No git fallback in a UVCS workspace"
+  vars:
+    user_message: "Show me the last 10 commits on this project. It's in a UVCS workspace."
+  assert:
+    - type: not-icontains
+      value: "git log"
+    - type: icontains
+      value: "cm find changeset"
+
+- description: "plastic:// changeset link: server @ becomes . and /diff suffix is required"
+  vars:
+    user_message: >-
+      Build a plastic:// link to changeset 4207 in the repo mygame on the server
+      myorg@cloud so I can paste it in a ticket.
+    reference_content: file://../skills/uvcs-cli-reference/references/plastic-links.md
+  assert:
+    - type: icontains
+      value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
+
+- description: "Headless conflicted merge uses --conflict-markers, exit 1 is not a failure"
+  vars:
+    user_message: >-
+      I'm an automated agent with no GUI. Merge /main/task001 into the branch my workspace is
+      on. It will almost certainly conflict, and no merge tool window can ever open.
+    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+  assert:
+    - type: icontains
+      value: "--conflict-markers"
+    - type: llm-rubric
+      value: >-
+        The response must treat exit code 1 from the marker merge (or from
+        cm merge --list-conflict-markers) as "files still need resolving", not as a failed
+        command. Claiming the command failed, errored, or must be retried on exit 1 is a
+        failure. Not mentioning exit codes at all is acceptable.
+
+- description: "Marker text that is intentional is cleared with --mark-resolved"
+  vars:
+    user_message: >-
+      cm checkin refuses to run: it says tests/MarkerParserTests.cs was merged with conflict
+      markers and still contains them. That file is a fixture — the <<<<<<< text is supposed
+      to be there. How do I check in?
+    reference_content: file://../skills/uvcs-cli-reference/references/merge-conflict-markers.md
+  assert:
+    - type: icontains
+      value: "--mark-resolved"
+    - type: llm-rubric
+      value: >-
+        The response must keep the fixture's marker text intact and drop the pending entry
+        with cm merge --mark-resolved. Telling the user to delete, strip, or edit the
+        <<<<<<< text out of the file is a failure.

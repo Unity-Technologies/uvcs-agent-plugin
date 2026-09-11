@@ -130,11 +130,11 @@ start with `./` and stay inside the plugin root.
 
 ## Skill composition: the `cm` hub
 
-- **Command syntax lives in exactly one place**: the `uvcs-cm` reference skill. Higher-level
+- **Command syntax lives in exactly one place**: the `uvcs-cli-reference` skill. Higher-level
   skills describe *workflow and judgement*, and point at the hub for syntax.
 - Cross-skill *file* paths are fragile — clients differ in how skills are installed and whether
   one skill can invoke another. So: name the dependency explicitly in the body (e.g. "This
-  workflow uses the `uvcs-cm` skill for all `cm` invocations; load it first"), and let the agent
+  workflow uses the `uvcs-cli-reference` skill for all `cm` invocations; load it first"), and let the agent
   resolve it.
 - Pragmatic exception: a higher-level skill may inline the **one or two exact invocations** it
   needs to stay usable standalone. It must never copy tables, flag lists, or reference material —
@@ -155,9 +155,12 @@ Before claiming a command works:
 **Mark every command read-only or mutating.** Read-only (`cm find`, `cm log`, `cm diff`,
 `cm status`, `cm cat`) can be run freely. Mutating operations (`cm checkin`, `cm merge`,
 `cm undo`, `cm rm`, `cm branch -d`, `cm switch`, `cm shelve`, anything touching a server) affect
-real repositories and other people's work: a skill must instruct the agent to confirm with the
-user first, and must never present a destructive command as a casual next step. Reviews and
-analyses should stay read-only end to end.
+real repositories and other people's work. Division of responsibility (settled): the
+`uvcs-cli-reference` hub labels commands as plain facts — read-only / mutating / irreversible —
+and stays policy-free. The confirmation rules (when to ask the user first, when to suggest
+shelving before an undo, never presenting a destructive command as a casual next step, keeping
+reviews and analyses read-only end to end) are workflow guidance and belong to the higher-level
+skills that perform those operations — every workflow skill that mutates must carry them.
 
 ## Workflow for changes here
 
@@ -166,11 +169,17 @@ analyses should stay read-only end to end.
    description shape right, and can evaluate triggering.
 2. Validate the format: `skills-ref validate ./skills/uvcs-<name>`
    (see https://github.com/agentskills/agentskills/tree/main/skills-ref), plus the `plugin.json`
-   / `mcp.json` schemas.
+   / `mcp.json` schemas. CI re-checks both on every PR
+   (`.github/workflows/validate-skills.yml`, via `Flash-Brew-Digital/validate-skill`).
+   Behavioral regressions are guarded by the promptfoo eval suite in `evals/`
+   (`.github/workflows/skill-evals.yml`, Anthropic auth via Workload Identity Federation —
+   see `evals/README.md`). If a change alters what a skill teaches, update or add an eval.
 3. Test triggering with realistic user phrasings, including ones that should *not* fire it.
-4. Test the actual task in **at least two different agents** (e.g. Claude Code + Codex CLI or
-   Cursor) before merging anything non-trivial. Portability regressions are the most common
-   failure here and are invisible from one client.
+4. If the PR **adds or renames a skill, or changes a `description`** (the triggering surface),
+   smoke-test it in a second agent: symlink the skill directory into that client's skills dir
+   (e.g. `~/.codex/skills/`, `~/.cursor/skills/`) and run 2–3 realistic prompts. Content-only
+   changes skip this — a reference edit cannot change how another client discovers the skill,
+   and CI already covers format (validate-skill) and behavior (evals).
 5. Then re-read the skill and delete everything that did not earn its tokens.
 
 Failures should degrade gracefully: per the spec, one broken skill must not take down the others,
@@ -185,14 +194,14 @@ so keep skills independent and self-contained.
 - [ ] No client-specific tools, paths, or assumptions in the portable core.
 - [ ] Every `cm` command verified against a real CLI; read-only vs mutating labelled.
 - [ ] No secrets, internal URLs, real user/customer/org data.
-- [ ] Tried in ≥2 agents.
-- [ ] `CHANGELOG.md` updated if a skill was added, renamed, or its triggering changed.
+- [ ] If a skill was added/renamed or a `description` changed: triggering smoke-tested in a
+      second agent, and `CHANGELOG.md` updated.
 
 ## Settled conventions
 
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
-  Planned set: `uvcs-cm` (hub), `uvcs-review-branch`, `uvcs-root-cause`, `uvcs-links`.
+  Set: `uvcs-cli-reference` (hub, shipped), `uvcs-review-branch`, `uvcs-root-cause`, `uvcs-links`.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
 
 ## Open decisions

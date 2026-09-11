@@ -32,7 +32,7 @@ skills/              One directory per skill, each with a SKILL.md
 
 | Skill | Purpose | Status |
 | ----- | ------- | ------ |
-| `uvcs-cm` | The `cm` CLI reference: concepts, commands, flags, output formats. The hub every other skill builds on. | Planned |
+| `uvcs-cli-reference` | The `cm` CLI reference: concepts, object specs, `cm find` queries, output formats, gotchas. The hub every other skill builds on. | ✅ Available |
 | `uvcs-review-branch` | Review the changes on a branch: scope, risk, per-changeset walkthrough. | Planned |
 | `uvcs-root-cause` | Root cause analysis: trace a symptom to the changeset that introduced it. | Planned |
 | `uvcs-links` | Build `plastic://` links so branches, changesets, and diffs are clickable. | Planned |

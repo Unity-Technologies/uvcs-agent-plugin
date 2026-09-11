@@ -72,9 +72,10 @@ Nothing deeper is discovered.
 
    See [skills-ref](https://github.com/agentskills/agentskills/tree/main/skills-ref).
 7. **Test triggering** with realistic phrasings, including ones that should *not* fire it.
-8. **Test the task in at least two different agents** before opening a PR for anything
-   non-trivial. Portability regressions are the most common failure here and are invisible from
-   a single client.
+8. **If you added/renamed a skill or changed a `description`, smoke-test triggering in a
+   second agent** (symlink the skill into e.g. `~/.codex/skills/` or `~/.cursor/skills/` and
+   run a few realistic prompts). Content-only changes don't need this — CI already validates
+   format and behavior on every PR.
 9. **Re-read and cut** everything that did not earn its tokens.
 
 ## Pull requests

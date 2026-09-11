@@ -1,0 +1,128 @@
+name: Skill evals
+
+# Runs the promptfoo eval suite when skill content (or the suite itself) changes.
+# Auth: Anthropic Workload Identity Federation — the job exchanges its GitHub OIDC
+# token for a short-lived Anthropic access token; no API key secret is stored.
+# See evals/README.md for the one-time Console setup and the repo variables required.
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - "evals/**"
+      - ".github/workflows/skill-evals.yml"
+  # Manual runs — handy to verify the WIF setup without opening a PR.
+  workflow_dispatch:
+
+permissions:
+  id-token: write # required to request the GitHub OIDC token
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    # OIDC tokens are not issued to fork PRs, and the WIF variables must be configured.
+    # Fork contributions: a maintainer pushes the branch to this repo to run the evals.
+    if: >-
+      vars.ANTHROPIC_FEDERATION_RULE_ID != '' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Exchange GitHub OIDC token for an Anthropic access token
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          set -euo pipefail
+          JWT=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" | jq -r .value)
+          BODY=$(jq -n --arg jwt "$JWT" \
+            --arg rule "$ANTHROPIC_FEDERATION_RULE_ID" \
+            --arg org "$ANTHROPIC_ORGANIZATION_ID" \
+            --arg svc "$ANTHROPIC_SERVICE_ACCOUNT_ID" \
+            --arg ws "${ANTHROPIC_WORKSPACE_ID:-}" \
+            '{grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+              assertion: $jwt,
+              federation_rule_id: $rule,
+              organization_id: $org,
+              service_account_id: $svc}
+             + (if $ws != "" then {workspace_id: $ws} else {} end)')
+          TOKEN=$(curl -sS https://api.anthropic.com/v1/oauth/token \
+            -H "content-type: application/json" -d "$BODY" | jq -r .access_token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "::error::Anthropic WIF token exchange failed (check the federation rule and the Console authentication history)"
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+          # WIF tokens are only valid as an Authorization bearer; the API validates
+          # x-api-key first if present, so the empty x-api-key line shadows the
+          # placeholder key (promptfoo refuses to start with no key at all) and
+          # keeps it off the wire.
+          {
+            echo "ANTHROPIC_CUSTOM_HEADERS<<__HDR__"
+            echo "authorization: Bearer $TOKEN"
+            echo "x-api-key:"
+            echo "__HDR__"
+          } >> "$GITHUB_ENV"
+          echo "ANTHROPIC_API_KEY=wif-placeholder-real-auth-is-bearer-header" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # promptfoo's dependency tree is large; a cold `npx promptfoo@latest` costs
+      # ~2 minutes per run. Pinning the version in evals/package-lock.json and
+      # caching node_modules makes warm runs skip the install entirely.
+      - name: Restore promptfoo install
+        id: pf-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: evals/node_modules
+          key: promptfoo-${{ runner.os }}-${{ hashFiles('evals/package-lock.json') }}
+
+      - name: Install promptfoo (cache miss only)
+        if: steps.pf-cache.outputs.cache-hit != 'true'
+        working-directory: evals
+        run: npm ci --no-audit --no-fund --loglevel=error
+
+      # Save before running the evals: the combined cache action only saves when
+      # the whole job succeeds, so a failing eval would re-install forever.
+      - name: Save promptfoo install cache
+        if: steps.pf-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: evals/node_modules
+          key: promptfoo-${{ runner.os }}-${{ hashFiles('evals/package-lock.json') }}
+
+      - name: Run promptfoo evals
+        working-directory: evals
+        env:
+          PROMPTFOO_DISABLE_TELEMETRY: "1"
+          PROMPTFOO_DISABLE_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          npx --no-install promptfoo eval -c promptfooconfig.yaml \
+            -o output/results.json --no-share --max-concurrency 4 || true
+          PASSES=$(jq -r '.results.stats.successes // 0' output/results.json)
+          FAILS=$(jq -r '.results.stats.failures // 0' output/results.json)
+          ERRORS=$(jq -r '.results.stats.errors // 0' output/results.json)
+          TOTAL=$((PASSES + FAILS + ERRORS))
+          {
+            echo "## Skill evals"
+            echo ""
+            echo "| Passed | Failed | Errors |"
+            echo "|---|---|---|"
+            echo "| $PASSES | $FAILS | $ERRORS |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # 13 mostly-deterministic tests at temperature 0: tolerate a single flaky
+          # llm-rubric miss; two or more failures/errors mean something actually broke.
+          if [ "$TOTAL" -eq 0 ] || [ $((FAILS + ERRORS)) -ge 2 ]; then
+            echo "::error::Evals failed: $PASSES passed, $FAILS failed, $ERRORS errors"
+            exit 1
+          fi
+          echo "Evals passed: $PASSES/$TOTAL"

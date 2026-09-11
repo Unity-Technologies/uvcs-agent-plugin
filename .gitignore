@@ -30,6 +30,10 @@ venv/
 # Node (tooling only; this plugin ships no runtime deps)
 node_modules/
 
+# Evals — local credentials and promptfoo output
+.env
+evals/output/
+
 # UVCS workspace metadata, in case a workspace is created inside the repo
 .plastic/
 plastic.workspace

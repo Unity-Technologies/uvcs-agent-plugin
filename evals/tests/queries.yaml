@@ -1,0 +1,64 @@
+# cm find query composition — the highest-value knowledge in the skill.
+
+- description: "Shelve queries must not use 'order by' (shelve rejects sorting)"
+  vars:
+    user_message: "Find my most recent shelves."
+    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+  assert:
+    - type: icontains
+      value: "find shelve"
+    # The shelve query itself must not sort (prose may legitimately mention "order by").
+    - type: not-regex
+      value: "find shelve[^\\n]*order by"
+
+- description: "Branch sort field is 'branchname', not 'name'"
+  vars:
+    user_message: "List all branches sorted alphabetically by name."
+    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+  assert:
+    - type: icontains
+      value: "branchname"
+
+- description: "Listing branches uses cm find, not cm branch (which only mutates)"
+  vars:
+    user_message: "List the branches I created this month."
+  assert:
+    - type: icontains
+      value: "cm find branch"
+
+- description: "Branch head lookup sorts by changesetid desc limit 1"
+  vars:
+    user_message: "Give me the GUID of the head changeset of branch /main/task007."
+    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+  assert:
+    - type: icontains
+      value: "changesetid desc"
+    - type: icontains
+      value: "limit 1"
+
+- description: "Reading attributes goes through cm find, never a 'cm attribute get'"
+  vars:
+    user_message: "Which attributes are set on branch /main/task042?"
+  assert:
+    - type: icontains
+      value: "cm find attribute"
+    - type: icontains
+      value: "srcobj"
+    - type: not-icontains
+      value: "attribute get"
+
+- description: "Cross-repo query puts 'on repository' inside the quoted query string"
+  vars:
+    user_message: >-
+      My workspace is on repo mygame@myorg@cloud, but I need the changesets of branch
+      /main/task001 in the repo otherlib@myorg@cloud without switching workspaces.
+    reference_content: file://../skills/uvcs-cli-reference/references/find-queries.md
+  assert:
+    - type: icontains
+      value: "on repository"
+    - type: llm-rubric
+      value: >-
+        The response must place the clause "on repository 'otherlib@myorg@cloud'" INSIDE
+        the double-quoted query string passed to cm find, not as a separate shell argument
+        after the closing quote. Fail if the on-repository clause appears outside the
+        quoted query.

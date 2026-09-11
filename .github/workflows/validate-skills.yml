@@ -1,0 +1,44 @@
+name: Validate skills
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - "plugin.json"
+      - ".github/workflows/validate-skills.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      skills: ${{ steps.list.outputs.skills }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: list
+        run: echo "skills=$(ls -d skills/*/ | sed 's:/$::' | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  validate-skill:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        skill: ${{ fromJson(needs.discover.outputs.skills) }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate ${{ matrix.skill }}
+        uses: Flash-Brew-Digital/validate-skill@v1
+        with:
+          path: ./${{ matrix.skill }}
+          fail-on-warning: "true"
+          validate-references: "true"
+
+  validate-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate plugin.json against the Agent Plugins 1.0 schema
+        run: pipx run check-jsonschema --schemafile https://agent-plugins.org/schemas/1.0.0/plugin.schema.json plugin.json

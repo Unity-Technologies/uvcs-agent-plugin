@@ -5,7 +5,7 @@
 ## Verification
 
 - **`cm` version verified against:** <!-- output of `cm version` -->
-- **Agents tested in:** <!-- e.g. Claude Code 2.x, Codex CLI, Cursor — at least two for non-trivial changes -->
+- **Triggering smoke-tested in a second agent:** <!-- only if a skill was added/renamed or its description changed; otherwise N/A -->
 - **Format validated:** `skills-ref validate ./skills/<name>` <!-- paste result, or N/A -->
 
 ## Transcript
@@ -21,8 +21,9 @@ This is the real review artifact.
 - [ ] `name` in frontmatter matches the skill directory name.
 - [ ] `description` says what + when, uses real user vocabulary, and does not overlap a sibling skill.
 - [ ] `SKILL.md` is well under 500 lines; detail lives in `references/`.
-- [ ] No `cm` syntax duplicated from the `uvcs-cm` hub skill.
+- [ ] No `cm` syntax duplicated from the `uvcs-cli-reference` hub skill.
 - [ ] No client-specific tool names, paths, or environment variables in `skills/`.
-- [ ] Mutating commands are labelled and require user confirmation.
+- [ ] Commands are labelled read-only / mutating / irreversible; user-confirmation policy lives
+      in the workflow skills, not the hub.
 - [ ] No secrets, internal hostnames, or real user/customer data.
 - [ ] Reviewed against the checklist in `CLAUDE.md` and cut anything that didn't earn its tokens.

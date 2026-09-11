@@ -1,0 +1,55 @@
+# Eval suite for the uvcs-cli-reference skill.
+#
+# Design goals (see evals/README.md):
+# - FAST and CHEAP: one small evaluated model, temperature 0, mostly deterministic
+#   string assertions; llm-rubric only where a string match cannot express the check.
+# - Green = the skill still teaches the behaviors that matter; red = something broke
+#   (a renamed section, a deleted gotcha, a regressed instruction).
+
+description: "uvcs-cli-reference skill evals"
+
+providers:
+  # Evaluated model: cheap and fast on purpose — the skill must carry the knowledge,
+  # not the model.
+  - id: anthropic:messages:claude-haiku-4-5
+    config:
+      max_tokens: 1024
+      temperature: 0
+      # Auth also works via a WIF bearer token in ANTHROPIC_CUSTOM_HEADERS (CI);
+      # locally, ANTHROPIC_API_KEY is picked up as usual.
+      apiKeyRequired: false
+
+defaultTest:
+  options:
+    # Judge for llm-rubric assertions only (a handful of tests).
+    provider:
+      id: anthropic:messages:claude-sonnet-5
+      config:
+        # Roomy enough that the judge's JSON verdict never gets truncated.
+        max_tokens: 2048
+        apiKeyRequired: false
+  vars:
+    skill_content: file://../skills/uvcs-cli-reference/SKILL.md
+    reference_content: ""
+
+prompts:
+  - id: eval-prompt
+    label: "Skill-loaded agent"
+    raw: |
+      You are an AI coding agent. The following skill is loaded; follow it exactly.
+
+      {{skill_content}}
+
+      {{reference_content}}
+
+      This is a planning exercise: do not execute anything. Reply with the exact
+      cm command(s) you would run (in fenced code blocks) plus at most three
+      sentences of explanation.
+
+      ## User request
+
+      {{user_message}}
+
+tests:
+  - file://tests/queries.yaml
+  - file://tests/commands.yaml
