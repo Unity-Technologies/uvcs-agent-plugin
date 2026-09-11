@@ -56,3 +56,4 @@ tests:
   - file://tests/commands.yaml
   - file://tests/reporting.yaml
   - file://tests/merge.yaml
+  - file://tests/reviews.yaml

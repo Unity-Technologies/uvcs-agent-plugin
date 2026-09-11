@@ -1,0 +1,88 @@
+# Merge requests and code reviews.
+
+- description: "A branch gets a merge request, not a branch code review"
+  vars:
+    user_message: >-
+      My branch /main/task009 is done and I want it reviewed before it goes into /main.
+      Open the review for it and put user alex on it.
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+  assert:
+    - type: icontains-any
+      value:
+        - "cm mergerequest create"
+        - "cm mr create"
+        - "cm mergerequest mk"
+        - "cm mr mk"
+    - type: icontains
+      value: "--destination"
+    - type: llm-rubric
+      value: >-
+        The response must propose a merge request for the branch. Proposing
+        "cm codereview br:/main/task009" as the way to review a branch is a failure;
+        mentioning it only as the older/alternative flow is acceptable. It must not use
+        --assignee to name the reviewer (the flag no longer exists) — reviewers go in
+        --users or --groups.
+
+- description: "Inline review comment uses comment add with a server path and a 1-based --line"
+  vars:
+    user_message: >-
+      On merge request 311, leave a comment asking for a rename on line 42 of
+      /src/Player.cs. I want it anchored to that line, not a general remark.
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+  assert:
+    - type: icontains
+      value: "comment add"
+    - type: icontains
+      value: "--path=/src/Player.cs"
+    - type: icontains
+      value: "--line=42"
+    - type: llm-rubric
+      value: >-
+        The --line value must be 42, passed as-is. Converting it to a 0-based value (41),
+        or claiming the CLI cannot add inline comments and falling back to the REST API or
+        the GUI, is a failure.
+
+- description: "Branch to merge request lookup filters on target with a br: spec"
+  vars:
+    user_message: "Find the merge request for branch /main/task009 and show me its destination."
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+  assert:
+    - type: icontains-any
+      value:
+        - "cm find mergerequest"
+        - "cm find review"
+    - type: icontains
+      value: "target='br:/main/task009'"
+    - type: llm-rubric
+      value: >-
+        The response must not print {target} as the source branch name — {target} renders
+        an internal id:<n>. Selecting {id}, {title} and/or {destination} is correct.
+
+- description: "Reviewer status is set on yourself, with the reviewer subcommand"
+  vars:
+    user_message: >-
+      I finished reviewing merge request 311 and it's good. Mark my review as done and
+      leave "LGTM" with it.
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+  assert:
+    - type: icontains
+      value: "reviewer status"
+    - type: icontains
+      value: "--status=Reviewed"
+    - type: llm-rubric
+      value: >-
+        The status-change comment must ride on the same command via -c (or -commentsfile).
+        Posting "LGTM" as a separate "comment add" call instead of attaching it to the
+        status change is a failure.
+
+- description: "plastic:// merge request link uses the merge-requests segment and no /diff"
+  vars:
+    user_message: >-
+      Build a plastic:// link to merge request 312 in the repo mygame on the server
+      myorg@cloud so I can paste it in a ticket.
+    reference_content: file://../skills/uvcs-core/references/plastic-links.md
+  assert:
+    - type: icontains
+      value: "plastic://myorg.cloud/repos/mygame/merge-requests/312"
+    - type: not-icontains
+      value: "merge-requests/312/diff"
