@@ -43,7 +43,7 @@ skills/uvcs-<name>/scripts/       # optional executables
 skills/uvcs-<name>/assets/        # optional templates/data
 mcp.json                          # only if we ever ship an MCP server; root only
 com.unity/                        # our client-specific extras, reverse-domain namespaced
-README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md CHANGELOG.md LICENSE NOTICE
+README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md LICENSE NOTICE
 .github/                          # issue and PR templates
 ```
 
@@ -246,7 +246,7 @@ finished skills.
 - [ ] Every `cm` command verified against a real CLI; read-only vs mutating labelled.
 - [ ] No secrets, internal URLs, real user/customer/org data.
 - [ ] If a skill was added/renamed or a `description` changed: triggering smoke-tested in a
-      second agent, and `CHANGELOG.md` updated.
+      second agent.
 
 ## Settled conventions
 
@@ -259,6 +259,8 @@ finished skills.
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
+- **No `CHANGELOG.md`.** Release notes are generated from the merged PRs when a release is cut,
+  so there is no hand-maintained changelog to update. Do not re-add one.
 
 ## Open decisions
 
