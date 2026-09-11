@@ -65,6 +65,10 @@ agent.
 git clone https://github.com/Unity-Technologies/unity-version-control-plugin.git
 ```
 
+Or download `unity-version-control-<version>.zip` from the
+[Releases page](https://github.com/Unity-Technologies/unity-version-control-plugin/releases) and
+unzip it — each release ships a `.sha256` next to the archive if you want to verify it.
+
 How you register a plugin differs per client, and the mechanism is deliberately outside the
 Agent Plugins spec. Follow your client's plugin or skills documentation and point it at the
 cloned directory:

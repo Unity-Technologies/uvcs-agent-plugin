@@ -1,0 +1,103 @@
+name: Release
+
+# One-button release. Go to Actions ▸ Release ▸ Run workflow, pick the branch to
+# release from and the bump level (patch / minor / major), and this does
+# everything in a single run:
+#
+#   1. bumps "version" in plugin.json, commits it and tags v<version> on the
+#      branch you picked
+#   2. packages the plugin (everything except repo-only files, see .gitattributes)
+#      as a zip plus a SHA-256 checksum
+#   3. opens a draft GitHub Release for the tag with notes generated from the
+#      merged PRs since the previous tag, with the assets already attached
+#
+# You then review the draft on the Releases page and click "Publish release".
+# There is no hand-maintained changelog and no version to bump by hand — the
+# workflow owns both.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+# The bump commit/tag push and the release upload both use the built-in
+# GITHUB_TOKEN, which needs write access to repo contents/releases. If the
+# release branch is ever protected with a required-PR rule, the bump push needs
+# that rule to allow GitHub Actions (or the job fails before anything is tagged).
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history so generated notes can diff against the last tag
+
+      - name: Bump plugin.json, commit, tag, push
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+
+          current=$(jq -r '.version // "0.0.0"' plugin.json)
+          IFS=. read -r major minor patch <<< "$current"
+          case "$BUMP" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          version="$major.$minor.$patch"
+          tag="v$version"
+
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::Tag $tag already exists. Pick a different bump level." && exit 1
+          fi
+
+          jq --arg v "$version" '.version = $v' plugin.json > plugin.json.tmp
+          mv plugin.json.tmp plugin.json
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release $tag"
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "HEAD:${{ github.ref_name }}" --follow-tags
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # git archive ships exactly what is committed, minus the paths marked
+      # export-ignore in .gitattributes (CI config, evals, agent guidance). The
+      # zip unpacks into a single unity-version-control/ directory, which is what
+      # a client's plugin/skills install path expects.
+      - name: Package the plugin
+        id: package
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          asset="unity-version-control-$VERSION.zip"
+          git archive --format=zip --prefix=unity-version-control/ -o "$asset" "$TAG"
+          sha256sum "$asset" > "$asset.sha256"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+
+      - name: Create draft release with generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.bump.outputs.tag }}
+          ASSET: ${{ steps.package.outputs.asset }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            --draft \
+            --generate-notes \
+            --latest \
+            --title "$TAG" \
+            "$ASSET" "$ASSET.sha256"

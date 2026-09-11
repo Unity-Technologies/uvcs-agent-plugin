@@ -1,0 +1,9 @@
+# Paths kept out of the release archive that `git archive` builds in
+# .github/workflows/release.yml. The zip is what a user installs, so it carries
+# the plugin and its docs; repo machinery stays behind.
+.gitattributes  export-ignore
+.gitignore      export-ignore
+.gitkeep        export-ignore
+.github/        export-ignore
+evals/          export-ignore
+CLAUDE.md       export-ignore
