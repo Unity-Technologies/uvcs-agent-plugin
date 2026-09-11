@@ -1,0 +1,59 @@
+# uvcs-core's reporting conventions: how results are named and rendered back to the user.
+# These load the hub body only — the conventions live there, not in a reference.
+
+- description: "Objects are reported with specs that round-trip: full branch path and cs: id"
+  vars:
+    user_message: >-
+      I ran cm status --header and got:
+      /main/task055@mygame@myorg@cloud (cs:4207 - head)
+      I'm on "task055". Give me the command that lists the last 5 changesets on the branch
+      I'm on, and tell me which branch and changeset that header says I'm at.
+  assert:
+    - type: icontains
+      value: "/main/task055"
+    - type: not-icontains
+      value: "'task055'"
+    - type: icontains
+      value: "cm find changeset"
+    - type: llm-rubric
+      value: >-
+        The branch must be identified by its full path (/main/task055 or br:/main/task055)
+        everywhere it is used as an identifier — in the cm command and in the answer. Treating
+        the user's shorthand "task055" as the branch name is a failure. Referring to the head
+        changeset as 4207 or cs:4207 is fine either way.
+
+- description: "A changeset reported to the user is offered as a clickable plastic:// link"
+  vars:
+    user_message: >-
+      cm status --header says my workspace is on /main/task055@mygame@myorg@cloud at changeset
+      4207. Give me something I can paste into a Jira ticket so a reviewer can open that
+      changeset.
+    reference_content: file://../skills/uvcs-core/references/plastic-links.md
+  assert:
+    - type: icontains
+      value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
+
+- description: "An id the output does not contain is not invented"
+  vars:
+    user_message: >-
+      Someone broke the build yesterday. Tell me the changeset id and the author so I can go
+      shout at them. I haven't run anything yet.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must not state any specific changeset id, author name, or date as fact:
+        no command has been run, so it cannot know them. It must say the information is not
+        available yet and name the cm command (a cm find changeset query) that would produce
+        it. Inventing or illustrating a plausible-looking id as if it were the answer is a
+        failure; a clearly-labelled placeholder such as <id> inside a command template is fine.
+
+- description: "A merge request defers to the uvcs-merge workflow rather than improvising"
+  vars:
+    user_message: "Merge /main into my branch and deal with any conflicts."
+  assert:
+    - type: llm-rubric
+      value: >-
+        The hub must not drive the merge from its own knowledge. The response must either
+        defer to the uvcs-merge skill by name, or — if it proceeds — run the read-only
+        cm merge preview before any applying merge and avoid anything that opens a GUI merge
+        tool. Applying a merge immediately with no preview is a failure.

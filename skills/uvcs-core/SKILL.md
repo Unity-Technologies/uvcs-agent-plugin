@@ -1,18 +1,19 @@
 ---
-name: uvcs-cli-reference
+name: uvcs-core
 description: >-
-  Reference for the cm command line of Unity Version Control (UVCS, formerly Plastic SCM):
-  core concepts and how they differ from git, object specs (br:, cs:, lb:, sh:), SQL-like
-  cm find queries, machine-readable output (--format, --machinereadable), branch / checkin /
-  shelve / diff / patch / history / annotate recipes, and shell quoting gotchas. Use whenever
+  Core knowledge for Unity Version Control (UVCS, formerly Plastic SCM) and its cm command line:
+  how UVCS concepts differ from git, object specs (br:, cs:, lb:, sh:, serverpath:), which cm
+  command answers which question, read-only vs mutating vs irreversible commands, how to name
+  UVCS objects and build plastic:// deep links when reporting results, and curated cm recipes for
+  status, find queries, diff and patch, history, branches, checkin and shelves. Use whenever
   composing or running any cm command, or when the user mentions UVCS, Unity Version Control,
-  Plastic SCM, cm, changeset, cset, workspace, selector, branch, merge, label, shelve,
-  shelveset, checkin, code review, xlink, or plastic:// links. Higher-level UVCS workflow
-  skills build on this one — load it before running cm.
+  Plastic SCM, cm, changeset, cset, workspace, selector, branch, label, shelve, shelveset,
+  checkin, annotate, code review, xlink, or plastic:// links. Every UVCS workflow skill builds on
+  this one — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
-# UVCS `cm` CLI reference
+# UVCS core
 
 `cm` is the UVCS command line. This is **not git**: commands, concepts, and grammar differ.
 Never fall back to git commands or git assumptions in a UVCS workspace.
@@ -24,8 +25,14 @@ Verified against `cm` 11.0.16. Anything version-sensitive is marked.
 1. Check the CLI is available: `cm version`. If missing, stop and tell the user to install the
    Unity Version Control client (it ships `cm`) — do not improvise with git.
 2. Check where you are: `cm status --header` prints the workspace's current
-   `branch@repo@server` and head changeset. If the current directory is not inside a workspace
-   it errors — server-side queries (`cm find`, `cm log`) still work from anywhere.
+   `branch@repo@server` and head changeset, the branch as its **full path**:
+
+   ```
+   /main/task055@mygame@myorg@cloud (cs:4207 - head)
+   ```
+
+   If the current directory is not inside a workspace it errors (`<path> is not in a
+   workspace.`) — server-side queries (`cm find`, `cm log`) still work from anywhere.
 3. Identify the user when needed: `cm whoami`.
 
 ## Concepts — UVCS vs git
@@ -61,17 +68,33 @@ Most commands take object specs, not bare names. `cm help objectspec` is the aut
 | `rep:` / `repo@server` | repository | `rep:mygame@repserver:myorg@cloud`, short form `mygame@myorg@cloud` |
 | `repserver:` | server | `repserver:myorg@cloud` |
 
-## Discovering commands
+## Finding the right command
 
-The full catalog is one command away — prefer checking help over guessing flags:
+Two traps make guessing expensive here, so route the question before composing a command:
+
+- **Most specialized commands only *act*.** `cm branch` creates, renames and deletes branches but
+  cannot list them; `cm attribute` sets values but cannot read them. **`cm find` is the query
+  tool** for branches, changesets, labels, shelves, revisions, attributes, merges and reviews.
+  Anything shaped like "which / list / show me all" is a `cm find` query, and its shape is always
+  **object first, then a quoted clause** — never one quoted string:
+
+  ```
+  cm find <object> "where <field>='<value>' order by <field> desc limit <n>" --format="..." --nototal
+  cm find attribute "where srcobj='br:/main/task001'" --nototal
+  ```
+
+  Field names, sort names, and which objects reject `order by` are per-object:
+  `references/find-queries.md` before composing anything non-trivial.
+- **The grammar is not uniform across subcommands.** A flag valid for one verb is often rejected
+  by another (`--nototal` is `cm find`-only; `--format` field names differ per command). Do not
+  generalize syntax between verbs.
+
+So: take the invocation from `references/commands.md` (curated, verified) or from help, never from
+memory, and do not retry a failed command with speculative syntax.
 
 - `cm showcommands --all` — every command with a one-line description.
 - `cm help <command>` (or `cm <command> --help`) — full syntax; `cm <command> --usage` — terse.
 - `cm showfindobjects` — every queryable object and its fields (for `cm find`).
-
-`cm`'s grammar is **not uniform across subcommands**: a flag valid for one is often rejected by
-another (`--nototal` is `cm find`-only; `--format` field names differ per command). Do not
-generalize syntax between verbs — check help or the references here.
 
 ## Read-only vs mutating
 
@@ -90,121 +113,45 @@ Irreversible — no `cm` command can recover what these discard:
 `shelveset delete`.
 
 When and whether to confirm a mutating command with the user is workflow policy, owned by the
-higher-level skill (or agent) driving the task — not by this reference.
+higher-level skill (or agent) driving the task — not by this skill.
 
-## Querying: `cm find`
+## Reporting UVCS objects
 
-Most specialized commands only **act** (e.g. `cm branch` creates/renames/deletes branches but
-cannot list them; `cm attribute` sets values but cannot read them). **`cm find` is the query
-tool** for branches, changesets, labels, shelves, revisions, attributes, merges, and reviews:
+How results are written matters as much as getting them: a changeset the user cannot paste back
+into `cm` or click through is half an answer.
 
-```
-cm find branch "where owner='me' order by date desc limit 5" --format="{name} {date}" --nototal
-cm find changeset "where branch='/main/task001'" --format="{changesetid} {owner} {comment}" --nototal
-```
+- **Name objects the way `cm` does**, so they round-trip: `cs:4207`, `br:/main/task001`,
+  `lb:v1.2.0`, `sh:12`. Always the **full** branch path — `task001` alone is not an identifier.
+- **Changeset ids are per-repository** integers, not global hashes. When more than one repo is in
+  play (xlinks), qualify the id with its repo or the number is ambiguous.
+- **Make objects clickable when the repo and server are known** (`cm status --header`, or
+  `{repository}` in `cm diff` output): a `plastic://` link opens the UVCS GUI straight on the
+  object. Shapes, the `@` → `.` server rewrite, and encoding: `references/plastic-links.md`.
+- **Report only what command output shows.** Never fill in a changeset id, branch name, author or
+  date from inference — if a command did not print it, say it is unknown and name the command
+  that would answer it.
 
-The query language has fixed clause order, per-object field names, distinct sort-field names,
-and objects that reject `order by` entirely. **Before composing any non-trivial query, read
-`references/find-queries.md`** — do not improvise from SQL or memory, and do not retry a failed
-query with speculative syntax.
+## UVCS workflow skills
 
-## Everyday recipes
+Higher-level skills own the judgement and the order of operations for one task, and use this
+skill for every `cm` invocation. **When one covers the task at hand, load and follow it — do not
+drive that task from this skill alone.** The syntax here is enough to compose the commands and
+not enough to get the order and the stopping points right, which is where the damage happens.
 
-Full syntax, output formats, and gotchas for each area live in the references — read the
-matching file before going beyond these exact invocations.
+| Skill | Use it for |
+|---|---|
+| `uvcs-merge` | Any merge, cherry-pick, or conflict resolution — including finishing a merge already in progress, or when `cm` refuses because one is. Never apply a merge (`--merge`) without it: the preview comes first, the mode is a decision, and the check-in is not yours to make. |
 
-**Pending changes** (see `references/status-and-checkin.md` for change codes and parsing):
-
-```
-cm status --header                                                  # current branch + head cset
-cm status --machinereadable --all --includeRevId --fieldseparator="|"
-```
-
-**Branches**:
-
-```
-cm branch create /main/task001 -c "short description"     # child of /main
-cm switch /main/task001                                   # also accepts cs:, lb:, sh: specs
-```
-
-**Checkin**:
-
-```
-cm checkin <paths> -c "comment"        # explicit paths; no-path form is cwd-scoped!
-cm checkin --all -c "comment"          # everything pending, from the workspace root
-```
-
-**Shelve** (`--all` is required to pick up files changed without checkout):
-
-```
-cm shelveset create --all -c "WIP: description"
-cm shelveset apply sh:<id> --preview          # then: cm shelveset apply sh:<id>
-```
-
-**Merge** (see `references/branches-and-merge.md`):
-
-```
-cm merge br:/main/task001                        # dry run: what the merge would do
-cm merge br:/main/task001 --merge                # merge into the current branch
-```
-
-The dry run is read-only and lists the conflicts — run it first. A conflicted file otherwise
-launches the configured merge tool, which blocks the command on a window no agent can drive.
-Newer `cm` builds add `--conflict-markers` for a merge that never launches a tool — read
-`references/merge-conflict-markers.md` before merging anything that may conflict.
-
-**What changed** (see `references/diff-and-patch.md` — including the `--integration` flag,
-which answers "what would land in the parent if merged now", the GitHub-PR-style diff):
-
-```
-cm diff br:/main/task001 --format="{status} {path} {baserevid} {revid} {repository}"
-cm patch br:/main/task001        # unified diff; also takes cs: and sh: specs
-```
-
-Never run `cm diff` on a bare workspace path or with no arguments — it launches the GUI diff
-tool and returns nothing on stdout.
-
-**File content at any point in history** (`cm cat` and `cm getfile` are the same command):
-
-```
-cm cat "serverpath:/src/Player.cs#br:/main/task001"
-cm cat "revid:<id>@rep:<repo>@repserver:<server>" --file=/tmp/base.cs
-```
-
-**History and blame** (see `references/history-and-annotate.md` for format tokens):
-
-```
-cm history /path/file.cs --format="{changesetid} {branch} {owner} {date}"
-cm annotate /path/file.cs --format="{changeset}|{owner}|{content}"   # note: {changeset}, not {changesetid}
-cm log cs:42 --csformat="{changesetid};{branch};{owner};{comment}"
-```
-
-Listing changesets ("recent history", "last N commits") is a **`cm find changeset`** query with
-`order by changesetid desc limit N` — `cm log` only details one changeset (or a `--from` range)
-and accepts neither branch specs nor a limit.
-
-**Labels and attributes**:
-
-```
-cm label create lb:v1.2.0 cs:42 -c "release 1.2.0"
-cm find label "where name like 'v1.%' order by date desc limit 10" --format="{name} {changeset}" --nototal
-cm attribute set att:status br:/main/task001 RESOLVED
-cm find attribute "where srcobj='br:/main/task001'"        # reading = cm find, never cm attribute
-```
-
-**Code reviews** (the CLI cannot add inline comments):
-
-```
-cm codereview br:/main/task001 "Review title" --assignee=<user>
-cm codereview -e <id> --status=Reviewed          # statuses: "Under review", "Reviewed", "Rework required"
-cm find review "where assignee='me' and status='Under review'" --nototal
-```
+Nothing else ships yet: for any other task, this skill plus judgement is the whole toolkit.
 
 ## Cross-cutting gotchas
 
 - **Empty output is not proof of "no changes".** Check the exit status and stderr. Capture
   `cm patch` output to a temp file (stderr merged) and read the file — see
   `references/diff-and-patch.md` for the capture and full-ingestion rules.
+- **Never run `cm diff` on a bare workspace path or with no arguments**, and never `cm merge` a
+  conflicted file without a headless mode: both launch a GUI window, return nothing on stdout,
+  and block the command until a human closes it.
 - **Comments with shell-special characters**: on PowerShell, backticks inside `-c "..."` are
   silently eaten; in Git Bash on Windows, MSYS rewrites `/main/...` positional args into
   Windows paths. Fixes and safe patterns: `references/shell-gotchas.md`. When a comment is
@@ -221,6 +168,7 @@ cm find review "where assignee='me' and status='Under review'" --nototal
 
 | File | Read it when |
 |---|---|
+| `references/commands.md` | Running anything beyond the orientation commands above: the verified invocation for status, branches, checkin, shelves, merge, diff, cat, history, labels, attributes, reviews. |
 | `references/find-queries.md` | Composing any `cm find` query: objects, fields, sort names, date constants, limits. |
 | `references/status-and-checkin.md` | Parsing `cm status`, checkin/checkout/undo semantics, ignore/hidden/cloaked conf files. |
 | `references/diff-and-patch.md` | Listing changed files, unified patches, `--integration`, extracting revisions, failure modes. |

@@ -8,17 +8,17 @@ description: >-
   or integrate one UVCS branch into another, merge down
   from /main into a task branch, cherry-pick a changeset, resolve UVCS merge conflicts, finish a
   merge that is already in progress, or when cm refuses an operation because a merge is in
-  progress or conflict markers are still pending. All cm syntax comes from the uvcs-cli-reference
-  skill — load it first.
+  progress or conflict markers are still pending. All cm syntax comes from the uvcs-core skill —
+  load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
 # Merging with `cm`
 
-This workflow uses the **`uvcs-cli-reference`** skill for every `cm` invocation, object spec, and
-output format — load it first. Its **merge-conflict-markers** reference holds the marker format,
-exit codes, and the check-in guard; its **branches-and-merge** reference holds the preview output
-tokens. Read them rather than guessing flags.
+This skill owns the *decisions*. Every `cm` flag, output format, and exit-code contract it names
+belongs to the **`uvcs-core`** skill — load it first, and read these two references rather than
+guessing: **merge-conflict-markers** (marker mode, availability, exit codes, marker format, the
+check-in guard) and **branches-and-merge** (preview output tokens, cherry-pick, no rebase).
 
 A merge you cannot finish is worse than one you never started: it blocks the next merge and the
 next check-in for whoever owns the workspace. So the shape of this workflow is *learn what the
@@ -50,16 +50,16 @@ round-trip per command — you need the whole picture before deciding anything a
 
 ```
 cm merge <source_spec>                     # read-only; no --merge, nothing is touched
-cm merge <source_spec> --machinereadable   # same, one stable prefix per line
 ```
 
-Read the result as: `STATUS NO_MERGES_DETECTED` → nothing to do, say so and stop.
-`FILE_CONFLICT <path> ...` → both sides changed that file. Everything else (`ADD`, `RM`, `MV`,
-`CHG`) the merge applies by itself.
+Nothing is touched without `--merge`, so there is never a reason to skip this. If the preview
+reports no merges detected, say so and stop. The output tokens are in **branches-and-merge**;
+`--machinereadable` gives one stable prefix per line if you are parsing it.
 
-`FILE_CONFLICT` is not a prediction of conflict: most such files merge cleanly. Do not report
-"there are N conflicts" from the preview — report that N files need a content merge, if you
-mention it at all. What actually collides is only knowable by running the merge.
+The one reading trap: a file the preview flags as conflicting is **not** a prediction of
+conflict — most such files merge cleanly. Do not report "there are N conflicts" from the preview;
+report that N files need a content merge, if you mention it at all. What actually collides is only
+knowable by running the merge.
 
 ## 3. Choose the mode
 
@@ -77,9 +77,9 @@ file, so ask, then take that whole side: `--keepsource` / `--keepdestination` wh
 the merge as a whole, otherwise restore that one file from the chosen changeset with `cm cat`
 (the marker header names both changesets) — once the markers are gone the entry clears itself.
 
-Old clients have no `--conflict-markers` (check `cm merge --help`). There, the only headless
-options are `--keepsource` / `--keepdestination`; if neither fits, hand the merge back to the
-user rather than launching a tool that will hang.
+Marker mode is newer than some clients (**merge-conflict-markers** says how to probe for it).
+Where it is missing the only headless options are `--keepsource` / `--keepdestination`; if
+neither fits, hand the merge back to the user rather than launching a tool that will hang.
 
 ## 4. Apply it
 
@@ -89,14 +89,15 @@ cm merge <source_spec> --merge --conflict-markers
 
 This is mutating, but it is confined to the workspace: the merge lands as *pending changes*, and
 nothing reaches the server until check-in, so `cm undo` still backs the whole thing out. Exit `1`
-means "files need attention", not failure — do not retry the command.
+here means "files need attention", not failure — never retry the command on it (the full
+exit-code contract is in **merge-conflict-markers**).
 
-Then work the output:
+Then work the output, one line per file that needs you:
 
-- `CONFLICT_MARKERS <path>` — the file has diff3 markers. Fix the file on disk.
-- `UNRESOLVED <path> (binary|symlink|recursive)` — markers were impossible. Pick a contributor
-  for that path with `--keepsource` / `--keepdestination`. For a binary asset, which side wins is
-  a call you usually cannot make from the file alone — ask, naming both changesets.
+- Markers written — the file has diff3 sections. Fix the file on disk (step 5).
+- Markers impossible (binary, symlink, recursive merge) — pick a contributor for that path with
+  `--keepsource` / `--keepdestination`. For a binary asset, which side wins is a call you usually
+  cannot make from the file alone — ask, naming both changesets.
 
 ## 5. Resolve
 
@@ -152,4 +153,4 @@ legitimate outcome: the check-in guard means nothing bad can land by accident.
 ## Stay in UVCS
 
 There is no rebase, no staging area, and no local commit. Never reach for `git` in a UVCS
-workspace, and never fabricate a `cm` flag — check `cm help merge` or the hub reference instead.
+workspace, and never fabricate a `cm` flag — check `cm help merge` or `uvcs-core` instead.

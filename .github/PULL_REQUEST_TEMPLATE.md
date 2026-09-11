@@ -21,7 +21,7 @@ This is the real review artifact.
 - [ ] `name` in frontmatter matches the skill directory name.
 - [ ] `description` says what + when, uses real user vocabulary, and does not overlap a sibling skill.
 - [ ] `SKILL.md` is well under 500 lines; detail lives in `references/`.
-- [ ] No `cm` syntax duplicated from the `uvcs-cli-reference` hub skill.
+- [ ] No `cm` syntax duplicated from the `uvcs-core` hub skill.
 - [ ] No client-specific tool names, paths, or environment variables in `skills/`.
 - [ ] Commands are labelled read-only / mutating / irreversible; user-confirmation policy lives
       in the workflow skills, not the hub.
