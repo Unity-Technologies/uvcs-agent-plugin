@@ -216,6 +216,19 @@ signal to detect one.
 Failures should degrade gracefully: per the spec, one broken skill must not take down the others,
 so keep skills independent and self-contained.
 
+## Cutting a release
+
+One button, no local steps: **Actions ▸ Release ▸ Run workflow**, pick the branch and the bump
+level (patch / minor / major). `.github/workflows/release.yml` bumps `version` in `plugin.json`,
+commits and tags `v<version>` on that branch, packages the plugin with `git archive` (everything
+except the paths marked `export-ignore` in `.gitattributes`), and opens a **draft** release with
+notes generated from the merged PRs since the previous tag and the zip + `.sha256` attached.
+Review the draft on the Releases page and click *Publish release*.
+
+Consequences worth keeping in mind: the version lives in `plugin.json` and nowhere else — never
+bump it by hand, or the next run fails on an existing tag. The release notes are only as good as
+the PR titles, so title PRs the way you would write a commit subject.
+
 ## Commit history
 
 The log is the story of how this plugin was built. `git log --oneline --stat` should show where
