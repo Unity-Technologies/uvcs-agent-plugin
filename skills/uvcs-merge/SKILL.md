@@ -16,9 +16,9 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 # Merging with `cm`
 
 This workflow uses the **`uvcs-cli-reference`** skill for every `cm` invocation, object spec, and
-output format — load it first. Its `references/merge-conflict-markers.md` holds the marker
-format, exit codes, and the check-in guard; its `references/branches-and-merge.md` holds the
-preview output tokens. Read them rather than guessing flags.
+output format — load it first. Its **merge-conflict-markers** reference holds the marker format,
+exit codes, and the check-in guard; its **branches-and-merge** reference holds the preview output
+tokens. Read them rather than guessing flags.
 
 A merge you cannot finish is worse than one you never started: it blocks the next merge and the
 next check-in for whoever owns the workspace. So the shape of this workflow is *learn what the
