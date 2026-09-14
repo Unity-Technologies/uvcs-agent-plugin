@@ -288,6 +288,35 @@ finished skills.
 - [ ] If a skill was added/renamed or a `description` changed: triggering smoke-tested in a
       second agent.
 
+## Distribution
+
+Settled, after working out what each client actually needs. **Do not add a second marketplace
+file for another vendor** — the whole point of the shape below is that no vendor needs one.
+
+| Route | What carries it | Who uses it |
+|---|---|---|
+| Marketplace | `.claude-plugin/marketplace.json` + `.claude-plugin/plugin.json` | Claude Code. The only vendor whose marketplace format we author, and the only route that can ever carry hooks. |
+| Plugin from a Git URL | the root `plugin.json`, nothing else | Clients implementing Agent Plugins 1.0 — VS Code, Copilot, and the other spec authors. Being spec-compliant *is* the integration. |
+| `npx skills add` | the `skills/` tree as it stands | ~75 agents. Needs nothing from this repo. |
+
+Neither Agent Plugins 1.0 nor the 1.1.0 draft says anything about registries, installation or
+updates — distribution is explicitly out of scope, which is why there is no one command and why
+the README lists routes rather than clients.
+
+The central registries other vendors run (Cursor, Codex, Grok, Awesome Copilot, Anthropic's own
+directory) are **submissions, not repository artifacts**: publishing to them is an action taken
+once, not a file to maintain. Anthropic's in-app form routes to `claude-plugins-community`;
+listing in `claude-plugins-official` is Anthropic-initiated and not something to plan around.
+
+The marketplace is named `unity`, so an install reads
+`/plugin install unity-version-control@unity`, and the marketplace can hold future Unity plugins.
+The `unity-version-control` slug is **immutable** once listed anywhere — renaming it requires a
+`renames` entry in every marketplace carrying it, so treat it as permanent.
+
+Marketplace installs follow the last release; `npx skills` installs follow `main` by content
+hash. That divergence is managed by keeping `main` release-quality, not by trying to reconcile
+the two.
+
 ## Settled conventions
 
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
@@ -316,8 +345,13 @@ finished skills.
 Do not silently invent answers to these — ask, then record the answer here.
 
 - Whether we ever ship an MCP server alongside the skills, or stay skills-only.
-- Verified per-client install instructions for `README.md` (currently generic — fill in as each
-  client is tested).
+- Verified per-client install instructions for `README.md`. Claude Code and `npx skills` are
+  tested end to end; the Git-URL route is documented from each client's own docs and still needs
+  someone with that client to confirm it. Fill in as each is tested — and do not add a command
+  here that nobody has run.
+- Whether to submit to the vendor registries (Anthropic's community directory, Cursor, Codex,
+  Grok, Awesome Copilot) and in what order. Each is a one-off publishing action, not a repo
+  change, and each has its own review and branding rules.
 - Whether `uvcs-links` still needs to exist as a skill. Building `plastic://` links is now hub
   material — the reporting conventions in `uvcs-core` plus `references/plastic-links.md` — so a
   dedicated skill would either duplicate that or be a thin wrapper. Left in the planned set until
