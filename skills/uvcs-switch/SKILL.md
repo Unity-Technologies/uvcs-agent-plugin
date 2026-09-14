@@ -115,9 +115,9 @@ The shelve from step 3 is now replayed onto the new branch. That replay is an or
 the next is issued:
 
 ```
-cm merge sh:5              # 1. preview, read-only; report conflicts before applying anything
-cm merge sh:5 --merge      # 2. apply, in the mode uvcs-merge picks, then resolve and verify there
-cm shelveset delete sh:5   # 3. only if nothing is left to resolve — irreversible, and last
+cm merge sh:5                                # 1. preview, read-only; report conflicts first
+cm merge sh:5 --merge --conflict-markers     # 2. apply headlessly; uvcs-merge picks the mode
+cm shelveset delete sh:5                     # 3. only once nothing is left to resolve — irreversible
 ```
 
 - **The preview is never skipped.** The shelve was made against a different changeset, so a file
