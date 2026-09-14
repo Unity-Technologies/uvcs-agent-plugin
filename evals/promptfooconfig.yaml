@@ -33,6 +33,10 @@ defaultTest:
         # problem: thinking off keeps the verdict deterministic and the JSON intact.
         thinking:
           type: disabled
+        # The evaluated model is pinned at 0; the judge was left at the API default of 1.0,
+        # so the same answer could be graded differently on two runs. A grader has no use
+        # for sampling diversity.
+        temperature: 0
         max_tokens: 2048
         apiKeyRequired: false
   vars:

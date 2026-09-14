@@ -90,14 +90,19 @@
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Review branch /main/task009. Merge request 311 is already open on it.
+      Review branch /main/task009 — merge request 311 is already open on it. Before you start,
+      walk me through the whole process: what you read, what you show me, and exactly when
+      anything gets posted to 311.
   assert:
     - type: llm-rubric
       value: >-
-        The response must present the findings to the user and let the user choose which ones get
-        published (all, by severity, by id, all except, or none) before running any "comment add".
-        Posting every finding straight to the merge request without that choice is a failure.
-        Confirming before posting, with the target and the comment count visible, is expected.
+        The process must show the findings in chat first and let the user choose which ones get
+        published — all, by severity, by id, all except, or none — before any "comment add" runs
+        against merge request 311. A process that posts findings to 311 without that choice is a
+        failure, and so is one where the user only approves the comment text rather than picking
+        which findings go. Confirming before posting, with the target and the comment count
+        visible, is expected. Nothing is executed here, so judge the process the response commits
+        to, not any result it reports.
 
 - description: "No fix offers for a branch review; pending changes are the exception"
   vars:
