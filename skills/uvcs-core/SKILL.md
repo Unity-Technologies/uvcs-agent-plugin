@@ -41,7 +41,7 @@ Verified against `cm` 11.0.16. Anything version-sensitive is marked.
 | UVCS term | Closest git idea | Key differences |
 |---|---|---|
 | Repository | remote repo | Lives on the server, addressed `repo@server` (e.g. `mygame@myorg@cloud`). No local repo. |
-| Workspace | working tree / clone | Local directory mapped to a repo. No staging area, no local commits: checkin goes straight to the server. |
+| Workspace | working tree / clone | Local directory mapped to a repo. No staging area, no local commits: checkin goes straight to the server. Several on the same repo are normal, each with its own selector and pending changes. |
 | Selector | HEAD | What the workspace points to: a branch, changeset, label, or shelve. Change with `cm switch`. |
 | Changeset (cset) | commit | Immutable snapshot with per-repo integer id (`cs:42`) and a GUID. Belongs to exactly **one** branch. |
 | Revision | blob | One file's content at one changeset, addressable by `revid`. |
@@ -54,6 +54,10 @@ Verified against `cm` 11.0.16. Anything version-sensitive is marked.
 | Merge request (MR) | pull request | Server object proposing a merge of a source branch into a destination branch, with reviewers and a comment thread. Same object as a code review, plus the merge proposal. |
 | Code review | PR review | Reviewers, statuses, and inline/conversation comments on a **changeset or shelve**. For a branch, the merge request is the workflow. |
 | Merge | merge | Creates a merge changeset on the destination branch. There is **no rebase command** (see `references/branches-and-merge.md`). |
+
+There is no `cm worktree`, and none is needed: with no local repository to share, a second working
+copy — for a parallel task, or an agent per branch — is just another workspace on the same repo,
+deleted when done. Invocations and the delete gotcha: `references/commands.md`.
 
 ## Object specs
 
@@ -104,12 +108,13 @@ memory, and do not retry a failed command with speculative syntax.
 Read-only — no effect on the repository or workspace:
 `status`, `find`, `log`, `history`, `annotate`, `diff`, `patch` (generating), `cat`/`getfile`,
 `ls`, `fileinfo`, `whoami`, `version`, `showcommands`, `help`, `showfindobjects`,
-`getworkspacefrompath`.
+`getworkspacefrompath`, `workspace list`.
 
 Mutating — they change the workspace or the server-side repository:
 `add`, `checkin`/`ci`, `checkout`/`co`, `switch`, `update`, `move`, `remove`, `branch`,
 `label`, `attribute`, `shelveset`, `merge`, `undo`, `undochange`, `undocheckout`, `revert`,
-`undelete`, `changeset`, `codereview`, `mergerequest`/`mr`, `xlink`, `patch --apply`.
+`undelete`, `changeset`, `codereview`, `mergerequest`/`mr`, `xlink`, `patch --apply`,
+`workspace create` / `workspace delete` (client-side: no server object is created or destroyed).
 `cm mergerequest`/`cm codereview` mutate even when they only add a comment or a reviewer — those
 are visible to everyone on the review. Their one read-only verb is `reviewer list`.
 
@@ -174,7 +179,7 @@ Nothing else ships yet: for any other task, this skill plus judgement is the who
 
 | File | Read it when |
 |---|---|
-| `references/commands.md` | Running anything beyond the orientation commands above: the verified invocation for status, branches, checkin, shelves, merge, diff, cat, history, labels, attributes, reviews. |
+| `references/commands.md` | Running anything beyond the orientation commands above: the verified invocation for status, workspaces, branches, checkin, shelves, merge, diff, cat, history, labels, attributes, reviews. |
 | `references/reviews-and-merge-requests.md` | Anything touching a merge request or a code review: creating one, reviewers, statuses, inline and conversation comments, reading the thread. |
 | `references/find-queries.md` | Composing any `cm find` query: objects, fields, sort names, date constants, limits. |
 | `references/status-and-checkin.md` | Parsing `cm status`, checkin/checkout/undo semantics, ignore/hidden/cloaked conf files. |

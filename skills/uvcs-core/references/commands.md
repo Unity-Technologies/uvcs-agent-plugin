@@ -17,6 +17,32 @@ cm status                                                           # pending ch
 cm status --machinereadable --all --includeRevId --fieldseparator="|"
 ```
 
+## Workspaces — extra working copies
+
+The UVCS answer to `git worktree`: another workspace on the same repo. Nothing is shared or
+cloned, so one per parallel task (or per agent) is the normal way to work on several branches at
+once.
+
+```
+cm workspace list --format="{wkname}|{path}"               # read-only; also {machine} {wkid} {wkspec}
+cm workspace create <name> <path> <repo>@<server>          # mutating (client only)
+cm switch /main/task001                                    # mutating; run inside the new workspace
+cm update                                                  # mutating; downloads the content
+cm workspace delete <path>                                 # mutating (client only) — see below
+```
+
+- A new workspace is **empty**: `cm status --header` shows `(cs:0 - head:<n>)` until `cm update`
+  or `cm switch` downloads the tree. Each workspace holds its own full copy of the content —
+  there is no shared object store as in a `git worktree`.
+- `cm workspace delete` removes the `.plastic` metadata and the client's registry entry and
+  **leaves every file on disk**, including pending changes — which then simply stop being tracked
+  and cannot be recovered as changes. Check in or shelve first; delete the directory yourself
+  afterwards.
+- Workspaces cannot nest or share a path, and names are unique per client; all three cases fail
+  with `The workspace <name> (<path>) already exists.`
+- Locks are server-side (`cm lock list`, read-only), so under exclusive checkout rules two of your
+  own workspaces contend with each other exactly like two people would.
+
 ## Querying: `cm find`
 
 `cm find` is the query tool for every UVCS object — branches, changesets, labels, shelves,
