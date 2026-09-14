@@ -93,12 +93,14 @@ The `uvcs-merge` skill owns the merge workflow; these are the invocations it run
 `branches-and-merge.md` (preview output tokens) and `merge-conflict-markers.md` (headless mode).
 
 ```
-cm merge br:/main/task001                        # dry run (read-only): what the merge would do
-cm merge br:/main/task001 --merge                # merge into the current branch
+cm merge br:/main/task001                             # dry run (read-only): what the merge would do
+cm merge br:/main/task001 --merge                     # merge into the current branch
+cm merge br:/main/task001 --merge --conflict-markers  # same, but a content conflict writes diff3
+                                                      # markers instead of opening a merge tool
 ```
 
-Run the dry run first. Applying a merge with a content conflict launches the configured merge
-tool, a window no agent can drive; the headless modes are in `merge-conflict-markers.md`.
+Run the dry run first. Without `--conflict-markers` (newer than 11.0.16) a content conflict
+launches the configured merge tool, a window no agent can drive: `merge-conflict-markers.md`.
 
 ## What changed
 
