@@ -51,7 +51,7 @@ Promptfoo is version-pinned in `package.json` so local runs and CI evaluate with
 tool version, and the config pins `claude-haiku-4-5` at `temperature: 0`, so a local result
 is a faithful preview of the CI result rather than an approximation of it.
 
-While iterating on one skill, narrow the run — the full suite is 58 tests, about **90
+While iterating on one skill, narrow the run — the full suite is 63 tests, about **90
 seconds** and roughly **$0.50** of API usage (locally it draws on your Claude Code
 subscription instead):
 

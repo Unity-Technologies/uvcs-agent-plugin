@@ -30,6 +30,53 @@ apply keeps the current selector and layers the shelve's changes on top as pendi
 
 `cm update` brings the workspace up to date with the head of its current selector.
 
+### Switching with pending changes
+
+What `cm switch` does when the workspace is dirty is **not fixed** — it is read from
+`<PendingChangesOnSwitchAction>` in `client.conf`, which the GUIs write when the user enables
+"switch and shelve". Unset means `None`.
+
+| Value | `cm switch` with pending changes |
+|---|---|
+| `None` (default) | `CH` edits are carried onto the new branch — the file is left alone (`... has been changed in the workspace. Won't overwrite.`), exit 0, and its base is now a changeset it was never edited against. Any *controlled* change (`CO`, `AD`, `MV`, `DE`) instead fails, exit 1. |
+| `Fail` | Always fails, exit 1: `Cannot perform the switch to branch/label/changeset/shelve since there are pending changes. Please review the pending changes and retry the operation again.` |
+| `Warn` | Asks on stdin whether to continue. |
+| `Shelve` | Asks on stdin: `Please enter your choice (s/b/c) [default is 'Cancel']:` — shelve, bring, or cancel. |
+
+Both questions read stdin. **With no terminal the answer is the default and `cm` still exits 0**:
+for `Shelve` that default is *Cancel*, so the workspace is untouched and nothing says the switch
+did not happen. Never issue a bare `cm switch` without checking `cm status` first.
+
+`--noinput` answers the question without a terminal: it shelves, undoes, switches, and then
+applies the shelve back if it merges cleanly — but when the shelve conflicts it stops and prints
+`You can manually apply the shelveset running the following command: cm shelveset apply sh:<id>`,
+leaving the shelve behind. (`cm help switch` says `--noinput` disables bringing the changes; it
+does not — verified against 11.0.16.) `--xml` forces the action to `Fail` regardless of the
+configured value, so machine-readable output never has a prompt in it.
+
+Driving this explicitly instead — shelve, undo, switch, and optionally merge the shelve back — is
+the `uvcs-switch` workflow.
+
+### Automatic shelves
+
+The shelve the GUIs (and `--noinput`) create before a switch is an ordinary shelve marked by its
+comment, which is how they recognize and overwrite it later:
+
+```
+Automatic shelve created during switch operation (from br:<branch id>)
+```
+
+`<branch id>` is the **internal object id** of the branch being left (`{id}` in `cm find branch`,
+not the changeset or the path). `cs:<n>` / `lb:<id>` replace `br:<id>` when the workspace is
+pinned to a changeset or a label instead. Matching this format keeps agent-made shelves legible
+to the GUIs; any other comment is just a normal shelve.
+
+```
+cm find branch "where name='task001'" --format="{id}" --nototal          # the branch's id
+cm find shelve "where owner='me' and comment='Automatic shelve created during switch operation (from br:21)'" \
+    --format="{shelveid} {date}" --nototal                               # previous ones
+```
+
 ## Shelves
 
 ```
@@ -45,6 +92,16 @@ cm shelveset delete sh:12                                  # IRREVERSIBLE; owner
 
 Without `--all`, `cm shelveset create` only picks up checked-out (`CO`) items and reports
 "There are no changes in the workspace" even when `cm status` shows `CH` files.
+
+Shelving does **not** clear the workspace — the shelved files stay pending (`CO`). Emptying it is
+a separate, irreversible `cm undo`. Private files are never shelved and `cm undo` does not delete
+them, so they survive both steps and follow the workspace onto the next branch; an `AD` file
+that was shelved reverts to `PR` and stays on disk too.
+
+`cm shelveset apply` is itself a forced merge from the shelve, so it hits the same conflicts
+`cm merge` would — but it rejects `--conflict-markers`, leaving the configured merge tool (a GUI)
+as its only conflict path. Where a shelve can collide with the workspace, `cm merge sh:<id>` is
+the form with headless modes and a free preview.
 
 Shelve ids are positive in the CLI and in `cm find shelve`. Internally a shelve is stored as a
 negative changeset (`cs:-12`) — relevant only when reading raw API output or building GUI deep
@@ -85,6 +142,10 @@ cm merge cs:42 --merge --cherrypicking           # cherry-pick a single changese
 - Merging creates a merge changeset on the **destination** (current) branch. Merge direction:
   you stand on the destination and pull from the source.
 - Without `--merge` the command only previews.
+- **`cm merge` refuses to run while the workspace has pending changes** (private files aside): it
+  prints a recommendation to check in first, lists the pending changes, and exits 0 without
+  merging — so check `cm status` rather than the exit code. Users who have set
+  `<MergeWithPendingChanges>yes</MergeWithPendingChanges>` in `client.conf` do not see this.
 - Merge history is queryable: `cm find merge "where srcbranch='br:/main/task001'"` (no
   `order by` support — see `find-queries.md`).
 - File conflicts are otherwise handed to the configured merge tool (a GUI an agent cannot
