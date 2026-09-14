@@ -106,6 +106,11 @@ Use progressive disclosure — three levels, no more:
 1. `description` (~100 tokens) — routing.
 2. `SKILL.md` body — the smallest complete set of instructions. Target **under 500 lines /
    ~5k tokens**; shorter is better. Cutting a line is a real improvement.
+   **CI is stricter than that target**: `validate-skill` runs with `fail-on-warning`, and its
+   `body-progressive-disclosure` rule warns — so the job fails — at a body of **more than 200
+   lines** in a skill with no `references/`, `scripts/` or `assets/` directory. For a workflow
+   skill, which by our own convention has no `references/`, 200 body lines is therefore a hard
+   ceiling. Cut prose to fit; do not add a directory just to clear the rule.
 3. `references/*.md`, `scripts/`, `assets/` — loaded only when the task needs them.
 
 Keep references one level deep from `SKILL.md`; no nested reference chains. Name reference files
