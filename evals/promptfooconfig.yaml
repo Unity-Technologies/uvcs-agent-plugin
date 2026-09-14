@@ -59,3 +59,4 @@ tests:
   - file://tests/reviews.yaml
   - file://tests/workspaces.yaml
   - file://tests/root-cause.yaml
+  - file://tests/code-review.yaml

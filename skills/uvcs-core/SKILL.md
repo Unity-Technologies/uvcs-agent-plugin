@@ -153,6 +153,7 @@ not enough to get the order and the stopping points right, which is where the da
 |---|---|
 | `uvcs-merge` | Any merge, cherry-pick, or conflict resolution — including finishing a merge already in progress, or when `cm` refuses because one is. Never apply a merge (`--merge`) without it: the preview comes first, the mode is a decision, and the check-in is not yours to make. |
 | `uvcs-root-cause` | "Why did this break / what changeset introduced this bug / who broke this line": tracing a bug, regression or error back through history. Read-only. It bounds the window, expands the suspect set through dependencies, and refuses to name a changeset it cannot connect to the symptom — the parts a bare `cm find` gets wrong. |
+| `uvcs-code-review` | Reviewing changes and publishing the findings: a branch or merge request, a changeset, a shelve, or pending changes. It routes the target to `cm mr` or `cm codereview`, keeps the analysis read-only, and never publishes a comment the user did not select. Judgement yields to any review rules the project or user already supplies. |
 
 For any task these do not cover, this skill plus judgement is the whole toolkit.
 

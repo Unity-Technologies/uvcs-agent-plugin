@@ -1,0 +1,151 @@
+# uvcs-code-review: routing the target, anchoring findings, and never publishing unasked.
+# These tests load the uvcs-code-review skill instead of the hub; reference_content carries the
+# hub reference the skill points at, as a client would have loaded it.
+
+- description: "A branch review runs on the merge request, not a branch code review"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review branch /main/task009 for me. There's no review open for it yet — set one up and put
+      yourself on it as the reviewer.
+  assert:
+    - type: icontains-any
+      value:
+        - "cm mergerequest create"
+        - "cm mr create"
+        - "cm mergerequest mk"
+        - "cm mr mk"
+    - type: icontains
+      value: "--destination"
+    - type: llm-rubric
+      value: >-
+        Reviewing a branch must go through a merge request. Proposing "cm codereview
+        br:/main/task009" as the way to review a branch is a failure. The response must also read
+        the actual diff content (cm patch, or cm diff plus cm cat) rather than reviewing from a
+        list of changed file names.
+
+- description: "A single changeset gets a plain code review, not a merge request"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: "Do a code review of changeset 4207 and publish whatever you find."
+  assert:
+    - type: icontains
+      value: "cm codereview cs:4207"
+    - type: not-icontains
+      value: "cm mergerequest create"
+    - type: llm-rubric
+      value: >-
+        An isolated changeset is reviewed with cm codereview. Creating a merge request for it is
+        a failure, because a merge request proposes merging a branch and there is no branch here.
+
+- description: "A shelve is a code review target too"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: "A teammate shelved their work as sh:12. Review it and leave your comments on it."
+  assert:
+    - type: icontains
+      value: "sh:12"
+    - type: icontains-any
+      value:
+        - "cm codereview sh:12"
+        - "cm codereview \"sh:12\""
+    - type: llm-rubric
+      value: >-
+        The shelve must be reviewed with cm codereview, and its content read with cm patch sh:12
+        (or cm diff plus cm cat) — not from a file list. Creating a merge request for a shelve is
+        a failure.
+
+- description: "Inline comment lines are 1-based and never converted"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      On merge request 311 I want one finding published: /src/Player.cs line 34 dereferences a
+      collider that can already be destroyed. Post it as an inline comment.
+  assert:
+    - type: icontains
+      value: "--path=/src/Player.cs"
+    - type: icontains
+      value: "--line=34"
+    - type: not-icontains
+      value: "--line=33"
+    - type: llm-rubric
+      value: >-
+        The --line value must be 34, exactly the line the user named. Subtracting one to make it
+        zero-based (33), or explaining that the flag needs a zero-based value, is a failure.
+
+- description: "Findings are shown first and never auto-published"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review branch /main/task009. Merge request 311 is already open on it.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must present the findings to the user and let the user choose which ones get
+        published (all, by severity, by id, all except, or none) before running any "comment add".
+        Posting every finding straight to the merge request without that choice is a failure.
+        Confirming before posting, with the target and the comment count visible, is expected.
+
+- description: "No fix offers for a branch review; pending changes are the exception"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    user_message: >-
+      Review branch /main/task009 and just go ahead and fix anything you find while you're in
+      there.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must decline to edit files for a branch review, because the workspace is
+        almost certainly not pointing at that branch and edits would land on the wrong thing.
+        Offering to publish the findings to the branch's merge request instead is the correct
+        alternative. Editing files, or offering to, is a failure.
+
+- description: "Reviewing pending changes stays in chat and may offer to fix"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    user_message: "Review my changes before I check them in."
+  assert:
+    - type: icontains
+      value: "cm status"
+    - type: not-icontains
+      value: "cm mergerequest create"
+    - type: llm-rubric
+      value: >-
+        With no target named, the review must default to the workspace's pending changes. There
+        is no review object to publish to, so creating a merge request or a code review is a
+        failure; offering to fix the files (they are on disk in the current workspace) is correct.
+
+- description: "Existing project review rules govern the judgement, the skill only carries it into UVCS"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review branch /main/task009 and publish the findings on its merge request. Our team already
+      has a review checklist and a severity scheme we use everywhere — use ours, not yours.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must defer to the team's existing review rules and severity scheme for the
+        judgement, while still using cm for the UVCS mechanics (reading the diff, creating or
+        locating the merge request, anchoring inline comments, setting reviewer status). Insisting
+        on its own severity taxonomy or review format over the team's is a failure.
+
+- description: "Approving a merge request is not merging it"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      I reviewed merge request 311 and it looks good. Mark it approved and get it into /main.
+  assert:
+    - type: icontains
+      value: "--status=Reviewed"
+    - type: llm-rubric
+      value: >-
+        Setting the reviewer status to Reviewed is this skill's job; performing the merge is not.
+        The response must hand the merge off to the uvcs-merge skill (or otherwise treat it as a
+        separate, non-review operation) rather than running cm merge --merge itself here.
