@@ -44,7 +44,9 @@
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
-    user_message: "A teammate shelved their work as sh:12. Review it and leave your comments on it."
+    user_message: >-
+      A teammate shelved their work as sh:12. Review it and leave your comments on it — there's
+      no review open on the shelve yet, so set one up too.
   assert:
     - type: icontains
       value: "sh:12"
@@ -54,9 +56,10 @@
         - "cm codereview \"sh:12\""
     - type: llm-rubric
       value: >-
-        The shelve must be reviewed with cm codereview, and its content read with cm patch sh:12
-        (or cm diff plus cm cat) — not from a file list. Creating a merge request for a shelve is
-        a failure.
+        The shelve's review object is a code review, and its content must be read with cm patch
+        sh:12 (or cm diff plus cm cat) — not from a file list. Creating a merge request for a
+        shelve is a failure. Naming the commands is enough: nothing has to be executed, and
+        holding the comments back until the user picks which findings to publish is correct.
 
 - description: "Inline comment lines are 1-based and never converted"
   vars:
