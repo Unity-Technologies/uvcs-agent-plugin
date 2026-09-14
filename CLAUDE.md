@@ -159,11 +159,16 @@ would get every mutating command with none of the conventions.
 
 - **Command syntax lives in exactly one place**: `uvcs-core`'s `references/`. Higher-level skills
   describe *workflow and judgement*, and point at the hub for syntax.
-- Cross-skill *file* paths are fragile — clients differ in how skills are installed and whether
-  one skill can invoke another. So: name the dependency explicitly in the body (e.g. "This
-  workflow uses the `uvcs-core` skill for all `cm` invocations; load it first"), and let the agent
-  resolve it. Name the hub *reference* the same way — "read **merge-conflict-markers**" — never a
-  path into another skill's directory.
+- **Cross-skill paths are skill-qualified and relative**, never absolute or client-specific:
+  clients differ in where they install skills, but every client keeps a skill's directory intact,
+  so `uvcs-core/references/merge-conflict-markers.md` resolves wherever `uvcs-core` was loaded
+  from. Name the dependency explicitly in the body ("This workflow uses the `uvcs-core` skill for
+  all `cm` invocations; load it first") and point at hub files with that path — the Agent Skills
+  spec's own `references/<file>.md` shape with the skill name in front, so a `find`/`grep` locates
+  it in any client. An earlier convention wrote the bare file stem in bold
+  (**merge-conflict-markers**); it was dropped because no spec or client uses it, it reads as
+  emphasis rather than as a file, and an agent that has not read this document has to guess that
+  it names a file at all.
 - **Inline the invocation, never the explanation.** A workflow skill prints the exact command it
   runs, on the line where it runs it — that keeps it executable in one step and usable when the
   hub is absent. It must never carry flag tables, output-token glossaries, exit-code contracts,

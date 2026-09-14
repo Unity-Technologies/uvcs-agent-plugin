@@ -17,9 +17,9 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 
 This skill owns the *decisions*: how far back to look, which files can plausibly be at fault, and
 what counts as evidence. Every `cm` flag and output token it names belongs to the **`uvcs-core`**
-skill — load it first, and read **history-and-annotate** (annotate tokens, previous revision,
-state before a changeset) and **find-queries** (date constants, which objects accept `order by`)
-rather than guessing.
+skill — load it first, and read `uvcs-core/references/history-and-annotate.md` (annotate tokens,
+previous revision, state before a changeset) and `uvcs-core/references/find-queries.md` (date
+constants, which objects accept `order by`) rather than guessing.
 
 The failure mode this workflow exists to prevent is a confident wrong answer. History always
 offers *some* recent changeset to blame, so the work is in bounding the search and refusing to
@@ -168,10 +168,9 @@ A compact table, strongest evidence first:
 | `cs:1205` on `/main` | `<user>` | 2026-04-16 | Dropped the null guard in `Cache.Get()`, which `SessionStore.cs:118` calls |
 
 Follow `uvcs-core`'s reporting conventions: full object names, clickable deep links when repo and
-server are known (**deep-links**), and nothing — id, author, date, branch — that no command
-printed. If no
-candidate qualifies, say so and offer a wider window: "not found in the last 4 weeks" is a useful
-answer, an unsupported guess is not.
+server are known (`uvcs-core/references/deep-links.md`), and nothing — id, author, date, branch
+— that no command printed. If no candidate qualifies, say so and offer a wider window: "not
+found in the last 4 weeks" is a useful answer, an unsupported guess is not.
 
 Then offer the follow-ups; the ids are already in hand, so they cost one command each — the full
 diff of a suspect, blame on another file or line (step 5), or the file as it was *before* a

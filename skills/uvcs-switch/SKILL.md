@@ -14,8 +14,8 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 # Switching the workspace with `cm`
 
 This skill owns the *decision*. Every `cm` flag and output shape it names belongs to the
-**`uvcs-core`** skill — load it first, and read **branches-and-merge** for switch and shelve
-semantics rather than guessing.
+**`uvcs-core`** skill — load it first, and read `uvcs-core/references/branches-and-merge.md` for
+switch and shelve semantics rather than guessing.
 
 `cm switch` rewrites the user's working tree. On a clean workspace that is all it is. On a dirty
 one their uncommitted work has to go somewhere, and where it goes is **their call, not yours** —
@@ -41,7 +41,7 @@ Both are read-only, so run them together. Then:
 Never fire a bare `cm switch` on an unchecked workspace. What it does with pending changes is a
 client setting, and one of its outcomes is a prompt on stdin that silently answers itself with
 *Cancel* and still exits 0 — the switch never happens and nothing says so (see
-**branches-and-merge**).
+`uvcs-core/references/branches-and-merge.md`).
 
 ## 2. Pending changes — ask, do not choose
 
@@ -78,8 +78,8 @@ cm status --header
 ```
 
 That comment is the marker the GUIs recognize as their own automatic shelve (format and variants:
-**branches-and-merge**); `br:21` is the internal id of the branch being left, which the first
-command fetches.
+`uvcs-core/references/branches-and-merge.md`); `br:21` is the internal id of the branch being
+left, which the first command fetches.
 
 Order matters and the middle step is the dangerous one:
 
@@ -92,7 +92,7 @@ Order matters and the middle step is the dangerous one:
   It clears the whole workspace, not just the files in play.
 
 **Leaving the changes behind ends here.** Report the shelve as `sh:<id>` with its comment, plus a
-deep link (**deep-links**), and say in one line how to get the work back:
+deep link (`uvcs-core/references/deep-links.md`), and say in one line how to get the work back:
 `cm shelveset apply sh:<id>`. Bringing them along continues to step 4.
 
 An earlier automatic shelve off the same branch is worth checking for first, since that is what
@@ -124,7 +124,7 @@ cm shelveset delete sh:5                     # 3. only once nothing is left to r
   both sides touched needs a content merge. Conflicts it reports go to the user *before* anything
   is applied: that is the "you will be notified" half of the promise made in step 2.
 - Use `cm merge`, not `cm shelveset apply`: apply has no headless mode for a content conflict
-  (**branches-and-merge**).
+  (`uvcs-core/references/branches-and-merge.md`).
 
 The shelve is the user's backup for the whole operation. Anything unresolved, anything they still
 have to decide, any doubt at all: **leave it**, report its id, and say why it is still there. A

@@ -15,9 +15,10 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 # Code review with `cm`
 
 Every `cm` flag, output token and availability note this skill names belongs to the
-**`uvcs-core`** skill — load it first, and read **reviews-and-merge-requests** (MR and review
-lifecycle, reviewers, comment grammar) and **diff-and-patch** (what each spec diffs,
-`--integration`, capture rules) rather than guessing.
+**`uvcs-core`** skill — load it first, and read
+`uvcs-core/references/reviews-and-merge-requests.md` (MR and review lifecycle, reviewers, comment
+grammar) and `uvcs-core/references/diff-and-patch.md` (what each spec diffs, `--integration`,
+capture rules) rather than guessing.
 
 ## What this skill owns, and what it yields
 
@@ -167,8 +168,8 @@ cm mr <id> reviewer status --status=Reviewed -c="<one line on why it is good to 
 
 Report the result with a link the user can click —
 `plastic://<server>/repos/<repo>/merge-requests/<id>`, or `/code-reviews/<id>` for a code review
-(shapes and the `@` → `.` rewrite: **deep-links**) — plus the comment count and the status you
-set.
+(shapes and the `@` → `.` rewrite: `uvcs-core/references/deep-links.md`) — plus the comment
+count and the status you set.
 
 ## Mutating, and visible to other people
 

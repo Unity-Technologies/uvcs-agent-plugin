@@ -16,8 +16,9 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 
 This skill owns the *order and the stopping points*. Every `cm` flag, field sentinel and
 availability note it names belongs to the **`uvcs-core`** skill — load it first, and read
-**reviews-and-merge-requests** (comment types, replies, the `[apply-change:]` tag) and
-**find-queries** (comment fields, `location` vs `line`, the revision lookup) rather than guessing.
+`uvcs-core/references/reviews-and-merge-requests.md` (comment types, replies, the
+`[apply-change:]` tag) and `uvcs-core/references/find-queries.md` (comment fields, `location` vs
+`line`, the revision lookup) rather than guessing.
 
 The reviewer's comments are the spec, and they are anchored to code that may have moved since. So
 the shape is *anchor to one review on one branch, work out what is genuinely still pending, then
@@ -87,7 +88,7 @@ on the evidence of its own children:
 is already addressed and stop.
 
 **Line numbers: `{location}` + 1.** It is 0-based and works on every client; `-1` means the
-comment is not anchored to a line (**find-queries**).
+comment is not anchored to a line (`uvcs-core/references/find-queries.md`).
 
 **The file to edit** comes from the comment's revision id — resolve it, never search for it or
 guess from names in the comment text:
@@ -183,9 +184,9 @@ so no half-applied edit is left behind.
 ## 7. Wrap up
 
 Show what happened to every item — applied, discarded, answered, skipped — with the changeset or
-shelve it produced, and a deep link for the review and for each of those objects: `unityhub://` or
-`plastic://`, chosen per object as **deep-links** says. Whether you re-request at all depends on
-the mode:
+shelve it produced, and a deep link for the review and for each of those objects — `unityhub://`
+or `plastic://`, chosen per object as `uvcs-core/references/deep-links.md` says. Whether you
+re-request at all depends on the mode:
 
 - **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded:
 
