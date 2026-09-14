@@ -8,7 +8,8 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
       Review branch /main/task009 for me. I've already looked and there is no review open for it
-      — so set one up, targeting /main, and put yourself on it as the reviewer.
+      — so set one up, targeting /main, and put yourself on it as the reviewer. List every cm
+      command the job needs, including the ones that only run after I approve the findings.
   assert:
     - type: icontains-any
       value:
