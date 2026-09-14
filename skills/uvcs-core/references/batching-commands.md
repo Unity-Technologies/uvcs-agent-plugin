@@ -76,6 +76,18 @@ message.
   `CommandResult 0`. So inside a batch — unlike a plain `cm` command, where empty output is not
   proof of "nothing found" — an empty output plus a zero result *is* that proof.
 
+### Ending the batch
+
+`exit` is how a batch says it is done, but it is not what closes the process: **end of input
+closes it** either way. Feeding a file with no `exit` line still terminates `cm shell` cleanly and
+leaves nothing running — as does a batch whose last command failed. Verified on 11.0.16; write
+`exit` anyway, so an interactively-fed shell is not left waiting on a terminal that has nothing
+more to send.
+
+A `cm` process still alive after its input ended is therefore not garbage to clean up — it is
+**blocked**, on the stdin prompt or the GUI window restrictions 3 and 5 exist to keep out of a
+batch. Kill it. Nothing rolls back, because everything in a batch was read-only.
+
 ## Route output to files, never parse the stream
 
 `cm shell` prints `CommandResult <n>` to stdout after every command, which looks like a usable
