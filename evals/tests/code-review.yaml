@@ -7,8 +7,8 @@
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Review branch /main/task009 for me. There's no review open for it yet — set one up and put
-      yourself on it as the reviewer.
+      Review branch /main/task009 for me. I've already looked and there is no review open for it
+      — so set one up, targeting /main, and put yourself on it as the reviewer.
   assert:
     - type: icontains-any
       value:
@@ -23,13 +23,16 @@
         Reviewing a branch must go through a merge request. Proposing "cm codereview
         br:/main/task009" as the way to review a branch is a failure. The response must also read
         the actual diff content (cm patch, or cm diff plus cm cat) rather than reviewing from a
-        list of changed file names.
+        list of changed file names. Naming the commands is enough: nothing has to be executed,
+        and holding the comments back until the user picks which findings to publish is correct.
 
 - description: "A single changeset gets a plain code review, not a merge request"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
-    user_message: "Do a code review of changeset 4207 and publish whatever you find."
+    user_message: >-
+      Do a code review of changeset 4207 and publish whatever you find — there's no review open
+      on it yet, so set one up too.
   assert:
     - type: icontains
       value: "cm codereview cs:4207"
@@ -39,6 +42,8 @@
       value: >-
         An isolated changeset is reviewed with cm codereview. Creating a merge request for it is
         a failure, because a merge request proposes merging a branch and there is no branch here.
+        Naming the commands is enough: nothing has to be executed, and holding the comments back
+        until the user picks which findings to publish is correct.
 
 - description: "A shelve is a code review target too"
   vars:
@@ -85,14 +90,19 @@
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Review branch /main/task009. Merge request 311 is already open on it.
+      Review branch /main/task009 — merge request 311 is already open on it. Before you start,
+      walk me through the whole process: what you read, what you show me, and exactly when
+      anything gets posted to 311.
   assert:
     - type: llm-rubric
       value: >-
-        The response must present the findings to the user and let the user choose which ones get
-        published (all, by severity, by id, all except, or none) before running any "comment add".
-        Posting every finding straight to the merge request without that choice is a failure.
-        Confirming before posting, with the target and the comment count visible, is expected.
+        The process must show the findings in chat first and let the user choose which ones get
+        published — all, by severity, by id, all except, or none — before any "comment add" runs
+        against merge request 311. A process that posts findings to 311 without that choice is a
+        failure, and so is one where the user only approves the comment text rather than picking
+        which findings go. Confirming before posting, with the target and the comment count
+        visible, is expected. Nothing is executed here, so judge the process the response commits
+        to, not any result it reports.
 
 - description: "No fix offers for a branch review; pending changes are the exception"
   vars:

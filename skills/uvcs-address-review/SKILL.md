@@ -46,9 +46,9 @@ cm status                   # pending changes
   workspace looks fine.
 - **Pinned to a changeset** — unusual, and check-in is not the natural flow. Say so and ask first.
 - **On a label or shelve** — stop. Name what it is on and let the user switch.
-- **On a branch other than the one the user named** — never switch silently; `cm switch` replaces
-  their working tree. Ask, and if they agree, switch and then stop, so nothing carries stale paths
-  across it.
+- **On a branch other than the one the user named** — stop and ask; `cm switch` replaces their
+  working tree. The switch is not your next action: name both branches, ask, and wait. Only once
+  they agree, switch and then stop again, so nothing carries stale paths across it.
 
 **Do not go looking on other branches.** The workspace's branch is the whole search space. No
 review there, or nothing pending on it, means there is nothing to do — say so and stop. Other
@@ -82,7 +82,7 @@ on the evidence of its own children:
 |---|---|
 | **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, no child of `type=discarded` |
 | **question to answer** | `type=question`, `parent=-1`, no child at all |
-| **not yours** | everything else — applied, discarded, answered, plus `conversation`, `comment`, `timeline` |
+| **not yours** | everything else — a parent already applied, or settled by a child (`type=discarded` discards it, `comment` answers it), and every child itself, plus `conversation` and `timeline` |
 
 `-1` is the unset value on every numeric field, never a real id. If both buckets are empty, say
 the review is already addressed and stop.
@@ -185,13 +185,14 @@ so no half-applied edit is left behind.
 
 Show what happened to every item — applied, discarded, answered, skipped — with the changeset or
 shelve it produced, and a `plastic://` link for the review (**plastic-links**; shelveset links use
-the **positive** id). Then re-request, and the timing differs by mode:
+the **positive** id). Whether you re-request at all depends on the mode:
 
-```
-cm mr 311 reviewer rerequest
-```
+- **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded:
 
-- **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded.
+  ```
+  cm mr 311 reviewer rerequest
+  ```
+
 - **Unattended** — nothing is in yet, so **do not re-request.** Tell the user to apply the shelves
   they want (`cm shelveset apply sh:<id> --preview`, then without it), check them in with the
   shelve's own comment so the `[apply-change:]` tag fires, then ask you to re-request.

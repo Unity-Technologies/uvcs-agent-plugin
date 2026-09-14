@@ -6,16 +6,20 @@
   vars:
     skill_content: file://../skills/uvcs-root-cause/SKILL.md
     user_message: >-
-      Enemies stopped chasing the player. The logic lives in Assets/Scripts/EnemyAI.cs. Which
-      changeset broke it?
+      Enemies stopped chasing the player. The logic lives in Assets/Scripts/EnemyAI.cs, and I
+      have already expanded the suspect set for you — EnemyAI.cs is self-contained, so it is the
+      only file in it. I have no idea when it last worked. Query its history and tell me which
+      changeset broke it.
   assert:
     - type: icontains
       value: "cm find revision"
     - type: llm-rubric
       value: >-
-        Every cm find in the response must be bounded — by a date constant such as
-        '4 weeks ago' or by a changeset lower bound. A cm find revision or cm find changeset
-        over the file's whole history with no date or changeset bound is a failure. cm annotate
+        The user gave no known-good changeset or date, so the history window must fall back to a
+        default of roughly the last 4 weeks. Every cm find in the response must be bounded — by
+        that date constant or by a changeset lower bound. A cm find revision or cm find changeset
+        over the file's whole history with no date or changeset bound is a failure, and so is
+        asking the user for a known-good point instead of applying the default. cm annotate
         is out of scope here: it takes no date or changeset window at all, so an unbounded
         annotate is correct and must not count against this.
 
@@ -62,8 +66,9 @@
     skill_content: file://../skills/uvcs-root-cause/SKILL.md
     reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
     user_message: >-
-      IndexOutOfRangeException thrown from src/combat/DamageResolver.cs line 118. Which changeset
-      introduced this?
+      IndexOutOfRangeException thrown from src/combat/DamageResolver.cs line 118. I have already
+      expanded the suspect set — that file is the whole of it. Which changeset introduced this,
+      and confirm it against line 118 itself.
   assert:
     - type: icontains
       value: "cm annotate"
@@ -71,7 +76,9 @@
       value: >-
         The response must annotate src/combat/DamageResolver.cs to find which changeset last
         modified line 118, and treat that as the strongest evidence. It must use the {changeset}
-        format token (not {changesetid}, which belongs to cm find).
+        format token (not {changesetid}, which belongs to cm find). This is a planning exercise
+        with nothing executed, so writing out the annotate command with that token is enough —
+        the response cannot report a real changeset and must not be required to.
 
 - description: "A line annotated as changeset -1 is the user's own uncommitted edit, not a suspect"
   vars:
