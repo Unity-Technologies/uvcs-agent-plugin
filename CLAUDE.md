@@ -217,6 +217,14 @@ It is deliberately **not** part of `uvcs-merge`: only the "bring" half is a merg
 different words, and a workflow that shelves and undoes the user's work needs its own stopping
 points. Do not fold it in.
 
+The replay itself is `cm merge sh:<id>`, **not** `cm shelveset apply` — settled after checking both
+against 11.0.16, and worth recording because apply looks like the obvious choice: it is the
+mechanism the GUIs and `cm switch --noinput` use, and it previews for free (`--preview`, so any
+claim that it has no read-only mode is wrong). But it rejects `--conflict-markers`
+(`shelveset: Unexpected option --conflict-markers`), leaving the configured merge tool — a GUI
+window no agent can drive — as its only path through a content conflict. `cm shelve` is a plain
+alias of `cm shelveset`, so the spelling is not the distinction; the conflict path is.
+
 ## Workflow for changes here
 
 1. **Use a skill-creator skill** to scaffold or refactor a skill rather than hand-rolling
