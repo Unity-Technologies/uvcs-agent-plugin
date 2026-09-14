@@ -10,13 +10,13 @@
       /main/task001@mygame@myorg@cloud (cs:4207 - head), and cm status lists 3 changed files in
       the workspace.
   assert:
-    - type: not-icontains
-      value: "cm find changereviewcomment"
     - type: llm-rubric
       value: >-
         The workspace has pending changes, so the response must stop and ask the user to check
-        them in or shelve them (cm shelveset create) before addressing review comments. Loading
-        the review's comments, editing files, or starting the queue anyway is a failure.
+        them in or shelve them (cm shelveset create) before addressing review comments. Actually
+        proceeding — loading the review's comments, editing files, or working the queue — is a
+        failure. Outlining what will happen *after* the workspace is clean is not a failure, as
+        long as the stop is unambiguous and nothing is presented as already done.
 
 - description: "A label selector stops the workflow instead of searching elsewhere"
   vars:
