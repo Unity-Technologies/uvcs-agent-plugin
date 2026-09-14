@@ -37,6 +37,8 @@ real `cm`, and stay portable across agents.
 
 ```
 plugin.json                       # $schema + name required; other metadata optional
+.claude-plugin/plugin.json        # the same manifest again, where Claude Code looks for it
+.claude-plugin/marketplace.json   # this repo is also its own one-plugin marketplace
 skills/uvcs-<name>/SKILL.md       # one skill per immediate subdirectory; nothing deeper is scanned
 skills/uvcs-<name>/references/    # detail loaded on demand
 skills/uvcs-<name>/scripts/       # optional executables
@@ -58,6 +60,15 @@ Rules that bite:
 - Client-specific behaviour (hooks, slash commands, subagents, custom agent definitions) is
   **not** portable and never belongs in the portable core. Put it under a reverse-domain
   directory, and make sure the skill still works fully without it.
+- **`.claude-plugin/` is the one exception to that rule**, because the location is dictated by
+  the client and cannot be moved: Claude Code reads its manifest from `.claude-plugin/plugin.json`
+  and ignores the root `plugin.json` entirely (`claude plugin validate .` reported
+  `"manifest": null` against 2.1.266 before this directory existed — the skills still loaded, but
+  with no name, version or description). So the plugin carries **two** manifests with the same
+  content, and the split is useful rather than merely tolerated: the root one stays a clean Agent
+  Plugins 1.0 manifest restricted to the permitted fields above, and anything Claude-only —
+  `hooks` first — goes in `.claude-plugin/plugin.json`, where it is legal. Nothing else may follow
+  it out of `com.unity/`; the test is whether the client *forces* the path.
 
 ## Writing skills
 
@@ -232,15 +243,18 @@ so keep skills independent and self-contained.
 ## Cutting a release
 
 One button, no local steps: **Actions ▸ Release ▸ Run workflow**, pick the branch and the bump
-level (patch / minor / major). `.github/workflows/release.yml` bumps `version` in `plugin.json`,
-commits and tags `v<version>` on that branch, packages the plugin with `git archive` (everything
+level (patch / minor / major). `.github/workflows/release.yml` bumps `version` in **both**
+manifests, commits and tags `v<version>` on that branch, packages the plugin with `git archive` (everything
 except the paths marked `export-ignore` in `.gitattributes`), and opens a **draft** release with
 notes generated from the merged PRs since the previous tag and the zip + `.sha256` attached.
 Review the draft on the Releases page and click *Publish release*.
 
-Consequences worth keeping in mind: the version lives in `plugin.json` and nowhere else — never
-bump it by hand, or the next run fails on an existing tag. The release notes are only as good as
-the PR titles, so title PRs the way you would write a commit subject.
+Consequences worth keeping in mind: the version lives in the two manifests and nowhere else —
+never bump it by hand, or the next run fails on an existing tag. The marketplace entry
+deliberately carries **no** `version`, so a release only has to move two files; `validate-skills`
+fails the PR if the manifests disagree with each other or if a version creeps into the entry,
+which is the most common reason a plugin-directory submission is rejected. The release notes are
+only as good as the PR titles, so title PRs the way you would write a commit subject.
 
 ## Commit history
 

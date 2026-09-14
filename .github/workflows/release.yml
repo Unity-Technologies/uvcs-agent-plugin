@@ -4,8 +4,9 @@ name: Release
 # release from and the bump level (patch / minor / major), and this does
 # everything in a single run:
 #
-#   1. bumps "version" in plugin.json, commits it and tags v<version> on the
-#      branch you picked
+#   1. bumps "version" in both manifests — plugin.json (Agent Plugins 1.0) and
+#      .claude-plugin/plugin.json (Claude Code) — commits them and tags
+#      v<version> on the branch you picked
 #   2. packages the plugin (everything except repo-only files, see .gitattributes)
 #      as a zip plus a SHA-256 checksum
 #   3. opens a draft GitHub Release for the tag with notes generated from the
@@ -39,7 +40,7 @@ jobs:
         with:
           fetch-depth: 0 # full history so generated notes can diff against the last tag
 
-      - name: Bump plugin.json, commit, tag, push
+      - name: Bump both manifests, commit, tag, push
         id: bump
         env:
           BUMP: ${{ inputs.bump }}
@@ -60,8 +61,13 @@ jobs:
             echo "::error::Tag $tag already exists. Pick a different bump level." && exit 1
           fi
 
-          jq --arg v "$version" '.version = $v' plugin.json > plugin.json.tmp
-          mv plugin.json.tmp plugin.json
+          # Two manifests carry the version and must never drift: the root one
+          # is the portable Agent Plugins manifest, .claude-plugin/ is Claude
+          # Code's. The marketplace entry deliberately carries no version.
+          for manifest in plugin.json .claude-plugin/plugin.json; do
+            jq --arg v "$version" '.version = $v' "$manifest" > "$manifest.tmp"
+            mv "$manifest.tmp" "$manifest"
+          done
 
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

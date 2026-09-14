@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "unity-version-control",
+  "version": "0.1.2",
+  "description": "Teaches AI agents to work with Unity Version Control (UVCS, formerly Plastic SCM) through the cm command line: querying history, reviewing branches, root cause analysis, and building plastic:// links.",
+  "author": {
+    "name": "Unity Technologies",
+    "url": "https://unity.com"
+  },
+  "homepage": "https://github.com/Unity-Technologies/unity-version-control-plugin",
+  "repository": "https://github.com/Unity-Technologies/unity-version-control-plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "uvcs",
+    "unity-version-control",
+    "plastic-scm",
+    "cm",
+    "version-control",
+    "code-review",
+    "unity"
+  ]
+}

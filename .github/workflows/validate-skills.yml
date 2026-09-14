@@ -5,6 +5,7 @@ on:
     paths:
       - "skills/**"
       - "plugin.json"
+      - ".claude-plugin/**"
       - ".github/workflows/validate-skills.yml"
 
 permissions:
@@ -42,3 +43,33 @@ jobs:
       - uses: actions/checkout@v7
       - name: Validate plugin.json against the Agent Plugins 1.0 schema
         run: pipx run check-jsonschema --schemafile https://agent-plugins.org/schemas/1.0.0/plugin.schema.json plugin.json
+
+      # The plugin ships two manifests on purpose: the root one is the portable
+      # Agent Plugins manifest, .claude-plugin/plugin.json is the one Claude
+      # Code actually reads. Duplication is only safe while they agree, and a
+      # manifest that disagrees with its marketplace entry is the most common
+      # reason a plugin-directory submission is rejected.
+      - name: Check the manifests and the marketplace entry agree
+        run: |
+          set -euo pipefail
+
+          root=$(jq -S '{name, version}' plugin.json)
+          claude=$(jq -S '{name, version}' .claude-plugin/plugin.json)
+          if [ "$root" != "$claude" ]; then
+            echo "::error::plugin.json and .claude-plugin/plugin.json disagree on name/version."
+            echo "  plugin.json:                $root"
+            echo "  .claude-plugin/plugin.json: $claude"
+            echo "  Both are bumped together by .github/workflows/release.yml — never by hand."
+            exit 1
+          fi
+
+          # The entry names the plugin by its (immutable) slug and leaves the
+          # version to the manifest, so a release only has to move two files.
+          name=$(jq -r '.name' plugin.json)
+          jq -e --arg name "$name" '
+            (.plugins | map(select(.name == $name)) | length == 1)
+            and (.plugins[] | select(.name == $name) | has("version") | not)
+          ' .claude-plugin/marketplace.json > /dev/null || {
+            echo "::error::.claude-plugin/marketplace.json must contain exactly one entry named '$name', and that entry must not carry a 'version' (the manifest is the authority)."
+            exit 1
+          }
