@@ -1,16 +1,14 @@
 ---
 name: uvcs-code-review
 description: >-
-  Perform a code review on UVCS / Plastic SCM changes and publish the findings where the team will
-  see them: route the target, read the real diff, then create or locate the merge request (for a
-  branch) or the code review (for a changeset or shelve), post one inline comment per finding, and
-  set your reviewer status. Use when the user says review my changes, review this branch, review
-  changeset 42 or shelve 12, code review, open a merge request or pull request, request a review
-  from someone, publish review comments, approve, LGTM, or rework required. Reviewing a branch
-  means reviewing its merge request; performing the merge itself is uvcs-merge. If the project or
-  the user already supplies code-review rules, a checklist, or another review skill, those govern
-  the judgement and this skill only carries the result into UVCS. All cm syntax comes from the
-  uvcs-core skill — load it first.
+  Review UVCS / Plastic SCM changes as the reviewer and publish the findings as review comments:
+  a branch through its merge request, a changeset or shelve through a code review, or the
+  workspace's pending changes in chat. Use when the user says review my changes, review this
+  branch, review changeset 42 or shelve 12, code review, open a merge request or pull request,
+  request a review from someone, publish review comments, approve, LGTM, or set my status to
+  rework required. Works with any review rules or checklist the project already supplies.
+  Performing the merge is uvcs-merge; fixing a review as its author is uvcs-address-review. All
+  cm syntax comes from the uvcs-core skill — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 

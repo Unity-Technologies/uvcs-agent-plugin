@@ -2,14 +2,13 @@
 name: uvcs-address-review
 description: >-
   Address the comments a reviewer left on a UVCS / Plastic SCM code review or merge request, as
-  the code author: find the review on the workspace's branch, build a queue of the change requests
-  and questions still pending, then work them one at a time under the user's direction or
-  unattended with one shelve per comment. It applies the fixes, links each check-in back to its
-  comment with the [apply-change:] tag, posts answers, discards a request the user rejects, and
-  re-requests the review. Use when the user says fix the review, address the review comments,
-  apply the review changes, rework required, answer the reviewer's question, discard a review
-  comment, or re-request review. This is the author side — producing findings and publishing them
-  is uvcs-code-review. All cm syntax comes from the uvcs-core skill — load it first.
+  the code author: find the review on the workspace's branch, list the change requests and
+  questions still pending, then fix, answer, discard or re-request under the user's direction,
+  one check-in per comment. Use when the user says fix the review, address the review comments,
+  apply the review changes, my review came back as rework required, answer the reviewer's
+  question, discard a review comment, or re-request review. This is the author side — producing
+  findings and publishing them is uvcs-code-review. All cm syntax comes from the uvcs-core skill
+  — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
