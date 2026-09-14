@@ -344,6 +344,20 @@ the two.
   (`show/changeset`, `show/branch`, `show/shelve`); the Hub's `merge/…`, `open/…` and `refresh/…`
   actions are deliberately out of scope, and a `merge/…` link must never appear in a report. Labels,
   ranges, code reviews and merge requests have no hub form and stay `plastic://` everywhere.
+- **`cm shell` batching is a hub reference, opt-in, read-only.** `cm shell` holds one `cm` process
+  open and reads commands from stdin, paying client startup (and the cloud handshake) once:
+  measured ~3× on 20 commands, and 12.55s → 4.83s on a realistic 10-changeset `log`+`diff` review.
+  It is `references/batching-commands.md` and **not** a skill — it is a `cm` invocation fact, and a
+  second always-on description covering `cm` vocabulary could not be kept mutually exclusive with
+  the hub's. The bar it must meet is "identical behavior, just faster", which is why the reference
+  is restrictions-first: read-only commands only, 5+ known up front, none that prompt or open a
+  GUI, output routed per command via `--shelloutputfile` (parsing the `CommandResult` stream
+  desyncs on any command whose own output contains such a line — reachable from a `--format`
+  string or a diff), and on any non-zero result fall back to that one command run plainly. Do not
+  relax those into "use shell mode when convenient", and do not let a workflow skill make batching
+  its default: the win is real but small next to inference time, and the failure modes are silent.
+  Naming: the file is `batching-commands.md`, not `shell-mode.md`, because `shell-gotchas.md`
+  already owns "shell" = the OS shell in this repo's vocabulary.
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.

@@ -1,0 +1,91 @@
+# cm shell batching: it must fire on a many-command read-only workload, stay off for
+# small or mutating ones, and carry the contract that changes when it is used.
+
+- description: "Many read-only commands known up front: batches with cm shell"
+  vars:
+    user_message: >-
+      I need the log and the diff for each of changesets 201 through 210 on this cloud repo.
+      That is a lot of cm calls and it feels slow — what is the fastest way to run them?
+    reference_content: file://../skills/uvcs-core/references/batching-commands.md
+  assert:
+    - type: icontains
+      value: "cm shell"
+    - type: icontains
+      value: "--shelloutputfile"
+    - type: llm-rubric
+      value: >-
+        The response batches the commands into a single cm shell invocation, with the
+        command lines written WITHOUT the "cm " prefix (e.g. "log cs:201", not
+        "cm log cs:201") and "exit" as the last line. It must not claim the batch's
+        success can be read from the process exit code or $?.
+
+- description: "A single command must not be batched"
+  vars:
+    user_message: "What branch is this workspace on right now?"
+    reference_content: file://../skills/uvcs-core/references/batching-commands.md
+  assert:
+    - type: icontains
+      value: "cm status"
+    - type: not-icontains
+      value: "cm shell"
+
+- description: "Below the 5-command threshold, stay with plain cm commands"
+  vars:
+    user_message: >-
+      Give me the fastest way to get the comment of changeset 4207 and the comment of
+      changeset 4210. Just those two.
+    reference_content: file://../skills/uvcs-core/references/batching-commands.md
+  assert:
+    - type: not-icontains
+      value: "cm shell"
+    - type: llm-rubric
+      value: >-
+        The response runs the two changesets as ordinary separate cm commands. If it
+        mentions cm shell at all, it must be to say batching is NOT worth it at this
+        count (it loses below about five commands) — recommending a batch here is a
+        failure.
+
+- description: "Mutating commands are never batched"
+  vars:
+    user_message: >-
+      I have ten files to check in, each with its own comment, and I want it fast.
+      Can I run all ten cm checkin calls in one cm shell batch?
+    reference_content: file://../skills/uvcs-core/references/batching-commands.md
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response refuses to batch the check-ins in cm shell and says batching is for
+        read-only commands only. It must give a reason of substance — a batch runs to the
+        end with nothing checked between steps, so a check-in could land part-way through
+        with no stopping point for the user. Agreeing to batch cm checkin is a failure,
+        even with caveats attached.
+
+- description: "Batch results are read from CommandResult, not the process exit code"
+  vars:
+    user_message: >-
+      I ran twenty cm find queries in one cm shell batch and the process exited 0.
+      Does that mean every query succeeded?
+    reference_content: file://../skills/uvcs-core/references/batching-commands.md
+  assert:
+    - type: icontains
+      value: "CommandResult"
+    - type: llm-rubric
+      value: >-
+        The response says NO: the cm shell process always exits 0 regardless of what
+        failed inside, so the exit code proves nothing. It must say the per-command
+        result is the CommandResult line, and that every command's result has to be
+        checked (not only the last one). Treating exit 0 as success is a failure.
+
+- description: "Errors inside a batch go to stdout, not stderr"
+  vars:
+    user_message: >-
+      In my cm shell batch I redirected stderr to a log file to catch failures, but the
+      log is empty even though one command clearly failed. Why?
+    reference_content: file://../skills/uvcs-core/references/batching-commands.md
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response explains that cm shell writes error messages to stdout by default,
+        so a stderr-only capture sees nothing. Mentioning --enablestderr as the flag that
+        splits the streams, or pointing to the CommandResult line / per-command output
+        file as where to detect the failure, both count as correct.
