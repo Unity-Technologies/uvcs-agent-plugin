@@ -59,6 +59,10 @@ cm find changeset "where branch='/main/task001' order by changesetid desc limit 
 | `label` | `date`, `labelname` |
 | `review` / `mergerequest` | `date`, `modifieddate`, `status`, `mergerequeststatus` |
 
+3. **`asc` or `desc` is required.** A bare `order by branchname` is a syntax error — *"Query
+   error: line 1:60 no viable alternative at input '<EOF>'"* — with no hint that the direction is
+   what is missing.
+
 To find a branch head, prefer `order by changesetid desc limit 1` over `date` (dates can tie
 within a second).
 

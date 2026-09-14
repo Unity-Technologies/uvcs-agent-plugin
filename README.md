@@ -5,8 +5,9 @@ Teach your AI coding agent to work with **Unity Version Control** (UVCS, formerl
 This is an [Agent Plugin](https://agent-plugins.org) — a portable bundle of
 [Agent Skills](https://agentskills.io) that gives an agent working knowledge of the `cm`
 command line and of the UVCS workflows built on top of it: exploring history, reviewing a
-branch, tracing a regression back to the changeset that caused it, and producing `plastic://`
-links so results are clickable in Unity DevOps and the UVCS GUI.
+branch, tracing a regression back to the changeset that caused it, and producing deep links so
+results are clickable — `unityhub://` links that open the object in the Unity Editor when the
+workspace is a Unity project, `plastic://` links that open the UVCS desktop GUI when it is not.
 
 It ships knowledge, not a runtime. There is nothing to build and nothing to run as a service:
 your agent reads the skills and drives the `cm` CLI you already have installed.
@@ -32,7 +33,7 @@ skills/              One directory per skill, each with a SKILL.md
 
 | Skill | Purpose | Status |
 | ----- | ------- | ------ |
-| `uvcs-core` | The hub: UVCS concepts vs git, object specs, how to report changesets and build `plastic://` links, read-only vs mutating commands — plus the full `cm` reference in its `references/`. Every other skill builds on it. | ✅ Available |
+| `uvcs-core` | The hub: UVCS concepts vs git, object specs, how to report changesets and build `unityhub://` / `plastic://` deep links, read-only vs mutating commands — plus the full `cm` reference in its `references/`. Every other skill builds on it. | ✅ Available |
 | `uvcs-merge` | Merge a branch, changeset, label, or shelve and drive it to a resolved workspace without a merge tool window. | ✅ Available |
 | `uvcs-switch` | Move the workspace to another branch (creating it first if needed), handling pending changes the way the GUIs do: leave them on a shelve, or bring them across. | ✅ Available |
 | `uvcs-root-cause` | Root cause analysis: trace a symptom to the changeset that introduced it. | ✅ Available |
@@ -139,7 +140,7 @@ right one:
 - "Review branch `/main/scm-12345` and tell me what changed and what looks risky."
 - "This test started failing last week. Find the changeset that broke it."
 - "Which changesets on `/main` touched `Editor/Inspector/` in the last month?"
-- "Give me a plastic link to changeset 41827 so I can paste it in the ticket."
+- "Give me a link to changeset 41827 so I can paste it in the ticket."
 
 Skills that only read (`cm find`, `cm log`, `cm diff`, `cm status`) run freely. Anything that
 mutates a repository — checkin, merge, undo, deleting a branch — is written to ask you first.

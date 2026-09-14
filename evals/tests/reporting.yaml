@@ -22,16 +22,47 @@
         the user's shorthand "task055" as the branch name is a failure. Referring to the head
         changeset as 4207 or cs:4207 is fine either way.
 
-- description: "A changeset reported to the user is offered as a clickable plastic:// link"
+- description: "A changeset in a non-Unity workspace is offered as a clickable plastic:// link"
   vars:
     user_message: >-
       cm status --header says my workspace is on /main/task055@mygame@myorg@cloud at changeset
-      4207. Give me something I can paste into a Jira ticket so a reviewer can open that
-      changeset.
-    reference_content: file://../skills/uvcs-core/references/plastic-links.md
+      4207. The workspace root holds src/, tests/ and a CMakeLists.txt — there is no Unity
+      project anywhere in it. Give me something I can paste into a Jira ticket so a reviewer
+      can open that changeset.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
     - type: icontains
       value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
+    - type: not-icontains
+      value: "unityhub://editor"
+
+- description: "A changeset in a Unity project is linked with unityhub:// and the cloud project id"
+  vars:
+    user_message: >-
+      cm status --header says my workspace is on /main/task055@mygame@myorg@cloud at changeset
+      4207. The workspace root holds Assets/, Packages/ and ProjectSettings/, and
+      ProjectSettings/ProjectSettings.asset has
+      "cloudProjectId: 86148379-dbd7-46fa-8b11-87a11f0c5500". Give me a link to that changeset
+      for my teammate on the same project.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
+  assert:
+    - type: icontains
+      value: "unityhub://editor/project/86148379-dbd7-46fa-8b11-87a11f0c5500/Unity.PlasticSCM.Editor/show/changeset/4207?repo=mygame%40myorg%40cloud"
+    - type: not-icontains
+      value: "plastic://myorg.cloud"
+
+- description: "A branch link in a Unity project drops the leading slash of the branch path"
+  vars:
+    user_message: >-
+      My workspace is /main/task055@mygame@myorg@cloud and it is a Unity project — Assets/ and
+      ProjectSettings/ are at the workspace root, and cloudProjectId is
+      86148379-dbd7-46fa-8b11-87a11f0c5500. Give me a link that opens the branch I am on.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
+  assert:
+    - type: icontains
+      value: "Unity.PlasticSCM.Editor/show/branch/main/task055?repo=mygame%40myorg%40cloud"
+    - type: not-icontains
+      value: "show/branch//main"
 
 - description: "An id the output does not contain is not invented"
   vars:

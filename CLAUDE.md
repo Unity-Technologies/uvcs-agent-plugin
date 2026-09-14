@@ -13,7 +13,7 @@ Planned shape:
 - **One hub skill: the `cm` CLI reference.** `cm` is the UVCS command line. This skill is the
   single source of truth for command syntax, flags, and output formats.
 - **Higher-level task skills** that build on the hub: review a branch, root cause analysis,
-  build Plastic links (`plastic://`) for richer output, and similar workflows.
+  build deep links (`plastic://`, `unityhub://`) for richer output, and similar workflows.
 
 Whoever ships a skill owns the whole vertical: it must trigger reliably, be correct against a
 real `cm`, and stay portable across agents.
@@ -84,7 +84,7 @@ description: <what it does>. Use when <concrete triggers, incl. words users actu
 `description` (max 1024 chars) is the *only* part loaded at startup, in every session, for every
 user. It is a routing decision, not marketing. Include the vocabulary people really use —
 `UVCS`, `Plastic SCM`, `cm`, `changeset`, `cset`, `workspace`, `branch`, `merge`, `label`,
-`shelve`, `plastic://`. Keep descriptions **mutually exclusive** across skills; overlapping
+`shelve`, `plastic://`, `unityhub://`. Keep descriptions **mutually exclusive** across skills; overlapping
 descriptions make the wrong skill fire.
 
 Optional fields, used sparingly: `license`, `compatibility` (only for real environment
@@ -148,7 +148,7 @@ start with `./` and stay inside the plugin root.
 
 `uvcs-core` is the hub, and it is the **parent** of the `cm` reference, not its sibling. Its body
 holds only what every UVCS task needs — the domain model, object specs, object naming and
-`plastic://` reporting conventions, read-only / mutating / irreversible labels, how to route a
+deep-link reporting conventions, read-only / mutating / irreversible labels, how to route a
 question to the right command, and the catalogue of workflow skills. All `cm` syntax lives one
 level down in `references/`, with `references/commands.md` as the curated everyday set.
 
@@ -196,7 +196,7 @@ Before claiming a command works:
 real repositories and other people's work. Division of responsibility (settled): the `uvcs-core`
 hub labels commands as plain facts — read-only / mutating / irreversible — and stays policy-free.
 Its reporting conventions cover *notation and rendering* only (how to name `cs:42`, when to emit
-a `plastic://` link, never inventing an id) for the same reason. The confirmation rules (when to
+a deep link and in which scheme, never inventing an id) for the same reason. The confirmation rules (when to
 ask the user first, when to suggest
 shelving before an undo, never presenting a destructive command as a casual next step, keeping
 reviews and analyses read-only end to end) are workflow guidance and belong to the higher-level
@@ -334,6 +334,16 @@ the two.
   hub was named
   `uvcs-cli-reference` until it grew into a real hub; the name now describes the body and the
   `cm` reference sits in its `references/`.
+- **Deep links: one scheme per workspace, chosen by the workspace.** A Unity project (`Assets/` +
+  `ProjectSettings/ProjectVersion.txt`) gets a `unityhub://` link that the Hub routes to that
+  project's Editor; anything else gets `plastic://` for the desktop GUI. Both live in one hub
+  reference, `references/deep-links.md` — splitting them would make the agent load two files to
+  answer one question. Settled with the user, so do not re-open: emit **one** link, never both,
+  and do **not** gate the hub form on an Editor or `com.unity.collab-proxy` version. The hub
+  actions are restricted to the read-only `show/` set that `plastic://` already covers
+  (`show/changeset`, `show/branch`, `show/shelve`); the Hub's `merge/…`, `open/…` and `refresh/…`
+  actions are deliberately out of scope, and a `merge/…` link must never appear in a report. Labels,
+  ranges, code reviews and merge requests have no hub form and stay `plastic://` everywhere.
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
@@ -352,7 +362,7 @@ Do not silently invent answers to these — ask, then record the answer here.
 - Whether to submit to the vendor registries (Anthropic's community directory, Cursor, Codex,
   Grok, Awesome Copilot) and in what order. Each is a one-off publishing action, not a repo
   change, and each has its own review and branding rules.
-- Whether `uvcs-links` still needs to exist as a skill. Building `plastic://` links is now hub
-  material — the reporting conventions in `uvcs-core` plus `references/plastic-links.md` — so a
-  dedicated skill would either duplicate that or be a thin wrapper. Left in the planned set until
+- Whether `uvcs-links` still needs to exist as a skill. Building links is now hub material — the
+  reporting conventions in `uvcs-core` plus `references/deep-links.md`, covering both schemes — so
+  a dedicated skill would either duplicate that or be a thin wrapper. Left in the planned set until
   decided; do not ship it without answering this.

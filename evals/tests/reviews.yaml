@@ -80,9 +80,23 @@
     user_message: >-
       Build a plastic:// link to merge request 312 in the repo mygame on the server
       myorg@cloud so I can paste it in a ticket.
-    reference_content: file://../skills/uvcs-core/references/plastic-links.md
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
     - type: icontains
       value: "plastic://myorg.cloud/repos/mygame/merge-requests/312"
     - type: not-icontains
       value: "merge-requests/312/diff"
+
+- description: "A merge request keeps its plastic:// link inside a Unity project — no hub form exists"
+  vars:
+    user_message: >-
+      My workspace is a Unity project (Assets/ and ProjectSettings/ at the root, cloudProjectId
+      86148379-dbd7-46fa-8b11-87a11f0c5500) on /main/task055@mygame@myorg@cloud. Give me a link
+      to merge request 312 for the ticket.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
+  assert:
+    - type: icontains
+      value: "plastic://myorg.cloud/repos/mygame/merge-requests/312"
+    # Naming the scheme while explaining is fine; emitting a hub URL for an MR is not.
+    - type: not-icontains
+      value: "unityhub://editor"

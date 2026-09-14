@@ -86,7 +86,7 @@
     user_message: >-
       Build a plastic:// link to changeset 4207 in the repo mygame on the server
       myorg@cloud so I can paste it in a ticket.
-    reference_content: file://../skills/uvcs-core/references/plastic-links.md
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
     - type: icontains
       value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"

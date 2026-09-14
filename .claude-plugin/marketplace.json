@@ -10,7 +10,7 @@
     {
       "name": "unity-version-control",
       "source": "./",
-      "description": "Teaches AI agents to work with Unity Version Control (UVCS, formerly Plastic SCM) through the cm command line: querying history, reviewing branches, root cause analysis, and building plastic:// links.",
+      "description": "Teaches AI agents to work with Unity Version Control (UVCS, formerly Plastic SCM) through the cm command line: querying history, reviewing branches, root cause analysis, and building clickable deep links (unityhub:// in a Unity project, plastic:// elsewhere).",
       "category": "version-control"
     }
   ]

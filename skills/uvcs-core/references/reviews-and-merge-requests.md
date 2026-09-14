@@ -220,5 +220,6 @@ cm find changereviewcomment "where reviewid=<id> and type='change'" --nototal
 
 ## Deep links
 
-`plastic://<server>/repos/<repo>/merge-requests/<id>` — see `plastic-links.md` for the code
-review shape, the `@` → `.` server rewrite, and encoding.
+`plastic://<server>/repos/<repo>/merge-requests/<id>` — see `deep-links.md` for the code review
+shape, the `@` → `.` server rewrite, and encoding. Merge requests and code reviews have no
+`unityhub://` form, so they stay `plastic://` even in a Unity project.
