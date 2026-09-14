@@ -1,0 +1,165 @@
+---
+name: uvcs-root-cause
+description: >-
+  Trace a bug, regression, crash or failing test back to the UVCS / Plastic SCM changeset that
+  most likely introduced it: bound the history window, expand from the symptom file to what it
+  depends on, rank only changesets with concrete evidence, and confirm the top suspect at line
+  level with cm annotate. Read-only end to end. Use when the user asks why something broke, what
+  changeset or cset broke it, which change introduced a bug, who broke a file or a line, when a
+  feature last worked, how to bisect or blame a regression in UVCS, or hands you a stack trace,
+  error message or failing test and wants the culprit changeset. Not for reviewing what a branch
+  changed and not for performing a merge. All cm syntax comes from the uvcs-core skill — load it
+  first.
+compatibility: Requires the cm CLI (Unity Version Control client) on PATH
+---
+
+# Root cause analysis with `cm`
+
+This skill owns the *decisions*: how far back to look, which files can plausibly be at fault, and
+what counts as evidence. Every `cm` flag and output token it names belongs to the **`uvcs-core`**
+skill — load it first, and read **history-and-annotate** (annotate tokens, previous revision,
+state before a changeset) and **find-queries** (date constants, which objects accept `order by`)
+rather than guessing.
+
+The failure mode this workflow exists to prevent is a confident wrong answer. History always
+offers *some* recent changeset to blame, so the work is in bounding the search and refusing to
+name a changeset you cannot connect to the symptom.
+
+## 1. Capture the symptom, bound the window
+
+```
+cm status --header          # current branch@repo@server and head changeset — the upper bound
+```
+
+Extract three things from the user's report: **what is broken**, **which file or symbol** it
+happens in, and **when it last worked**. A stack trace, compiler error or failing assertion is
+the best anchor there is — it names a file *and* a line, which step 5 can confirm against.
+
+If no file or symbol is named and none can be derived, ask for one. A symptom with no anchor
+cannot be bounded, and starting from a guessed file wastes the entire investigation.
+
+Lower bound, best available first:
+
+| The user gave you | Lower bound |
+|---|---|
+| a known-good changeset | that id |
+| a known-good date ("it worked last Tuesday") | resolve it to an id first: `cm find changeset "where branch='<branch>' and date < '<date>' order by changesetid desc limit 1" --format="{changesetid}" --nototal` |
+| nothing | the last 4 weeks |
+
+**Never query unbounded history.** A long-lived file has hundreds of revisions and every one of
+them looks plausible at a distance. If the bounded window turns up nothing, widen it deliberately
+— to three months — and say that you did.
+
+## 2. Expand the suspect set *before* touching history
+
+A bug whose cause sits in the file that throws is the easy case, and rarely the one the user
+needs help with. Expanding from the symptom file to **what it depends on** is what makes
+cross-file root cause possible: a change in a dependency breaks its dependents.
+
+From each symptom file, follow the outgoing references — imports/includes/`using`, base classes,
+interfaces, and the types and functions the failing code actually calls — and add those files.
+Use whatever the environment offers, best first: a project index or language server if there is
+one, otherwise plain text search for the symbol (which is also the only thing that catches
+reflection, string lookups, config and generated code).
+
+Keep the direction *outgoing*: what the symptom file uses, not everything that uses it.
+
+Cap the set at ~20 files. Above ~10, list them with the reason each is in (symptom / dependency
+of X / references `<symbol>`) and ask the user to confirm or narrow before querying — a 40-file
+set produces a candidate list nobody can act on. At or below that, proceed without asking.
+
+## 3. Query history, per suspect file, inside the bounds
+
+```
+cm find revision "where item='<path>' and changeset > <lower_cs>" --format="{changeset} {date}" --nototal
+cm find revision "where item='<path>' and date > '4 weeks ago'" --format="{changeset} {date}" --nototal
+```
+
+Pass the path as it exists in the workspace. Deduplicate into one changeset list while keeping
+**which suspect files each changeset touched** — that mapping is the evidence for step 4, so
+losing it means redoing the work. Then fetch metadata in one query rather than one per id:
+
+```
+cm find changeset "where changesetid=<a> or changesetid=<b>" --format="{changesetid}|{branch}|{owner}|{date}|{comment}" --nototal
+```
+
+## 4. Rank on evidence, never on recency
+
+Every candidate carries a stated connection to the symptom, in one line, or it does not appear
+at all:
+
+- it touched a symptom file;
+- it touched a dependency the failing code uses — and touched the part that is used;
+- it last modified the exact line the error names (step 5, the strongest signal available).
+
+"Touched a related file" is not a connection. A changeset whose only claim is that it is recent
+is noise: drop it, rather than listing it as a weak suspect and letting the user chase it. Cap
+the list at 10, strongest connection first, and say how many you dropped.
+
+Two cheap things sharpen the ranking a lot:
+
+- **The comment.** A changeset comment naming the symbol from the stack trace outranks any
+  amount of file-level proximity.
+- **What actually changed.** `cm patch cs:<id> > /tmp/cs<id>.patch 2>&1` (read-only) before
+  calling anything "most likely" — a rename, a reformat or a comment edit in the symptom file is
+  not a cause.
+
+**Report the branch, not just the id.** The candidate's `{branch}` says whether the change was
+made on the branch the user is on or arrived from elsewhere in a merge. "Introduced on
+`/main/task001`" and "merged into your branch from `/main`" are different stories with different
+fixes, and the user cannot tell them apart from a changeset number.
+
+## 5. Confirm at line level
+
+When the symptom names a line, check the top suspect against it:
+
+```
+cm annotate <path> --format="{line}|{changeset}|{branch}|{owner}|{ismergerev}|{content}"
+```
+
+The changeset on that line is the one that last modified it. If it is your top suspect, say so —
+that is the strongest evidence this workflow can produce. Annotate is slow on large files, so run
+it on the symptom file around the line you care about, not across the suspect set.
+
+Two readings change the answer entirely:
+
+- **The line's changeset predates your window.** The bug is older than assumed. Say that
+  explicitly and offer to widen the search — do not promote the best in-window candidate instead.
+- **`{changeset}` is `-1`.** That line has an uncommitted local edit, so no changeset caused it:
+  the user's own pending change did. Stop and tell them.
+
+## 6. Report
+
+A compact table, strongest evidence first:
+
+| Changeset | Author | Date | Evidence |
+|---|---|---|---|
+| `cs:1205` on `/main` | `<user>` | 2026-04-16 | Dropped the null guard in `Cache.Get()`, which `SessionStore.cs:118` calls |
+
+Follow `uvcs-core`'s reporting conventions: full object names, `plastic://` links when repo and
+server are known, and nothing — id, author, date, branch — that no command printed. If no
+candidate qualifies, say so and offer a wider window: "not found in the last 4 weeks" is a useful
+answer, an unsupported guess is not.
+
+Then offer the follow-ups; the ids are already in hand, so they cost one command each — the full
+diff of a suspect, blame on another file or line (step 5), or the file as it was *before* a
+suspect touched it:
+
+```
+cm patch cs:<id> > /tmp/cs<id>.patch 2>&1                                                  # what a suspect changed
+cm find revision "where item='<path>' and changeset < <id>" --format="{changeset} {id}" --nototal
+cm annotate "<path>#cs:<highest changeset in that result>"                                 # the state before it
+```
+
+## Stay read-only
+
+`cm status`, `cm find`, `cm annotate`, `cm patch`, `cm log` and `cm cat` are the whole toolkit,
+and all of them are read-only — an investigation has no reason to leave a trace.
+
+So: do not `cm switch` the workspace to a suspect changeset "to check", do not undo or revert the
+suspected change, and never present a switch, undo or revert as a casual next step. Those replace
+the user's working tree or discard their pending work, and neither is recoverable with `cm`.
+Finding the cause and fixing it are separate decisions: hand the fix back to the user, and if
+they ask for one, treat it as a new task with its own confirmation.
+
+Never fabricate a `cm` flag — check `uvcs-core` or `cm help <command>`.
