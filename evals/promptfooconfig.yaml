@@ -60,3 +60,4 @@ tests:
   - file://tests/workspaces.yaml
   - file://tests/root-cause.yaml
   - file://tests/code-review.yaml
+  - file://tests/address-review.yaml

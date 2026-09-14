@@ -1,0 +1,199 @@
+# uvcs-address-review: the author side. Anchoring to the workspace branch, deriving "pending"
+# from the thread, the location+1 rule, one comment per changeset, and the two modes' endings.
+# reference_content carries the hub reference the skill points at, as a client would have loaded it.
+
+- description: "Pending changes block the workflow before anything is read"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    user_message: >-
+      Fix the review comments on this branch. For context: cm status --header prints
+      /main/task001@mygame@myorg@cloud (cs:4207 - head), and cm status lists 3 changed files in
+      the workspace.
+  assert:
+    - type: not-icontains
+      value: "cm find changereviewcomment"
+    - type: llm-rubric
+      value: >-
+        The workspace has pending changes, so the response must stop and ask the user to check
+        them in or shelve them (cm shelveset create) before addressing review comments. Loading
+        the review's comments, editing files, or starting the queue anyway is a failure.
+
+- description: "A label selector stops the workflow instead of searching elsewhere"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    user_message: >-
+      Address the review comments. cm status --header shows the workspace is on label
+      lb:v2.1-release, and cm status is clean.
+  assert:
+    - type: not-icontains
+      value: "cm find changereviewcomment"
+    - type: icontains
+      value: "v2.1-release"
+    - type: llm-rubric
+      value: >-
+        Applying review fixes needs the workspace on the reviewed branch. The response must stop,
+        name the label the workspace is on, and let the user switch. Searching other branches for
+        a review, or running cm switch itself, is a failure.
+
+- description: "A branch the user names that is not the workspace's needs confirmation, not a switch"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    user_message: >-
+      Fix the review on /main/feature-x. cm status --header shows the workspace is on
+      /main/feature-y and cm status is clean.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must ask the user before switching the workspace, because cm switch replaces
+        their working tree. Running cm switch straight away is a failure, and so is silently
+        addressing the review on /main/feature-y instead of the branch the user named.
+
+- description: "The review lookup queries review by target, not mergerequest and not by status"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Address the review comments on the current branch. The workspace is clean and on
+      /main/task001. What do you run to locate the review?
+  assert:
+    - type: icontains
+      value: "cm find review"
+    - type: icontains
+      value: "target='br:/main/task001'"
+    - type: not-icontains
+      value: "cm find mergerequest"
+    - type: llm-rubric
+      value: >-
+        The lookup must be cm find review filtered on target, because a branch can carry a plain
+        code review rather than a merge request and the author has to address either. Filtering
+        the query on a review status such as 'Rework required' is a failure — whether a comment is
+        pending is a property of the comment, not of the review's status field.
+
+- description: "location is 0-based: the line to edit is location + 1"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
+    user_message: >-
+      Review 311 has one pending change request: type=change, parent=-1,
+      appliedinchangeset=-1, location=88, revisionid=5501234,
+      guid=8123d65a-620d-49ee-bf51-f526741a3341. Which line of the file does this comment point
+      at, and how do you find out which file it is?
+  assert:
+    - type: icontains
+      value: "89"
+    - type: icontains
+      value: "cm find revision"
+    - type: icontains
+      value: "5501234"
+    - type: llm-rubric
+      value: >-
+        The comment's location is 0-based, so the editor line is 89, not 88. Answering 88, or
+        subtracting instead of adding, is a failure. The file must be resolved by feeding
+        revisionid 5501234 to cm find revision; searching the filesystem, grepping for a
+        filename, or guessing a path from the comment text is a failure.
+
+- description: "Pending is derived from the thread: applied, discarded and answered items are excluded"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |
+      Review 311's thread (cm find changereviewcomment --xml) contains:
+      - id=900 type=change parent=-1 appliedinchangeset=-1 location=88
+      - id=901 type=change parent=-1 appliedinchangeset=4210 location=120
+      - id=902 type=change parent=-1 appliedinchangeset=-1 location=140
+      - id=903 type=discarded parent=902 location=140
+      - id=904 type=question parent=-1 location=200
+      - id=905 type=comment parent=904 location=200
+      - id=906 type=question parent=-1 location=250
+      - id=907 type=timeline parent=-1 location=-1
+      Which items go in the work queue? Do not run anything.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The queue must contain exactly two items: the change id=900 (nothing applied it, no
+        discarded child) and the question id=906 (no reply). Every other item must be excluded:
+        901 is already applied (appliedinchangeset 4210), 902 was discarded by its child 903, 904
+        was answered by its child 905, and 907 is a timeline entry. Including any of those, or
+        treating -1 as a real changeset or comment id, is a failure.
+
+- description: "Assisted mode checks in one comment per changeset with the apply-change tag"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Assisted mode, review 311. Two pending change requests, both in /src/Player.cs:
+      B1 (guid 8123d65a-620d-49ee-bf51-f526741a3341) and S1 (guid
+      a4e7f012-1234-5678-abcd-ef0123456789). I said "fix B1", you edited the file and I replied
+      "ok". What do you run?
+  assert:
+    - type: icontains
+      value: "apply-change:8123d65a"
+    - type: not-icontains
+      value: "apply-change:a4e7f012"
+    - type: not-icontains
+      value: "cm shelveset create"
+    - type: llm-rubric
+      value: >-
+        The response must run a cm checkin carrying the [apply-change:8123d65a] tag for B1 alone,
+        with the file path named. Batching S1 into the same changeset, or including a second
+        apply-change tag, is a failure because the link would leave one comment silently pending.
+
+- description: "Unattended mode shelves each fix and undoes only the paths it edited"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Unattended mode, review 311. Two pending change requests: B1 in /src/Player.cs (guid
+      8123d65a-620d-49ee-bf51-f526741a3341) and S1 in /src/ItemData.cs (guid
+      a4e7f012-1234-5678-abcd-ef0123456789). Give the exact commands for both.
+  assert:
+    - type: icontains
+      value: "cm shelveset create"
+    - type: icontains
+      value: "cm undo"
+    - type: not-icontains
+      value: "cm checkin"
+    - type: llm-rubric
+      value: >-
+        Each fix gets its own cm shelveset create followed by a cm undo of exactly the path that
+        was edited, so the next shelve contains only its own fix. Checking in is a failure in this
+        mode. Running cm undo recursively over the workspace (cm undo -r, cm undo ., or
+        undoing everything) instead of the named paths is a failure. Asking the user for approval
+        per item is also a failure — they chose not to be interrupted.
+
+- description: "Unattended wrap-up does not re-request the review"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Unattended mode on review 311 is finished: B1 shelved as sh:101, S1 shelved as sh:102, Q1
+      answered. Write the wrap-up.
+  assert:
+    - type: not-icontains
+      value: "reviewer rerequest"
+    - type: llm-rubric
+      value: >-
+        Nothing has been checked in yet, so the response must not re-request the review. It must
+        tell the user to apply the shelves and check them in — reusing the shelve comment so the
+        [apply-change:] tag fires at check-in — and to ask for the re-request afterwards.
+
+- description: "A reply is posted against the comment GUID, and a discard is never proposed"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Assisted mode, review 311. Q1 is a question, comment id 7700042, guid
+      b5f8e123-9999-aaaa-bbbb-ccccddddeeee, on /src/Player.cs line 104. I said "answer Q1" and
+      approved your draft. What do you run?
+  assert:
+    - type: icontains
+      value: "comment reply"
+    - type: icontains
+      value: "b5f8e123-9999-aaaa-bbbb-ccccddddeeee"
+    - type: not-icontains
+      value: "--discard"
+    - type: llm-rubric
+      value: >-
+        The reply must identify the parent comment by its GUID, not by the numeric id 7700042,
+        which cm rejects. Suggesting --discard for a question the user asked to be answered is a
+        failure; a discard is only ever run when the user explicitly asks for one.

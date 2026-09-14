@@ -266,7 +266,12 @@ finished skills.
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
   Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-root-cause` (shipped),
-  `uvcs-code-review` (shipped), `uvcs-links` (see Open decisions). `uvcs-merge-request` and
+  `uvcs-code-review` (shipped), `uvcs-address-review` (shipped), `uvcs-links` (see Open
+  decisions). Review has **two** skills on purpose, split by *side* and not by object:
+  `uvcs-code-review` produces findings and publishes them, `uvcs-address-review` consumes an
+  existing thread as the author. Their triggers do not overlap ("review this branch" vs "fix the
+  review"), and the shared vocabulary lives in the hub's `reviews-and-merge-requests.md`, so this
+  is not the split that was rejected below. `uvcs-merge-request` and
   `uvcs-review-branch` were planned separately and collapsed into `uvcs-code-review`: reviewing a
   branch *is* reviewing its merge request, so splitting them would have produced two skills
   fighting over the same triggers and the same `cm mr` workflow — do not resurrect the split. The

@@ -93,7 +93,8 @@ mention, not findings; a file only moved gets a mention too.
 Follow whatever governs judgement (see above). Whatever produces the findings, each one needs:
 
 - a **short ID** — `B1`, `I1`, `S1`, `N1` — carried **into the published comment text**. The
-  author-side workflow reads those IDs back out, so dropping them at publish time breaks it.
+  **`uvcs-address-review`** skill reads those IDs back out so the author can say "fix B1", so
+  dropping them at publish time breaks it.
 - the **server path** and the line, taken from the diff metadata. `--line` is the line as an
   editor shows it (**1-based**) — never convert it, never subtract one.
 
@@ -186,3 +187,7 @@ a casual next step.
 Approving is not merging. When the user wants the branch actually merged — before or after the
 review — hand off to the **`uvcs-merge`** skill; the preview, the mode and the check-in are its
 decisions, not this one's.
+
+Addressing comments is not reviewing either. When the user is the **author** — "fix the review",
+"address these comments", "answer the reviewer" — that is **`uvcs-address-review`**, which reads
+the thread back and applies the fixes.

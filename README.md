@@ -34,8 +34,9 @@ skills/              One directory per skill, each with a SKILL.md
 | ----- | ------- | ------ |
 | `uvcs-core` | The hub: UVCS concepts vs git, object specs, how to report changesets and build `plastic://` links, read-only vs mutating commands — plus the full `cm` reference in its `references/`. Every other skill builds on it. | ✅ Available |
 | `uvcs-merge` | Merge a branch, changeset, label, or shelve and drive it to a resolved workspace without a merge tool window. | ✅ Available |
-| `uvcs-review-branch` | Review the changes on a branch: scope, risk, per-changeset walkthrough. | Planned |
-| `uvcs-root-cause` | Root cause analysis: trace a symptom to the changeset that introduced it. | Planned |
+| `uvcs-root-cause` | Root cause analysis: trace a symptom to the changeset that introduced it. | ✅ Available |
+| `uvcs-code-review` | Review a branch, changeset, shelve, or your pending changes, and publish the findings as merge request or code review comments. | ✅ Available |
+| `uvcs-address-review` | The author side: apply the change requests a reviewer left, answer their questions, and re-request the review. | ✅ Available |
 
 Skill names are `uvcs-`prefixed so they stay unambiguous when installed alongside other plugins.
 
