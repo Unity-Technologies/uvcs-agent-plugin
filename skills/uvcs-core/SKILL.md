@@ -80,8 +80,9 @@ Most commands take object specs, not bare names. `cm help objectspec` is the aut
 Two traps make guessing expensive here, so route the question before composing a command:
 
 - **Most specialized commands only *act*.** `cm branch` creates, renames and deletes branches but
-  cannot list them; `cm attribute` sets values but cannot read them. **`cm find` is the query
-  tool** for branches, changesets, labels, shelves, revisions, attributes, merges and reviews.
+  cannot list them; `cm attribute` sets values but cannot read them; `cm log` details changesets
+  you already name and cannot list a branch's. **`cm find` is the query tool** for branches,
+  changesets, labels, shelves, revisions, attributes, merges and reviews.
   Anything shaped like "which / list / show me all" is a `cm find` query, and its shape is always
   **object first, then a quoted clause** — never one quoted string:
 
