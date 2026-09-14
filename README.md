@@ -61,8 +61,49 @@ output formats, so there is a single place to fix a command when `cm` changes.
 
 ## Install
 
-The plugin is a plain directory, so installation is: get the files, then register them with your
-agent.
+Distribution is deliberately outside the Agent Plugins spec, so there is no one command that
+works everywhere. Pick the line for your agent.
+
+### Claude Code
+
+This repository is its own marketplace. Register it, then install from it:
+
+```
+/plugin marketplace add Unity-Technologies/unity-version-control-plugin
+/plugin install unity-version-control@unity
+```
+
+The same two steps from a terminal, without starting a session:
+
+```bash
+claude plugin marketplace add Unity-Technologies/unity-version-control-plugin
+claude plugin install unity-version-control@unity
+```
+
+### Any other agent
+
+The skills install into Codex, Cursor, Gemini CLI, OpenCode, Copilot, Zed and ~70 more with one
+command:
+
+```bash
+npx skills add Unity-Technologies/unity-version-control-plugin --skill '*'
+```
+
+Keep the `--skill '*'`. Every workflow skill builds on `uvcs-core`, so installing one on its own
+leaves it pointing at a hub that is not there. Add `-g` to install for every project rather than
+the current one, and `-a <agent>` to pick a specific agent when several are installed.
+
+### Clients that implement Agent Plugins 1.0
+
+The root `plugin.json` is all these clients need, so they install straight from the repository
+URL with no marketplace involved — in VS Code, *Chat: Install Plugin From Source*; elsewhere the
+equivalent "install plugin from a Git URL" command:
+
+```
+https://github.com/Unity-Technologies/unity-version-control-plugin
+```
+
+### Manual
 
 ```bash
 git clone https://github.com/Unity-Technologies/unity-version-control-plugin.git
@@ -70,19 +111,26 @@ git clone https://github.com/Unity-Technologies/unity-version-control-plugin.git
 
 Or download `unity-version-control-<version>.zip` from the
 [Releases page](https://github.com/Unity-Technologies/unity-version-control-plugin/releases) and
-unzip it — each release ships a `.sha256` next to the archive if you want to verify it.
+unzip it — each release ships a `.sha256` next to the archive if you want to verify it. Then
+point your client's plugin or skills install path at the directory, or copy the `skills/*`
+directories where it looks for skills.
 
-How you register a plugin differs per client, and the mechanism is deliberately outside the
-Agent Plugins spec. Follow your client's plugin or skills documentation and point it at the
-cloned directory:
+We have verified the Claude Code and `npx skills` routes ourselves; the rest follow each client's
+documented mechanism. Verified one-liners will be added as we test each client — if you work one
+out, please [contribute it](CONTRIBUTING.md).
 
-- **Claude Code / Claude Desktop** — install as a plugin, or place the `skills/*` directories
-  where Claude looks for skills.
-- **Codex / Codex CLI**, **Cursor**, **VS Code**, and other clients — use their respective
-  plugin/skills install path.
+## Updating
 
-Verified per-client one-liners will be added here as we test each client. If you work one out,
-please [contribute it](CONTRIBUTING.md).
+The two main routes do not track the same thing, which is worth knowing before you pick one:
+
+| Installed with | Follows | Update with |
+| -------------- | ------- | ----------- |
+| `/plugin install` | the `version` in the manifest — pinned until a release bumps it | `/plugin update unity-version-control` |
+| `npx skills add` | the default branch, compared by content hash | `npx skills update` |
+
+So marketplace installs sit on the last release and `npx skills` installs sit on `main`. We keep
+`main` release-quality — every PR runs skill validation and the behavioural eval suite — so the
+difference is which fixes you have, not whether the skills work.
 
 ## Usage
 
@@ -92,7 +140,7 @@ right one:
 - "Review branch `/main/scm-12345` and tell me what changed and what looks risky."
 - "This test started failing last week. Find the changeset that broke it."
 - "Which changesets on `/main` touched `Editor/Inspector/` in the last month?"
-- "Give me a plastic link to changeset 41827 so I can paste it in the ticket."
+- "Give me a link to changeset 41827 so I can paste it in the ticket."
 
 Skills that only read (`cm find`, `cm log`, `cm diff`, `cm status`) run freely. Anything that
 mutates a repository — checkin, merge, undo, deleting a branch — is written to ask you first.
