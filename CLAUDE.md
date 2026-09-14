@@ -237,13 +237,28 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    Behavioral regressions are guarded by the promptfoo eval suite in `evals/`
    (`.github/workflows/skill-evals.yml`, Anthropic auth via Workload Identity Federation —
    see `evals/README.md`). If a change alters what a skill teaches, update or add an eval.
-3. Test triggering with realistic user phrasings, including ones that should *not* fire it.
-4. If the PR **adds or renames a skill, or changes a `description`** (the triggering surface),
+3. **Run only the evals the change can reach.** Every test is one independent API call whose
+   prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
+   ~1.5 minutes of API calls and re-rolls the suite's noise floor on 72 unrelated tests, which
+   buys nothing and muddies the result:
+
+   | Changed | Run |
+   |---|---|
+   | one test's `vars` or `assert` | **that test only** — nothing else loads it, so nothing else can break |
+   | a `SKILL.md` or a `references/*.md` | the tests that name that file in `skill_content` / `reference_content` (`grep -l <filename> evals/tests/*.yaml`) — but *all* of them, since an edit anywhere in a file perturbs every prompt carrying it |
+   | `promptfooconfig.yaml` (the prompt, provider or `defaultTest`), or the workflow | the whole suite — it is in every prompt |
+
+   Select with `--filter-pattern "<test description>"`: a **case-sensitive regex**, so confirm the
+   matched count is what you expected — a pattern that matches nothing reports a clean pass. Add
+   `--repeat N --no-cache` when the question is flakiness rather than correctness, and compare
+   against a baseline measured the same way on `HEAD` before concluding anything.
+4. Test triggering with realistic user phrasings, including ones that should *not* fire it.
+5. If the PR **adds or renames a skill, or changes a `description`** (the triggering surface),
    smoke-test it in a second agent: symlink the skill directory into that client's skills dir
    (e.g. `~/.codex/skills/`, `~/.cursor/skills/`) and run 2–3 realistic prompts. Content-only
    changes skip this — a reference edit cannot change how another client discovers the skill,
    and CI already covers format (validate-skill) and behavior (evals).
-5. Then re-read the skill and delete everything that did not earn its tokens.
+6. Then re-read the skill and delete everything that did not earn its tokens.
 
 Failures should degrade gracefully: per the spec, one broken skill must not take down the others,
 so keep skills independent and self-contained.
