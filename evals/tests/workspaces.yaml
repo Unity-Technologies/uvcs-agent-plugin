@@ -1,0 +1,37 @@
+# Extra workspaces: the UVCS answer to a git worktree.
+
+- description: "A parallel working copy is a second workspace, not a worktree or a clone"
+  vars:
+    user_message: >-
+      I want to run three agents on this UVCS repo at the same time, each on its own
+      branch, without them fighting over one directory. In git I'd use git worktree.
+      What's the equivalent here?
+    reference_content: file://../skills/uvcs-core/references/commands.md
+  assert:
+    - type: icontains
+      value: "cm workspace create"
+    - type: not-icontains
+      value: "cm worktree"
+    - type: llm-rubric
+      value: >-
+        The response must answer that the equivalent is creating another workspace
+        against the same repository, one per parallel task, each with its own selector
+        and pending changes. Proposing a clone, a local copy of the repository, or any
+        cm worktree command is a failure; naming git worktree only as the analogy being
+        replaced is fine.
+
+- description: "cm workspace delete leaves the local files on disk"
+  vars:
+    user_message: >-
+      I'm finished with the extra workspace I created for a parallel task. How do I get
+      rid of it, and is anything lost?
+    reference_content: file://../skills/uvcs-core/references/commands.md
+  assert:
+    - type: icontains
+      value: "cm workspace delete"
+    - type: llm-rubric
+      value: >-
+        The response must say that cm workspace delete removes the workspace metadata and
+        its client registration but leaves the files on disk, so the directory has to be
+        removed separately. Claiming the command erases the working copy, or that it
+        deletes anything on the server (repository, branch, changesets), is a failure.
