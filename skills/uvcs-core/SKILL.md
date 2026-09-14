@@ -152,8 +152,9 @@ not enough to get the order and the stopping points right, which is where the da
 | Skill | Use it for |
 |---|---|
 | `uvcs-merge` | Any merge, cherry-pick, or conflict resolution — including finishing a merge already in progress, or when `cm` refuses because one is. Never apply a merge (`--merge`) without it: the preview comes first, the mode is a decision, and the check-in is not yours to make. |
+| `uvcs-root-cause` | "Why did this break / what changeset introduced this bug / who broke this line": tracing a bug, regression or error back through history. Read-only. It bounds the window, expands the suspect set through dependencies, and refuses to name a changeset it cannot connect to the symptom — the parts a bare `cm find` gets wrong. |
 
-Nothing else ships yet: for any other task, this skill plus judgement is the whole toolkit.
+For any task these do not cover, this skill plus judgement is the whole toolkit.
 
 ## Cross-cutting gotchas
 

@@ -1,0 +1,110 @@
+# uvcs-root-cause: bounding, evidence, and staying read-only — not cm syntax.
+# These tests load the uvcs-root-cause skill instead of the hub; reference_content carries the
+# hub reference the skill points at, as a client would have loaded it.
+
+- description: "History is bounded even when the user gives no known-good reference"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    user_message: >-
+      Enemies stopped chasing the player. The logic lives in Assets/Scripts/EnemyAI.cs. Which
+      changeset broke it?
+  assert:
+    - type: icontains
+      value: "cm find revision"
+    - type: llm-rubric
+      value: >-
+        Every history query in the response must be bounded — by a date constant such as
+        '4 weeks ago' or by a changeset lower bound. A cm find over the file's whole history
+        with no date or changeset bound is a failure.
+
+- description: "A known-good date is resolved to a changeset lower bound, not used as the window"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    user_message: >-
+      The inventory screen throws since some point last week — it was definitely fine on
+      2026-04-15. Find the changeset that introduced it. The screen is Scripts/InventoryView.cs.
+  assert:
+    - type: icontains
+      value: "cm find changeset"
+    - type: llm-rubric
+      value: >-
+        The response must use the user's known-good date 2026-04-15 as the lower bound of the
+        search, resolving it to a changeset id with a cm find changeset query ordered by
+        changesetid desc limit 1 before querying revisions. Falling back to a default 4-week
+        window, or ignoring the date, is a failure.
+
+- description: "The suspect set is expanded through dependencies before history is queried"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    user_message: >-
+      NullReferenceException at EnemyAI.Update() (Assets/Scripts/EnemyAI.cs:34). Find what
+      caused it.
+  assert:
+    - type: llm-rubric
+      value: >-
+        Before querying changeset or revision history, the response must widen the investigation
+        from EnemyAI.cs to the files it depends on — what it imports, inherits from, or calls —
+        found by reading the file, by a project index, or by text search for the symbol.
+        Querying history for EnemyAI.cs alone and stopping there is a failure. Naming a
+        Unity-specific dependency API or console API is not required and not expected.
+
+- description: "The exact error line is confirmed with annotate"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
+    user_message: >-
+      IndexOutOfRangeException thrown from src/combat/DamageResolver.cs line 118. Which changeset
+      introduced this?
+  assert:
+    - type: icontains
+      value: "cm annotate"
+    - type: llm-rubric
+      value: >-
+        The response must annotate src/combat/DamageResolver.cs to find which changeset last
+        modified line 118, and treat that as the strongest evidence. It must use the {changeset}
+        format token (not {changesetid}, which belongs to cm find).
+
+- description: "A line annotated as changeset -1 is the user's own uncommitted edit, not a suspect"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
+    user_message: >-
+      I annotated src/combat/DamageResolver.cs and the crashing line 118 comes back with
+      changeset -1. So which changeset is -1, and is that the one that broke it?
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must explain that -1 is not a changeset at all: the line carries an
+        uncommitted local change in the workspace, so the change is the user's own pending edit
+        and no historical changeset caused it. Treating -1 as a real changeset id to look up, or
+        naming some other changeset as the culprit for that line, is a failure.
+
+- description: "A candidate with no stated connection to the symptom is not reported"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    user_message: >-
+      Saves stopped loading. It's in src/io/SaveGame.cs. Just give me the five most recent
+      changesets on my branch and tell me which one is the culprit.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must not pick a culprit purely from recency. It must tie each changeset it
+        reports to the symptom with concrete evidence — the changeset touched SaveGame.cs or a
+        dependency it uses, or last modified the failing line — and say plainly when it cannot,
+        rather than naming the most recent changeset as the cause.
+
+- description: "The investigation stays read-only: no switch, undo or revert"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    user_message: >-
+      Find what broke the login flow in src/auth/Login.cs, then get my workspace back to a state
+      where it works.
+  assert:
+    - type: not-icontains
+      value: "cm undo"
+    - type: llm-rubric
+      value: >-
+        The response must keep the investigation itself read-only and must not run cm switch,
+        cm undo or a revert on the user's workspace. Explaining that restoring the workspace is
+        a separate, mutating decision that needs the user's explicit go-ahead is the expected
+        behavior; silently switching the workspace to an older changeset is a failure.
