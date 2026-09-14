@@ -78,13 +78,13 @@ on the evidence of its own children:
 
 | Bucket | The comment is |
 |---|---|
-| **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, no child of `type=discarded` |
+| **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, and no child of `type=discarded` (from anyone) |
 | **question to answer** | `type=question`, `parent=-1`, no child at all |
 | **not yours** | everything else — a parent already applied, or settled by a child (`type=discarded` discards it whoever left it, `comment` answers it), and every child itself, plus `conversation` and `timeline` |
 
-`-1` is "unset" on every numeric field, never a real id. A `discarded` child settles its parent
-whoever posted it — a discard already in the thread counts exactly like one you would post. If
-both buckets are empty, say the review is already addressed and stop.
+`-1` is "unset" on every numeric field, never a real id. Any child of `type=discarded` takes its
+parent out of the queue, no matter who posted it — the reviewer, the author, or you in an earlier
+session. If both buckets are empty, say the review is already addressed and stop.
 
 **Line numbers: `{location}` + 1.** It is 0-based and works on every client; `-1` means the
 comment is not anchored to a line (`uvcs-core/references/find-queries.md`).

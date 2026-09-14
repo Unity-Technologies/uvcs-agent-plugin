@@ -36,7 +36,8 @@ Both are read-only, so run them together. Then:
   current head (`--changeset=<id>`) is a decision; ask if it is not obvious.
 - **Workspace clean** — switch and report where they landed:
   `cm switch br:/main/task001`, then `cm status --header`.
-- **Workspace dirty** — go to step 2. Do **not** run `cm switch` yet.
+- **Workspace dirty** — go to step 2 and stop there until the user answers. Do **not** run, or
+  line up, `cm switch` or step 3 yet.
 
 Never fire a bare `cm switch` on an unchecked workspace. What it does with pending changes is a
 client setting, and one of its outcomes is a prompt on stdin that silently answers itself with
@@ -111,13 +112,11 @@ stale shelve.
 ## 4. Bring changes to the destination
 
 The shelve from step 3 is now replayed onto the new branch. That replay is an ordinary merge, so
-**`uvcs-merge` owns it from here**. Three commands, run one at a time and each one read before
-the next is issued:
+**`uvcs-merge` owns it from here**. Two commands, the second only after the first has been read:
 
 ```
 cm merge sh:5                                # 1. preview, read-only; report conflicts first
 cm merge sh:5 --merge --conflict-markers     # 2. apply headlessly; uvcs-merge picks the mode
-cm shelveset delete sh:5                     # 3. only once nothing is left to resolve — irreversible
 ```
 
 - **The preview is never skipped.** The shelve was made against a different changeset, so a file
@@ -128,7 +127,12 @@ cm shelveset delete sh:5                     # 3. only once nothing is left to r
 
 The shelve is the user's backup for the whole operation. Anything unresolved, anything they still
 have to decide, any doubt at all: **leave it**, report its id, and say why it is still there. A
-stale shelve costs nothing; a deleted one is gone.
+stale shelve costs nothing; a deleted one is gone. Only once `uvcs-merge` has verified that
+nothing is left to resolve, and as a separate step the user sees, may it go:
+
+```
+cm shelveset delete sh:5                     # irreversible; never in the same breath as the merge
+```
 
 The result is **pending changes** — that is the finished state. Do not check in, and do not offer
 to. The user carries on working exactly where they left off.
