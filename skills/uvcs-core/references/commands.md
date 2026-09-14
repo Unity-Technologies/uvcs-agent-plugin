@@ -71,6 +71,10 @@ cm branch create /main/task001 -c "short description"     # child of /main
 cm switch /main/task001                                   # also accepts cs:, lb:, sh: specs
 ```
 
+Check `cm status` first: on a workspace with pending changes `cm switch` may carry them over,
+fail, or stop at a stdin prompt that defaults to *Cancel* and still exits 0 — see
+`branches-and-merge.md`.
+
 ## Checkin
 
 ```

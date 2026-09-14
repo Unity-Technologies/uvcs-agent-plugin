@@ -198,6 +198,14 @@ treat the check-in as the point of no return). Never gate that on detecting a he
 an agent cannot drive a merge tool window whatever the machine is, and there is no portable
 signal to detect one.
 
+`uvcs-switch` is the same division applied to `cm switch`: the hub states what the client setting
+`PendingChangesOnSwitchAction` does to a dirty switch and what the automatic shelve comment looks
+like, and `uvcs-switch` owns the decision the desktop GUIs and the Unity plugin put in a dialog —
+present both options (leave the changes on a shelve, or bring them across) and let the user pick.
+It is deliberately **not** part of `uvcs-merge`: only the "bring" half is a merge, it triggers on
+different words, and a workflow that shelves and undoes the user's work needs its own stopping
+points. Do not fold it in.
+
 ## Workflow for changes here
 
 1. **Use a skill-creator skill** to scaffold or refactor a skill rather than hand-rolling
@@ -270,9 +278,9 @@ finished skills.
 
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
-  Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-root-cause` (shipped),
-  `uvcs-code-review` (shipped), `uvcs-address-review` (shipped), `uvcs-links` (see Open
-  decisions). Review has **two** skills on purpose, split by *side* and not by object:
+  Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-switch` (shipped),
+  `uvcs-root-cause` (shipped), `uvcs-code-review` (shipped), `uvcs-address-review` (shipped),
+  `uvcs-links` (see Open decisions). Review has **two** skills on purpose, split by *side* and not by object:
   `uvcs-code-review` produces findings and publishes them, `uvcs-address-review` consumes an
   existing thread as the author. Their triggers do not overlap ("review this branch" vs "fix the
   review"), and the shared vocabulary lives in the hub's `reviews-and-merge-requests.md`, so this

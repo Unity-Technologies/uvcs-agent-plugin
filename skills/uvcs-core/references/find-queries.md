@@ -68,7 +68,7 @@ All objects also have `GUID` and `ID` (internal object id — not the user-visib
 
 | Object | Filter fields |
 |---|---|
-| `branch` | `name`, `date`, `changesets` (date of its changesets), `attribute`, `attrvalue`, `owner`, `parent` (brspec), `comment`, `hidden` |
+| `branch` | `name` (**leaf only** — `name='task001'`, never `'/main/task001'`, which matches nothing; `{name}` still *prints* the full path, and two branches can share a leaf, so compare the printed path), `date`, `changesets` (date of its changesets), `attribute`, `attrvalue`, `owner`, `parent` (brspec), `comment`, `hidden` |
 | `changeset` | `branch`, `changesetid`, `date`, `owner`, `comment`, `attribute`, `attrvalue`, `parent` (cset id), `returnparent` (`'true'` returns the parent instead), `onlywithrevisions`, `ignorehidden` |
 | `label` | `name`, `date`, `owner`, `branch`, `changeset` (cset id), `comment`, `attribute`, `attrvalue` |
 | `shelve` | `shelveid`, `owner`, `date`, `comment`, `parent`, `attribute`, `attrvalue` |
