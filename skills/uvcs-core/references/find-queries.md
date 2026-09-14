@@ -104,6 +104,12 @@ shelve `{shelveid} {date} {owner} {comment} {parent}` · review/mergerequest `{i
   editors; it accepts only `=` and `!=`, rejects values below 1, and is empty when the comment is
   not anchored to a line. `reviewcomment` is an older object exposing a subset of the same
   comments — prefer `changereviewcomment`.
+- **`line` is newer than `cm` 11.0.16.10371**, which rejects it with *"The field line is not valid
+  for the specified object type"*; `location` works on both. Reading `{location}` and adding 1
+  needs no version probe and is the portable choice — but then the **+1 is mandatory**, and
+  `location` is `-1`, not empty, when the comment is not anchored.
+- `revisionid` is a real revision id: feed it to `cm find revision` for the file it points at
+  (recipe below). It is *not* a changeset — `appliedinchangeset` and `changeset` are.
 
 ## Recipes
 
@@ -137,6 +143,10 @@ cm find mergerequest "where target='br:/main/task001'" --format="{id} {title} {d
 
 # Pending change requests on a review, with the 1-based line they sit on
 cm find changereviewcomment "where reviewid=311 and type='change'" --format="{guid} {line} {comment}" --nototal
+
+# A revision id -> the file it is a revision of, and where that revision lives
+# ({item} is the workspace path when the repo is mapped; the changeset dates the anchor)
+cm find revision "where id=5501234" --format="{item}|{changeset}|{branch}" --nototal
 
 # Recent merges into /main via changeset comments (fast at any repo size)
 cm find changeset "where branch='/main' and comment like 'merged%' order by changesetid desc limit 30" --format="{changesetid} {date} {comment}" --nototal

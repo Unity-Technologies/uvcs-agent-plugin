@@ -106,6 +106,11 @@ Use progressive disclosure — three levels, no more:
 1. `description` (~100 tokens) — routing.
 2. `SKILL.md` body — the smallest complete set of instructions. Target **under 500 lines /
    ~5k tokens**; shorter is better. Cutting a line is a real improvement.
+   **CI is stricter than that target**: `validate-skill` runs with `fail-on-warning`, and its
+   `body-progressive-disclosure` rule warns — so the job fails — at a body of **more than 200
+   lines** in a skill with no `references/`, `scripts/` or `assets/` directory. For a workflow
+   skill, which by our own convention has no `references/`, 200 body lines is therefore a hard
+   ceiling. Cut prose to fit; do not add a directory just to clear the rule.
 3. `references/*.md`, `scripts/`, `assets/` — loaded only when the task needs them.
 
 Keep references one level deep from `SKILL.md`; no nested reference chains. Name reference files
@@ -266,7 +271,12 @@ finished skills.
 - Plugin `name`: `unity-version-control`. License: Apache-2.0.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
   Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-root-cause` (shipped),
-  `uvcs-code-review` (shipped), `uvcs-links` (see Open decisions). `uvcs-merge-request` and
+  `uvcs-code-review` (shipped), `uvcs-address-review` (shipped), `uvcs-links` (see Open
+  decisions). Review has **two** skills on purpose, split by *side* and not by object:
+  `uvcs-code-review` produces findings and publishes them, `uvcs-address-review` consumes an
+  existing thread as the author. Their triggers do not overlap ("review this branch" vs "fix the
+  review"), and the shared vocabulary lives in the hub's `reviews-and-merge-requests.md`, so this
+  is not the split that was rejected below. `uvcs-merge-request` and
   `uvcs-review-branch` were planned separately and collapsed into `uvcs-code-review`: reviewing a
   branch *is* reviewing its merge request, so splitting them would have produced two skills
   fighting over the same triggers and the same `cm mr` workflow — do not resurrect the split. The

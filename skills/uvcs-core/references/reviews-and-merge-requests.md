@@ -115,9 +115,48 @@ cm mr <id> comment delete <comment_guid> [<guid> ...]
   *"The comment must be identified by its GUID"*.
 - `reply --discard` marks a `Change` request as one you will not make, so it stops counting as
   pending. A reply inherits the parent's file, line and changeset.
+- **A reply is a comment in its own right**, carrying the parent's **numeric id** in its `parent`
+  field (not the parent's GUID). Its `type` records what the reply did: answering a `question`
+  yields a `comment`, and `reply --discard` yields a **`discarded`** comment — the parent stays
+  `change`. So "was this addressed?" is a question about the *children*, not about the parent.
 - Editing keeps type, file, line and changeset — only the text changes. **Anyone with change
   permission on the reviewed branch or changeset can edit or delete any comment**, not just its
   author.
+
+## Closing a change request from a check-in: `[apply-change:]`
+
+A `Change` comment stays pending until something applies or discards it. The applying half is a
+**check-in comment tag** — no review command is involved:
+
+```
+cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
+```
+
+- `8123d65a` is the **first 8 hex characters of the comment GUID** — the part before the first
+  `-`. Short enough to scan in `cm find changeset` output, unique enough within one review.
+- The server matches the tag at check-in and sets the comment's `appliedinchangeset` to the new
+  changeset id, decrementing the review's pending count. This is the whole mechanism; there is no
+  follow-up command.
+- **`Change` comments only.** On a `question`, `comment`, `conversation` or a reply, the tag
+  matches nothing and `cm checkin` exits **1** with *"The following review change requests
+  (specified in the checkin comment) cannot be found or are already applied in a previous
+  changeset"* — the same error a mistyped or already-applied GUID produces. **The changeset is
+  still created**, so never re-run the check-in on this error: only the link is missing. Mark
+  those comments by replying in the thread instead.
+- Several tags in one comment (`[apply-change:abc12345] [apply-change:def67890] ...`) are each
+  matched independently, in any position.
+- Verify rather than assume — the tag is silent on success:
+
+  ```
+  cm find changereviewcomment "where reviewid=<id> and guid='<full-guid>'" \
+      --format="{appliedinchangeset}" --nototal
+  ```
+
+  `-1` means nothing matched.
+
+A **shelve comment links nothing**: `cm shelveset create -c "[apply-change:...]"` is just text,
+because only a check-in triggers the server-side match. Putting the tag in the shelve comment is
+still useful — it becomes the ready-made check-in comment when the shelve is applied.
 
 ## Code reviews (changesets and shelves)
 
@@ -149,15 +188,29 @@ cm find mergerequest "where mergerequeststatus='Open' and destination='br:/main'
 # Waiting on me
 cm find mergerequest "where assignee='me' and status='Under review'" --format="{id} {title}" --nototal
 
-# Read a review's comments (conversation + inline + timeline)
-cm find changereviewcomment "where reviewid=<id>" \
-    --format="{guid}|{type}|{line}|{changeset}|{parent}|{comment}" --nototal
+# The review or MR on a branch — the reliable lookup from the author's side
+cm find review "where target='br:/main/task001'" \
+    --format="{id}|{title}|{targettype}|{status}|{owner}" --nototal
+
+# Read a review's whole thread (conversation + inline + replies + timeline)
+cm find changereviewcomment "where reviewid=<id>" --xml --nototal
 
 # Just the pending change requests
 cm find changereviewcomment "where reviewid=<id> and type='change'" --nototal
 ```
 
-- `cm find mergerequest` returns only reviews that are MRs; `cm find review` returns both.
+- **Prefer `--xml` for reading a thread.** Comment text is free-form and may contain newlines, so
+  `--format` output is not one record per line and cannot be parsed positionally. The XML element
+  names are the field names upper-cased (`<APPLIEDINCHANGESET>`, `<LOCATION>`, `<PARENT>`).
+- **`-1` is the "unset" value on every numeric comment field** — `parent` (top-level),
+  `appliedinchangeset` (not applied), `changeset` (not filed under one), `revisionid` and
+  `location` (not anchored to a file and line). Never read `-1` as a real id.
+- `{type}` renders **lower-case**: `change`, `question`, `comment`, `conversation`, `discarded`,
+  `timeline` — and a `where` clause matches that spelling (`type='change'`), not the `--type`
+  flag's `Change`.
+- `cm find mergerequest` returns only reviews that are MRs; `cm find review` returns both — and a
+  branch can carry a plain code review rather than an MR, so **query `review` when you need
+  whatever review exists** on a branch and `mergerequest` only when you specifically need MRs.
 - `{mergerequeststatus}` and `{status}` render with their field name inline
   (`MergeRequestStatus Open`, `Status Reviewed`), not as a bare value — strip the prefix when
   parsing.
