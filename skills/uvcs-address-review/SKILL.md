@@ -82,10 +82,11 @@ on the evidence of its own children:
 |---|---|
 | **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, no child of `type=discarded` |
 | **question to answer** | `type=question`, `parent=-1`, no child at all |
-| **not yours** | everything else — a parent already applied, or settled by a child (`type=discarded` discards it, `comment` answers it), and every child itself, plus `conversation` and `timeline` |
+| **not yours** | everything else — a parent already applied, or settled by a child (`type=discarded` discards it whoever left it, `comment` answers it), and every child itself, plus `conversation` and `timeline` |
 
-`-1` is the unset value on every numeric field, never a real id. If both buckets are empty, say
-the review is already addressed and stop.
+`-1` is the unset value on every numeric field, never a real id. A `discarded` child settles its
+parent whoever posted it — a discard already in the thread counts exactly like one you post. If
+both buckets are empty, say the review is already addressed and stop.
 
 **Line numbers: use `{location}` and add 1.** It is 0-based, the 1-based `{line}` alias is missing
 on older clients, and the +1 is not optional. `location=-1` means not anchored to a line at all.
