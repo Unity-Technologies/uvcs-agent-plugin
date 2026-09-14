@@ -10,15 +10,15 @@
   assert:
     - type: icontains
       value: "cm workspace create"
-    - type: not-icontains
-      value: "cm worktree"
     - type: llm-rubric
       value: >-
         The response must answer that the equivalent is creating another workspace
-        against the same repository, one per parallel task, each with its own selector
-        and pending changes. Proposing a clone, a local copy of the repository, or any
-        cm worktree command is a failure; naming git worktree only as the analogy being
-        replaced is fine.
+        against the same repository, one per parallel task, independent of the others.
+        Failures: proposing a second repository instead (cm clone, a replica, a local
+        copy of the repository), or proposing a cm worktree command as something to
+        run. Both of these are correct and must not be marked down: saying that no
+        cm worktree command exists, and saying that each workspace holds its own full
+        copy of the content with no shared object store.
 
 - description: "cm workspace delete leaves the local files on disk"
   vars:
