@@ -13,9 +13,11 @@
       value: "cm find revision"
     - type: llm-rubric
       value: >-
-        Every history query in the response must be bounded — by a date constant such as
-        '4 weeks ago' or by a changeset lower bound. A cm find over the file's whole history
-        with no date or changeset bound is a failure.
+        Every cm find in the response must be bounded — by a date constant such as
+        '4 weeks ago' or by a changeset lower bound. A cm find revision or cm find changeset
+        over the file's whole history with no date or changeset bound is a failure. cm annotate
+        is out of scope here: it takes no date or changeset window at all, so an unbounded
+        annotate is correct and must not count against this.
 
 - description: "A known-good date is resolved to a changeset lower bound, not used as the window"
   vars:
@@ -28,10 +30,13 @@
       value: "cm find changeset"
     - type: llm-rubric
       value: >-
-        The response must use the user's known-good date 2026-04-15 as the lower bound of the
-        search, resolving it to a changeset id with a cm find changeset query ordered by
-        changesetid desc limit 1 before querying revisions. Falling back to a default 4-week
-        window, or ignoring the date, is a failure.
+        The response must derive the lower bound from the user's known-good date 2026-04-15,
+        resolving it to a changeset id with a cm find changeset query ordered by changesetid
+        desc limit 1, and bound the revision queries on that id. Either literal is correct:
+        2026-04-15, or 2026-04-16 to cover the whole of the known-good day (a bare date in a cm
+        find means 00:00 that day), and the response need not spell that adjustment out.
+        Falling back to a default 4-week window, ignoring the date, or filtering revisions by
+        the date instead of resolving it to a changeset id first, is a failure.
 
 - description: "The suspect set is expanded through dependencies before history is queried"
   vars:
@@ -42,11 +47,15 @@
   assert:
     - type: llm-rubric
       value: >-
-        Before querying changeset or revision history, the response must widen the investigation
-        from EnemyAI.cs to the files it depends on — what it imports, inherits from, or calls —
-        found by reading the file, by a project index, or by text search for the symbol.
-        Querying history for EnemyAI.cs alone and stopping there is a failure. Naming a
-        Unity-specific dependency API or console API is not required and not expected.
+        This is a planning exercise with no tools, so the response cannot name a real dependency
+        file and must not be required to. It passes when both of these hold: (a) a step that
+        inspects EnemyAI.cs for what it depends on — its imports, base classes, or the symbols
+        the failing code calls — by reading the file, by a project index, or by text search, and
+        that step comes before the first cm find revision or cm find changeset; and (b) the
+        history queries are described as covering that suspect set, not EnemyAI.cs alone.
+        Omitting the expansion, or raising it only after the history queries as a later "next
+        step", is a failure. Naming a Unity-specific dependency API or console API is not
+        required and not expected.
 
 - description: "The exact error line is confirmed with annotate"
   vars:
@@ -91,7 +100,9 @@
         The response must not pick a culprit purely from recency. It must tie each changeset it
         reports to the symptom with concrete evidence — the changeset touched SaveGame.cs or a
         dependency it uses, or last modified the failing line — and say plainly when it cannot,
-        rather than naming the most recent changeset as the cause.
+        rather than naming the most recent changeset as the cause. This is a planning exercise
+        with nothing executed, so naming no culprit at all is a pass, not a gap: judge the
+        ranking rule the response commits to, not whether a changeset is named.
 
 - description: "The investigation stays read-only: no switch, undo or revert"
   vars:
