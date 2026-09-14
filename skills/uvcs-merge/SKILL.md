@@ -35,8 +35,7 @@ cm status --header          # current branch@repo@server and head changeset
 cm status                   # pending changes
 ```
 
-Everything in this step and the next is read-only, so gather it in one go rather than a
-round-trip per command — you need the whole picture before deciding anything anyway.
+Both are read-only, as is the preview in step 2; gather all three before deciding anything.
 
 - If the workspace is not on the destination branch the user means, say so and switch only after
   they confirm — `cm switch` replaces their working tree.
@@ -57,10 +56,9 @@ Nothing is touched without `--merge`, so there is never a reason to skip this. I
 reports no merges detected, say so and stop. The output tokens are in **branches-and-merge**;
 `--machinereadable` gives one stable prefix per line if you are parsing it.
 
-The one reading trap: a file the preview flags as conflicting is **not** a prediction of
-conflict — most such files merge cleanly. Do not report "there are N conflicts" from the preview;
-report that N files need a content merge, if you mention it at all. What actually collides is only
-knowable by running the merge.
+One reading trap: a file the preview flags as conflicting usually merges cleanly. Report "N files
+need a content merge", never "N conflicts" — what actually collides is only known once the merge
+runs.
 
 ## 3. Choose the mode
 

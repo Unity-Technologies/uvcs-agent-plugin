@@ -77,9 +77,9 @@ cm switch br:/main/task002
 cm status --header
 ```
 
-That comment is the exact marker the GUIs write and look for, so a shelve made this way shows up
-as theirs — `br:21` is the **internal id** of the branch being left, which is what the first
-command fetches (`cs:<n>` / `lb:<id>` if the workspace was pinned to a changeset or a label).
+That comment is the marker the GUIs recognize as their own automatic shelve (format and variants:
+**branches-and-merge**); `br:21` is the internal id of the branch being left, which the first
+command fetches.
 
 Order matters and the middle step is the dangerous one:
 
@@ -123,9 +123,8 @@ cm shelveset delete sh:5                     # 3. only once nothing is left to r
 - **The preview is never skipped.** The shelve was made against a different changeset, so a file
   both sides touched needs a content merge. Conflicts it reports go to the user *before* anything
   is applied: that is the "you will be notified" half of the promise made in step 2.
-- Use `cm merge`, not `cm shelveset apply`. Apply previews fine (`--preview`) but rejects
-  `--conflict-markers`, so the first file both sides touched falls to the configured merge tool —
-  a GUI window no agent can drive (**branches-and-merge**).
+- Use `cm merge`, not `cm shelveset apply`: apply has no headless mode for a content conflict
+  (**branches-and-merge**).
 
 The shelve is the user's backup for the whole operation. Anything unresolved, anything they still
 have to decide, any doubt at all: **leave it**, report its id, and say why it is still there. A

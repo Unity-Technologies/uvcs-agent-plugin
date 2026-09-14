@@ -85,8 +85,8 @@ cm diff <spec> --format="{status} {path} {baserevid} {revid} {repository}"
 Every finding has to be anchored later to a **server path** (`/src/Player.cs`, not a workspace
 path) and a line. An agent that throws this away has to redo the diff at publish time.
 
-Skip binaries and Unity YAML assets — a diff of them is not reviewable text. Deleted files get a
-mention, not findings; a file only moved gets a mention too.
+Binaries, Unity YAML assets (`.unity`, `.prefab` — not reviewable line by line), deleted files
+and files that only moved get a mention in the report, not findings.
 
 ## 3. Review, and keep the anchors
 
