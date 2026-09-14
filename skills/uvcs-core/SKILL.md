@@ -4,13 +4,13 @@ description: >-
   Core knowledge for Unity Version Control (UVCS, formerly Plastic SCM) and its cm command line:
   how UVCS concepts differ from git, object specs (br:, cs:, lb:, sh:, serverpath:), which cm
   command answers which question, read-only vs mutating vs irreversible commands, how to name
-  UVCS objects and build plastic:// deep links when reporting results, and curated cm recipes for
-  status, find queries, diff and patch, history, branches, checkin, shelves, merge requests and
-  code reviews. Use whenever composing or running any cm command, or when the user mentions UVCS,
+  UVCS objects and build deep links (plastic://, or unityhub:// when the workspace is a Unity
+  project) when reporting results, and curated cm recipes for status, find queries, diff and
+  patch, history, branches, checkin, shelves, merge requests and code reviews. Use whenever composing or running any cm command, or when the user mentions UVCS,
   Unity Version Control, Plastic SCM, cm, changeset, cset, workspace, selector, branch, label,
   shelve, shelveset, checkin, annotate, merge request, MR, pull request, PR, code review,
-  reviewer, xlink, or plastic:// links. Every UVCS workflow skill builds on this one — load it
-  first.
+  reviewer, xlink, plastic:// or unityhub:// links. Every UVCS workflow skill builds on this one —
+  load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
@@ -136,8 +136,9 @@ into `cm` or click through is half an answer.
 - **Changeset ids are per-repository** integers, not global hashes. When more than one repo is in
   play (xlinks), qualify the id with its repo or the number is ambiguous.
 - **Make objects clickable when the repo and server are known** (`cm status --header`, or
-  `{repository}` in `cm diff` output): a `plastic://` link opens the UVCS GUI straight on the
-  object. Shapes, the `@` → `.` server rewrite, and encoding: `references/plastic-links.md`.
+  `{repository}` in `cm diff` output): one link, `unityhub://` in a Unity project (`Assets/` +
+  `ProjectSettings/`) and `plastic://` anywhere else. Shapes and encoding:
+  `references/deep-links.md`.
 - **Report only what command output shows.** Never fill in a changeset id, branch name, author or
   date from inference — if a command did not print it, say it is unknown and name the command
   that would answer it.
@@ -192,4 +193,4 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
 | `references/merge-conflict-markers.md` | Resolving a conflicted merge headlessly: `--conflict-markers`, exit codes, marker format, the check-in guard. |
 | `references/history-and-annotate.md` | File history, blame tokens, `cm log` formats, walking `/main` history. |
 | `references/shell-gotchas.md` | Running `cm` from PowerShell / Git Bash / POSIX shells; quoting and comment pitfalls. |
-| `references/plastic-links.md` | Building `plastic://` deep links to branches, changesets, labels, shelves, code reviews, merge requests. |
+| `references/deep-links.md` | Building a clickable link to a branch, changeset, label, shelve, code review or merge request: `unityhub://` in a Unity project, `plastic://` everywhere else. |

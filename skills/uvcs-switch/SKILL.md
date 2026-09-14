@@ -92,7 +92,7 @@ Order matters and the middle step is the dangerous one:
   It clears the whole workspace, not just the files in play.
 
 **Leaving the changes behind ends here.** Report the shelve as `sh:<id>` with its comment, plus a
-`plastic://` link (**plastic-links**), and say in one line how to get the work back:
+deep link (**deep-links**), and say in one line how to get the work back:
 `cm shelveset apply sh:<id>`. Bringing them along continues to step 4.
 
 An earlier automatic shelve off the same branch is worth checking for first, since that is what

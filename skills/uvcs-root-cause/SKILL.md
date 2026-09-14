@@ -167,8 +167,9 @@ A compact table, strongest evidence first:
 |---|---|---|---|
 | `cs:1205` on `/main` | `<user>` | 2026-04-16 | Dropped the null guard in `Cache.Get()`, which `SessionStore.cs:118` calls |
 
-Follow `uvcs-core`'s reporting conventions: full object names, `plastic://` links when repo and
-server are known, and nothing — id, author, date, branch — that no command printed. If no
+Follow `uvcs-core`'s reporting conventions: full object names, clickable deep links when repo and
+server are known (**deep-links**), and nothing — id, author, date, branch — that no command
+printed. If no
 candidate qualifies, say so and offer a wider window: "not found in the last 4 weeks" is a useful
 answer, an unsupported guess is not.
 

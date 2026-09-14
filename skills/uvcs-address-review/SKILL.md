@@ -184,7 +184,7 @@ so no half-applied edit is left behind.
 ## 7. Wrap up
 
 Show what happened to every item — applied, discarded, answered, skipped — with the changeset or
-shelve it produced, and a `plastic://` link for the review (**plastic-links**; shelveset links use
+shelve it produced, and a `plastic://` link for the review (**deep-links**; shelveset links use
 the **positive** id). Whether you re-request at all depends on the mode:
 
 - **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded:

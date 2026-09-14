@@ -167,7 +167,7 @@ cm mr <id> reviewer status --status=Reviewed -c="<one line on why it is good to 
 
 Report the result with a link the user can click —
 `plastic://<server>/repos/<repo>/merge-requests/<id>`, or `/code-reviews/<id>` for a code review
-(shapes and the `@` → `.` rewrite: **plastic-links**) — plus the comment count and the status you
+(shapes and the `@` → `.` rewrite: **deep-links**) — plus the comment count and the status you
 set.
 
 ## Mutating, and visible to other people
