@@ -43,8 +43,16 @@ Lower bound, best available first:
 | The user gave you | Lower bound |
 |---|---|
 | a known-good changeset | that id |
-| a known-good date ("it worked last Tuesday") | resolve it to an id first: `cm find changeset "where branch='<branch>' and date < '<date>' order by changesetid desc limit 1" --format="{changesetid}" --nototal` |
+| a known-good date ("it worked last Tuesday") | resolve the date to an id, and bound on the id — below |
 | nothing | the last 4 weeks |
+
+A date is not a usable bound on its own: resolve it to the last changeset that predates it, then
+bound every later query on that id. A bare date literal means 00:00 that day, so a day the user
+says was *fine* has to be included whole — "fine on the 15th" is `date < '<the 16th>'`.
+
+```
+cm find changeset "where branch='<branch>' and date < '<day after the known-good day>' order by changesetid desc limit 1" --format="{changesetid}" --nototal
+```
 
 **Never query unbounded history.** A long-lived file has hundreds of revisions and every one of
 them looks plausible at a distance. If the bounded window turns up nothing, widen it deliberately
@@ -56,28 +64,51 @@ A bug whose cause sits in the file that throws is the easy case, and rarely the 
 needs help with. Expanding from the symptom file to **what it depends on** is what makes
 cross-file root cause possible: a change in a dependency breaks its dependents.
 
-From each symptom file, follow the outgoing references — imports/includes/`using`, base classes,
-interfaces, and the types and functions the failing code actually calls — and add those files.
-Use whatever the environment offers, best first: a project index or language server if there is
-one, otherwise plain text search for the symbol (which is also the only thing that catches
-reflection, string lookups, config and generated code).
+This step is not a `cm` step, and it is not optional: **the suspect set comes before the first
+`cm find`** — in what you run and in what you report. Going straight from the symptom file to
+`cm find revision` is the single most common way this workflow fails, and it fails silently: the
+answer looks complete while it can only ever blame the file that threw. Mentioning the expansion
+afterwards, as a next step or a caveat, is the same failure — by then the queries are already
+narrowed to one file.
+
+1. Read the symptom file — the imports/includes/`using` it declares, the base classes and
+   interfaces it derives from, and the types and functions the failing code actually calls. A
+   stack trace narrows this to the failing method; without one, read the whole file.
+2. Resolve each of those names to a file. Best tool first: a project index or language server if
+   there is one, otherwise plain text search across the repo for the symbol — which is also the
+   only thing that catches reflection, string lookups, config and generated code.
+3. **List the set, then query it.** The list is the first thing you output, ahead of any `cm`
+   command, one line per path and the reason it is in:
+
+   ```
+   Suspect set
+   - Assets/Scripts/EnemyAI.cs      symptom (line 34)
+   - Assets/Scripts/Perception.cs   EnemyAI.Update() calls Perception.FindTarget()
+   - Assets/Scripts/TargetCache.cs  references the `ITarget` interface EnemyAI declares
+   ```
+
+   Ending up with only the symptom file is a legitimate outcome; say that you looked and found
+   nothing else, never that you skipped looking.
 
 Keep the direction *outgoing*: what the symptom file uses, not everything that uses it.
 
-Cap the set at ~20 files. Above ~10, list them with the reason each is in (symptom / dependency
-of X / references `<symbol>`) and ask the user to confirm or narrow before querying — a 40-file
+Cap the set at ~20 files. Above ~10, ask the user to confirm or narrow before querying — a 40-file
 set produces a candidate list nobody can act on. At or below that, proceed without asking.
 
 ## 3. Query history, per suspect file, inside the bounds
+
+Once step 1 produced an id — including when it came from a date, which step 1 already resolved —
+bound on the id. The date form is only for the case where there was no reference at all:
 
 ```
 cm find revision "where item='<path>' and changeset > <lower_cs>" --format="{changeset} {date}" --nototal
 cm find revision "where item='<path>' and date > '4 weeks ago'" --format="{changeset} {date}" --nototal
 ```
 
-Pass the path as it exists in the workspace. Deduplicate into one changeset list while keeping
-**which suspect files each changeset touched** — that mapping is the evidence for step 4, so
-losing it means redoing the work. Then fetch metadata in one query rather than one per id:
+Pass the path as it exists in the workspace, and run this for **every** file in the suspect set,
+not just the symptom file. Deduplicate into one changeset list while keeping **which suspect
+files each changeset touched** — that mapping is the evidence for step 4, so losing it means
+redoing the work. Then fetch metadata in one query rather than one per id:
 
 ```
 cm find changeset "where changesetid=<a> or changesetid=<b>" --format="{changesetid}|{branch}|{owner}|{date}|{comment}" --nototal
