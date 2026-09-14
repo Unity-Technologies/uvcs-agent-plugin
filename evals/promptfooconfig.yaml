@@ -25,7 +25,14 @@ defaultTest:
     provider:
       id: anthropic:messages:claude-sonnet-5
       config:
-        # Roomy enough that the judge's JSON verdict never gets truncated.
+        # Sonnet 5 runs adaptive thinking whenever `thinking` is omitted, and those tokens
+        # come out of max_tokens. A judge that thought its way through a long rubric could
+        # hit the cap before emitting its verdict, and promptfoo scored the truncation as
+        # "Could not extract JSON from llm-rubric response" — a failed test with no defect
+        # behind it. Grading against a fixed rubric is a classification, not a reasoning
+        # problem: thinking off keeps the verdict deterministic and the JSON intact.
+        thinking:
+          type: disabled
         max_tokens: 2048
         apiKeyRequired: false
   vars:

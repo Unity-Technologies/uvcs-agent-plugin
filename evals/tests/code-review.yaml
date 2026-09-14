@@ -7,8 +7,8 @@
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Review branch /main/task009 for me. There's no review open for it yet — set one up and put
-      yourself on it as the reviewer.
+      Review branch /main/task009 for me. I've already looked and there is no review open for it
+      — so set one up, targeting /main, and put yourself on it as the reviewer.
   assert:
     - type: icontains-any
       value:
@@ -23,13 +23,16 @@
         Reviewing a branch must go through a merge request. Proposing "cm codereview
         br:/main/task009" as the way to review a branch is a failure. The response must also read
         the actual diff content (cm patch, or cm diff plus cm cat) rather than reviewing from a
-        list of changed file names.
+        list of changed file names. Naming the commands is enough: nothing has to be executed,
+        and holding the comments back until the user picks which findings to publish is correct.
 
 - description: "A single changeset gets a plain code review, not a merge request"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
-    user_message: "Do a code review of changeset 4207 and publish whatever you find."
+    user_message: >-
+      Do a code review of changeset 4207 and publish whatever you find — there's no review open
+      on it yet, so set one up too.
   assert:
     - type: icontains
       value: "cm codereview cs:4207"
@@ -39,6 +42,8 @@
       value: >-
         An isolated changeset is reviewed with cm codereview. Creating a merge request for it is
         a failure, because a merge request proposes merging a branch and there is no branch here.
+        Naming the commands is enough: nothing has to be executed, and holding the comments back
+        until the user picks which findings to publish is correct.
 
 - description: "A shelve is a code review target too"
   vars:
