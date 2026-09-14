@@ -131,12 +131,13 @@ re-show as long as they keep asking. On "ok", confirm the check-in with the comm
 visible, then:
 
 ```
-cm checkin /src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
+cm checkin src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
 ```
 
 **One comment, one changeset**, always. The 8-hex is the first block of the comment GUID and it is
 what links the changeset to the comment — batch two fixes and one silently stays pending. Name the
-paths; a bare `cm checkin` is scoped to the current directory. On the *"change requests … cannot
+paths, as **workspace** paths (`{item}` gave them; the comment's `/src/...` anchor is a server
+path): a bare `cm checkin` is scoped to the current directory. On the *"change requests … cannot
 be found or are already applied"* error the changeset still landed and only the link is missing:
 never re-run the check-in, report it and move on.
 
@@ -166,9 +167,9 @@ The user chose not to be interrupted, so do not ask per item. Every fix still la
 shelve, and nothing is checked in — the review only changes when the user checks the shelves in.
 
 ```
-cm shelveset create /src/InventoryManager.cs --all \
+cm shelveset create src/InventoryManager.cs --all \
     -c "[apply-change:8123d65a] Null-check the slot before use" --summaryformat
-cm undo /src/InventoryManager.cs
+cm undo src/InventoryManager.cs
 ```
 
 The `undo` is what keeps the next shelve to its own fix; without it every shelve piles up all the
