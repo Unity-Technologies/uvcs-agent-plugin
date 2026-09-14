@@ -21,16 +21,44 @@ prescribes, and respects the safety rules.
 
 ## Running locally
 
+No credentials to set up, and no local variant of the config — the same
+`promptfooconfig.yaml` CI runs works as-is:
+
 ```bash
-export ANTHROPIC_API_KEY=<your key>
 cd evals
-npm ci
+npm ci                  # first time only
 npm run eval
 npx promptfoo view      # browse results
 ```
 
+This works because promptfoo resolves Anthropic credentials in order — `apiKey` in the
+provider config, then `ANTHROPIC_API_KEY`, then **the Claude Code OAuth credential from
+your local session**. With no API key in the environment it falls through to the third,
+which is why a machine logged into Claude Code needs nothing else. (`apiKeyRequired: false`
+on both providers is what lets it get that far instead of failing the startup key check.)
+Confirm which path was taken in the debug log:
+
+```
+[anthropic] Authenticating with Claude Code OAuth credential from local session.
+```
+
+The same ordering is what keeps CI on WIF: the workflow exports a placeholder
+`ANTHROPIC_API_KEY` alongside the bearer header, so it stops at step two and never reaches
+the OAuth fallback. To use a real API key locally instead, `export ANTHROPIC_API_KEY=<key>`
+— it takes precedence with no config change.
+
 Promptfoo is version-pinned in `package.json` so local runs and CI evaluate with the same
-tool version.
+tool version, and the config pins `claude-haiku-4-5` at `temperature: 0`, so a local result
+is a faithful preview of the CI result rather than an approximation of it.
+
+While iterating on one skill, narrow the run — the full suite is 58 tests, about **90
+seconds** and roughly **$0.50** of API usage (locally it draws on your Claude Code
+subscription instead):
+
+```bash
+npx --no-install promptfoo eval --filter-pattern "shelve"   # only matching tests
+npx --no-install promptfoo eval --no-cache                  # ignore cached results
+```
 
 ## CI
 

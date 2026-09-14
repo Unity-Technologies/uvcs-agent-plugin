@@ -71,12 +71,21 @@ Nothing deeper is discovered.
    ```
 
    See [skills-ref](https://github.com/agentskills/agentskills/tree/main/skills-ref).
-7. **Test triggering** with realistic phrasings, including ones that should *not* fire it.
-8. **If you added/renamed a skill or changed a `description`, smoke-test triggering in a
+7. **Run the behavioral evals:**
+
+   ```bash
+   cd evals && npm ci && npm run eval
+   ```
+
+   No API key needed — it uses your Claude Code login. About 90 seconds for the full suite;
+   `--filter-pattern <regex>` narrows it while you iterate. If your change alters what a skill
+   teaches, update or add a test. See [evals/README.md](evals/README.md).
+8. **Test triggering** with realistic phrasings, including ones that should *not* fire it.
+9. **If you added/renamed a skill or changed a `description`, smoke-test triggering in a
    second agent** (symlink the skill into e.g. `~/.codex/skills/` or `~/.cursor/skills/` and
    run a few realistic prompts). Content-only changes don't need this — CI already validates
    format and behavior on every PR.
-9. **Re-read and cut** everything that did not earn its tokens.
+10. **Re-read and cut** everything that did not earn its tokens.
 
 ## Pull requests
 
