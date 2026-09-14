@@ -103,10 +103,9 @@ what is on disk. **Read the file around the line before editing**, and the branc
 comment only makes sense against the whole change (`cm patch br:/main/task001 --integration`): if
 the code the reviewer described is gone, the fix may already be in or the line has shifted.
 
-**Give every item a short id.** Reuse the reviewer's own — `uvcs-code-review` writes `[B1]`,
-`[I1]`, `[S1]`, `[N1]` into the comment text and the user will refer to those, so never renumber
-them. For a hand-written comment with none, assign `CH1`, `CH2`… to changes and `Q1`, `Q2`… to
-questions, skipping numbers an embedded id already took.
+**Give every item a short id.** When the comment text starts with a bracketed id (`uvcs-code-review`
+writes `[B1]`, `[I2]`…), reuse it: the user will refer to it, so never renumber. For a comment
+with none, assign `CH1`, `CH2`… to changes and `Q1`, `Q2`… to questions.
 
 ## 4. Show the queue, then ask how to work it
 
@@ -126,10 +125,10 @@ moment to reorder, skip or drop something, and the modes differ in what reaches 
 Act only on what the user asked for: never pick the next item, suggest one, or start a fix they
 did not name.
 
-**A change.** Show the request in full — reviewer comments are structured (`What's wrong` / `Why it
-matters` / `Fix`), so keep the line breaks instead of flattening them. Read the file, apply the fix,
-show the result as a diff, and wait; tweak and re-show as long as they keep asking. On "ok", confirm
-the check-in with the comment and file list visible, then:
+**A change.** Show the request in full, keeping its line breaks — a finding flattened into one
+line loses its fix. Read the file, apply the fix, show the result as a diff, and wait; tweak and
+re-show as long as they keep asking. On "ok", confirm the check-in with the comment and file list
+visible, then:
 
 ```
 cm checkin /src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"

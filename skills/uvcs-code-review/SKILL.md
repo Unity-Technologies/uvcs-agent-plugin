@@ -92,9 +92,11 @@ mention, not findings; a file only moved gets a mention too.
 
 Follow whatever governs judgement (see above). Whatever produces the findings, each one needs:
 
-- a **short ID** — `B1`, `I1`, `S1`, `N1` — carried **into the published comment text**. The
-  **`uvcs-address-review`** skill reads those IDs back out so the author can say "fix B1", so
-  dropping them at publish time breaks it.
+- a **short ID in brackets at the start of the comment text** — `[B1]`, `[I2]`… — so the author
+  can say "fix B1" and the **`uvcs-address-review`** skill can find the comment again. Under the
+  default judgement the letter is the severity: **B**locker, **I**mportant, **S**uggestion,
+  **N**it. When other rules govern, take the letter from their severity names; keep the bracket
+  and the number.
 - the **server path** and the line, taken from the diff metadata. `--line` is the line as an
   editor shows it (**1-based**) — never convert it, never subtract one.
 
