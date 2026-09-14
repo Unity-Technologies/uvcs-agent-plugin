@@ -40,9 +40,10 @@ round-trip per command — you need the whole picture before deciding anything a
 
 - If the workspace is not on the destination branch the user means, say so and switch only after
   they confirm — `cm switch` replaces their working tree.
-- Pending changes survive a merge but make the result hard to review, and an `undo` after a bad
-  merge would take the user's own edits with it. If `cm status` is not clean, offer to shelve
-  first (`cm shelveset create --all -c "..."`, which is recoverable) rather than merging on top.
+- If `cm status` is not clean, do not merge yet. By default `cm merge` refuses a dirty workspace:
+  it lists the pending changes and exits 0 without merging. Where the client is configured to
+  allow it, an `undo` after a bad merge would take the user's own edits with it. Offer to shelve
+  first (`cm shelveset create --all -c "..."`, which is recoverable) or to check in, then merge.
 - If `cm status` reports a merge already in progress or files with pending conflict markers,
   finish that merge first (jump to step 4) — a new merge is refused while either is pending.
 
