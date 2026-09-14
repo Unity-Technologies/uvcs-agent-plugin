@@ -17,8 +17,9 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 
 This skill owns the *decisions*. Every `cm` flag, output format, and exit-code contract it names
 belongs to the **`uvcs-core`** skill — load it first, and read these two references rather than
-guessing: **merge-conflict-markers** (marker mode, availability, exit codes, marker format, the
-check-in guard) and **branches-and-merge** (preview output tokens, cherry-pick, no rebase).
+guessing: `uvcs-core/references/merge-conflict-markers.md` (marker mode, availability, exit
+codes, marker format, the check-in guard) and `uvcs-core/references/branches-and-merge.md`
+(preview output tokens, cherry-pick, no rebase).
 
 A merge you cannot finish is worse than one you never started: it blocks the next merge and the
 next check-in for whoever owns the workspace. So the shape of this workflow is *learn what the
@@ -35,14 +36,14 @@ cm status --header          # current branch@repo@server and head changeset
 cm status                   # pending changes
 ```
 
-Everything in this step and the next is read-only, so gather it in one go rather than a
-round-trip per command — you need the whole picture before deciding anything anyway.
+Both are read-only, as is the preview in step 2; gather all three before deciding anything.
 
 - If the workspace is not on the destination branch the user means, say so and switch only after
   they confirm — `cm switch` replaces their working tree.
-- Pending changes survive a merge but make the result hard to review, and an `undo` after a bad
-  merge would take the user's own edits with it. If `cm status` is not clean, offer to shelve
-  first (`cm shelveset create --all -c "..."`, which is recoverable) rather than merging on top.
+- If `cm status` is not clean, do not merge yet. By default `cm merge` refuses a dirty workspace:
+  it lists the pending changes and exits 0 without merging. Where the client is configured to
+  allow it, an `undo` after a bad merge would take the user's own edits with it. Offer to shelve
+  first (`cm shelveset create --all -c "..."`, which is recoverable) or to check in, then merge.
 - If `cm status` reports a merge already in progress or files with pending conflict markers,
   finish that merge first (jump to step 4) — a new merge is refused while either is pending.
 
@@ -53,13 +54,13 @@ cm merge <source_spec>                     # read-only; no --merge, nothing is t
 ```
 
 Nothing is touched without `--merge`, so there is never a reason to skip this. If the preview
-reports no merges detected, say so and stop. The output tokens are in **branches-and-merge**;
-`--machinereadable` gives one stable prefix per line if you are parsing it.
+reports no merges detected, say so and stop. The output tokens are in
+`uvcs-core/references/branches-and-merge.md`; `--machinereadable` gives one stable prefix per line
+if you are parsing it.
 
-The one reading trap: a file the preview flags as conflicting is **not** a prediction of
-conflict — most such files merge cleanly. Do not report "there are N conflicts" from the preview;
-report that N files need a content merge, if you mention it at all. What actually collides is only
-knowable by running the merge.
+One reading trap: a file the preview flags as conflicting usually merges cleanly. Report "N files
+need a content merge", never "N conflicts" — what actually collides is only known once the merge
+runs.
 
 ## 3. Choose the mode
 
@@ -77,7 +78,8 @@ file, so ask, then take that whole side: `--keepsource` / `--keepdestination` wh
 the merge as a whole, otherwise restore that one file from the chosen changeset with `cm cat`
 (the marker header names both changesets) — once the markers are gone the entry clears itself.
 
-Marker mode is newer than some clients (**merge-conflict-markers** says how to probe for it).
+Marker mode is newer than some clients (`uvcs-core/references/merge-conflict-markers.md` says how
+to probe for it).
 Where it is missing the only headless options are `--keepsource` / `--keepdestination`; if
 neither fits, hand the merge back to the user rather than launching a tool that will hang.
 
@@ -90,7 +92,7 @@ cm merge <source_spec> --merge --conflict-markers
 This is mutating, but it is confined to the workspace: the merge lands as *pending changes*, and
 nothing reaches the server until check-in, so `cm undo` still backs the whole thing out. Exit `1`
 here means "files need attention", not failure — never retry the command on it (the full
-exit-code contract is in **merge-conflict-markers**).
+exit-code contract is in `uvcs-core/references/merge-conflict-markers.md`).
 
 Then work the output, one line per file that needs you:
 

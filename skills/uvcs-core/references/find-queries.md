@@ -40,8 +40,9 @@ cm find changeset "where branch='/main/task001' order by changesetid desc limit 
 - Booleans: `'true'` / `'false'`.
 - Date constants for any date field: `'today'`, `'yesterday'`, `'this week'`, `'this month'`,
   `'this year'`, `'one day ago'`, `'one week ago'`, `'one month ago'`, `'<n> days ago'`,
-  `'<n> months ago'`, `'<n> years ago'`, or a literal date in the machine locale
-  (`'2026/01/15'`).
+  `'<n> weeks ago'`, `'<n> months ago'`, `'<n> years ago'`, or a literal date in the machine
+  locale (`'2026/01/15'`). An unknown constant is rejected with *"The value '...' is not valid
+  for field 'date'"*, so an empty result never means the constant was wrong.
 
 ## Sorting — the rules that bite
 
@@ -108,8 +109,8 @@ shelve `{shelveid} {date} {owner} {comment} {parent}` · review/mergerequest `{i
   editors; it accepts only `=` and `!=`, rejects values below 1, and is empty when the comment is
   not anchored to a line. `reviewcomment` is an older object exposing a subset of the same
   comments — prefer `changereviewcomment`.
-- **`line` is newer than `cm` 11.0.16.10371**, which rejects it with *"The field line is not valid
-  for the specified object type"*; `location` works on both. Reading `{location}` and adding 1
+- **`line` is newer than `cm` 11.0.16.10371**, which rejects it with *"The object type 'line' is
+  not valid on performed query."*; `location` works on both. Reading `{location}` and adding 1
   needs no version probe and is the portable choice — but then the **+1 is mandatory**, and
   `location` is `-1`, not empty, when the comment is not anchored.
 - `revisionid` is a real revision id: feed it to `cm find revision` for the file it points at
@@ -145,8 +146,8 @@ cm find review "where assignee='me' and status='Under review'" --format="{id} {t
 # The merge request for a branch (target filters on the source branch; don't print it)
 cm find mergerequest "where target='br:/main/task001'" --format="{id} {title} {destination}" --nototal
 
-# Pending change requests on a review, with the 1-based line they sit on
-cm find changereviewcomment "where reviewid=311 and type='change'" --format="{guid} {line} {comment}" --nototal
+# Pending change requests on a review ({location} is 0-based: add 1 for the editor line)
+cm find changereviewcomment "where reviewid=311 and type='change'" --format="{guid} {location} {comment}" --nototal
 
 # A revision id -> the file it is a revision of, and where that revision lives
 # ({item} is the workspace path when the repo is mapped; the changeset dates the anchor)

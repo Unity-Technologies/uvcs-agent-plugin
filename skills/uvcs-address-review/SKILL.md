@@ -2,14 +2,13 @@
 name: uvcs-address-review
 description: >-
   Address the comments a reviewer left on a UVCS / Plastic SCM code review or merge request, as
-  the code author: find the review on the workspace's branch, build a queue of the change requests
-  and questions still pending, then work them one at a time under the user's direction or
-  unattended with one shelve per comment. It applies the fixes, links each check-in back to its
-  comment with the [apply-change:] tag, posts answers, discards a request the user rejects, and
-  re-requests the review. Use when the user says fix the review, address the review comments,
-  apply the review changes, rework required, answer the reviewer's question, discard a review
-  comment, or re-request review. This is the author side — producing findings and publishing them
-  is uvcs-code-review. All cm syntax comes from the uvcs-core skill — load it first.
+  the code author: find the review on the workspace's branch, list the change requests and
+  questions still pending, then fix, answer, discard or re-request under the user's direction,
+  one check-in per comment. Use when the user says fix the review, address the review comments,
+  apply the review changes, my review came back as rework required, answer the reviewer's
+  question, discard a review comment, or re-request review. This is the author side — producing
+  findings and publishing them is uvcs-code-review. All cm syntax comes from the uvcs-core skill
+  — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
@@ -17,8 +16,9 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 
 This skill owns the *order and the stopping points*. Every `cm` flag, field sentinel and
 availability note it names belongs to the **`uvcs-core`** skill — load it first, and read
-**reviews-and-merge-requests** (comment types, replies, the `[apply-change:]` tag) and
-**find-queries** (comment fields, `location` vs `line`, the revision lookup) rather than guessing.
+`uvcs-core/references/reviews-and-merge-requests.md` (comment types, replies, the
+`[apply-change:]` tag) and `uvcs-core/references/find-queries.md` (comment fields, `location` vs
+`line`, the revision lookup) rather than guessing.
 
 The reviewer's comments are the spec, and they are anchored to code that may have moved since. So
 the shape is *anchor to one review on one branch, work out what is genuinely still pending, then
@@ -31,8 +31,6 @@ still works completely (`[apply-change:]` is a check-in tag, not a review comman
 discarding and re-requesting do not. Say which half you can do rather than finding out mid-queue.
 
 ## 1. Anchor to the workspace's branch
-
-The workspace is not context here — it is the thing being changed.
 
 ```
 cm status --header          # branch@repo@server, or the changeset/label/shelve it is pinned to
@@ -80,16 +78,16 @@ on the evidence of its own children:
 
 | Bucket | The comment is |
 |---|---|
-| **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, no child of `type=discarded` |
+| **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, and no child of `type=discarded` (from anyone) |
 | **question to answer** | `type=question`, `parent=-1`, no child at all |
 | **not yours** | everything else — a parent already applied, or settled by a child (`type=discarded` discards it whoever left it, `comment` answers it), and every child itself, plus `conversation` and `timeline` |
 
-`-1` is the unset value on every numeric field, never a real id. A `discarded` child settles its
-parent whoever posted it — a discard already in the thread counts exactly like one you post. If
-both buckets are empty, say the review is already addressed and stop.
+`-1` is "unset" on every numeric field, never a real id. Any child of `type=discarded` takes its
+parent out of the queue, no matter who posted it — the reviewer, the author, or you in an earlier
+session. If both buckets are empty, say the review is already addressed and stop.
 
-**Line numbers: use `{location}` and add 1.** It is 0-based, the 1-based `{line}` alias is missing
-on older clients, and the +1 is not optional. `location=-1` means not anchored to a line at all.
+**Line numbers: `{location}` + 1.** It is 0-based and works on every client; `-1` means the
+comment is not anchored to a line (`uvcs-core/references/find-queries.md`).
 
 **The file to edit** comes from the comment's revision id — resolve it, never search for it or
 guess from names in the comment text:
@@ -103,10 +101,9 @@ what is on disk. **Read the file around the line before editing**, and the branc
 comment only makes sense against the whole change (`cm patch br:/main/task001 --integration`): if
 the code the reviewer described is gone, the fix may already be in or the line has shifted.
 
-**Give every item a short id.** Reuse the reviewer's own — `uvcs-code-review` writes `[B1]`,
-`[I1]`, `[S1]`, `[N1]` into the comment text and the user will refer to those, so never renumber
-them. For a hand-written comment with none, assign `CH1`, `CH2`… to changes and `Q1`, `Q2`… to
-questions, skipping numbers an embedded id already took.
+**Give every item a short id.** When the comment text starts with a bracketed id (`uvcs-code-review`
+writes `[B1]`, `[I2]`…), reuse it: the user will refer to it, so never renumber. For a comment
+with none, assign `CH1`, `CH2`… to changes and `Q1`, `Q2`… to questions.
 
 ## 4. Show the queue, then ask how to work it
 
@@ -126,18 +123,19 @@ moment to reorder, skip or drop something, and the modes differ in what reaches 
 Act only on what the user asked for: never pick the next item, suggest one, or start a fix they
 did not name.
 
-**A change.** Show the request in full — reviewer comments are structured (`What's wrong` / `Why it
-matters` / `Fix`), so keep the line breaks instead of flattening them. Read the file, apply the fix,
-show the result as a diff, and wait; tweak and re-show as long as they keep asking. On "ok", confirm
-the check-in with the comment and file list visible, then:
+**A change.** Show the request in full, keeping its line breaks — a finding flattened into one
+line loses its fix. Read the file, apply the fix, show the result as a diff, and wait; tweak and
+re-show as long as they keep asking. On "ok", confirm the check-in with the comment and file list
+visible, then:
 
 ```
-cm checkin /src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
+cm checkin src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
 ```
 
 **One comment, one changeset**, always. The 8-hex is the first block of the comment GUID and it is
 what links the changeset to the comment — batch two fixes and one silently stays pending. Name the
-paths; a bare `cm checkin` is scoped to the current directory. On the *"change requests … cannot
+paths, as **workspace** paths (`{item}` gave them; the comment's `/src/...` anchor is a server
+path): a bare `cm checkin` is scoped to the current directory. On the *"change requests … cannot
 be found or are already applied"* error the changeset still landed and only the link is missing:
 never re-run the check-in, report it and move on.
 
@@ -167,9 +165,9 @@ The user chose not to be interrupted, so do not ask per item. Every fix still la
 shelve, and nothing is checked in — the review only changes when the user checks the shelves in.
 
 ```
-cm shelveset create /src/InventoryManager.cs --all \
+cm shelveset create src/InventoryManager.cs --all \
     -c "[apply-change:8123d65a] Null-check the slot before use" --summaryformat
-cm undo /src/InventoryManager.cs
+cm undo src/InventoryManager.cs
 ```
 
 The `undo` is what keeps the next shelve to its own fix; without it every shelve piles up all the
@@ -185,8 +183,9 @@ so no half-applied edit is left behind.
 ## 7. Wrap up
 
 Show what happened to every item — applied, discarded, answered, skipped — with the changeset or
-shelve it produced, and a `plastic://` link for the review (**deep-links**; shelveset links use
-the **positive** id). Whether you re-request at all depends on the mode:
+shelve it produced, and a deep link for the review and for each of those objects — `unityhub://`
+or `plastic://`, chosen per object as `uvcs-core/references/deep-links.md` says. Whether you
+re-request at all depends on the mode:
 
 - **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded:
 

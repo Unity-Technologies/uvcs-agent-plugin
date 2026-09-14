@@ -7,17 +7,17 @@ prescribes, and respects the safety rules.
 ## Design principles
 
 - **Fast and cheap.** One small evaluated model (Claude Haiku), `temperature: 0`,
-  `max_tokens: 1024`, and 25 tests. Most assertions are deterministic string checks
+  `max_tokens: 1024`, one API call per test. Most assertions are deterministic string checks
   (`icontains` / `not-icontains`); `llm-rubric` is used only where a string match cannot
   express the requirement (a minority of assertions, judged by one Sonnet call each).
 - **Green means minimum quality; red means something broke.** Every test pins a behavior the
   skill exists to teach (query grammar rules, flag names, output formats, reporting notation)
   — not stylistic preferences. If you edit the skill and a test goes red, the edit removed or
-  weakened one of those behaviors. CI requires a 90% pass rate
-  (`fail-on-threshold: 90`) so rare judge flakiness does not block a PR.
+  weakened one of those behaviors. CI tolerates a single failure, so rare judge flakiness does
+  not block a PR; two or more fail the job.
 - Tests load the same files an agent would: `SKILL.md` always, plus the one reference the task
-  calls for. `uvcs-merge` tests override `skill_content` with the workflow skill and pass the
-  hub reference it points at — which is also how the hub/workflow split gets exercised.
+  calls for. Workflow-skill tests override `skill_content` with that skill and pass the hub
+  reference it points at — which is also how the hub/workflow split gets exercised.
 
 ## Running locally
 
@@ -51,9 +51,9 @@ Promptfoo is version-pinned in `package.json` so local runs and CI evaluate with
 tool version, and the config pins `claude-haiku-4-5` at `temperature: 0`, so a local result
 is a faithful preview of the CI result rather than an approximation of it.
 
-While iterating on one skill, narrow the run — the full suite is 63 tests, about **90
-seconds** and roughly **$0.50** of API usage (locally it draws on your Claude Code
-subscription instead):
+While iterating on one skill, narrow the run to the tests that load the file you changed (the
+selection rule is in `CLAUDE.md`) — the full suite is about 70 tests, **90 seconds** and roughly
+**$0.50** of API usage (locally it draws on your Claude Code subscription instead):
 
 ```bash
 npx --no-install promptfoo eval --filter-pattern "shelve"   # only matching tests
@@ -89,7 +89,8 @@ suite.
 
 ## Adding tests
 
-Add cases to `tests/*.yaml` (grouped by theme: `queries`, `commands`, `reporting`, `merge`). Prefer
+Add cases to `tests/*.yaml` (one file per hub area or workflow skill; `promptfooconfig.yaml`
+lists them). Prefer
 deterministic assertions; reserve `llm-rubric` for semantics. Every test should encode a fact
 verified against a real `cm` — the same bar as the skill content itself. Keep the suite small:
 each test costs tokens on every PR, so a new test must guard a behavior whose silent regression

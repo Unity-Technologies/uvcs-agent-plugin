@@ -25,7 +25,7 @@
       in Beyond Compare, which is what I have configured as my merge tool.
   assert:
     - type: not-icontains
-      value: "--conflict-markers"
+      value: "--merge --conflict-markers"
     - type: llm-rubric
       value: >-
         The response must hand the merge command to the user to run themselves rather than

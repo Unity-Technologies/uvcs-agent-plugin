@@ -2,7 +2,8 @@
 
 Both commands take `br:`, `cs:`, and `sh:` specs. A branch spec diffs the branch against its
 base; a changeset spec diffs one changeset against its parent; a shelve spec diffs the shelve
-against the changeset it was taken from.
+against the changeset it was taken from. Two specs (`cs:4100 cs:4207`) diff the second against
+the first — the range form; `cm diff` also accepts `lb:` there.
 
 ## List changed files — `cm diff`
 
@@ -22,6 +23,7 @@ cm diff br:/main/task001 --format="{status} {path} {baserevid} {revid} {reposito
 ```
 cm patch br:/main/task001          # emits `diff -rauN --binary` unified output
 cm patch cs:42
+cm patch cs:40 cs:45               # everything between two changesets
 cm patch sh:12
 ```
 

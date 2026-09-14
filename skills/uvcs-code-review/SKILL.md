@@ -1,25 +1,24 @@
 ---
 name: uvcs-code-review
 description: >-
-  Perform a code review on UVCS / Plastic SCM changes and publish the findings where the team will
-  see them: route the target, read the real diff, then create or locate the merge request (for a
-  branch) or the code review (for a changeset or shelve), post one inline comment per finding, and
-  set your reviewer status. Use when the user says review my changes, review this branch, review
-  changeset 42 or shelve 12, code review, open a merge request or pull request, request a review
-  from someone, publish review comments, approve, LGTM, or rework required. Reviewing a branch
-  means reviewing its merge request; performing the merge itself is uvcs-merge. If the project or
-  the user already supplies code-review rules, a checklist, or another review skill, those govern
-  the judgement and this skill only carries the result into UVCS. All cm syntax comes from the
-  uvcs-core skill — load it first.
+  Review UVCS / Plastic SCM changes as the reviewer and publish the findings as review comments:
+  a branch through its merge request, a changeset or shelve through a code review, or the
+  workspace's pending changes in chat. Use when the user says review my changes, review this
+  branch, review changeset 42 or shelve 12, code review, open a merge request or pull request,
+  request a review from someone, publish review comments, approve, LGTM, or set my status to
+  rework required. Works with any review rules or checklist the project already supplies.
+  Performing the merge is uvcs-merge; fixing a review as its author is uvcs-address-review. All
+  cm syntax comes from the uvcs-core skill — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
 # Code review with `cm`
 
 Every `cm` flag, output token and availability note this skill names belongs to the
-**`uvcs-core`** skill — load it first, and read **reviews-and-merge-requests** (MR and review
-lifecycle, reviewers, comment grammar) and **diff-and-patch** (what each spec diffs,
-`--integration`, capture rules) rather than guessing.
+**`uvcs-core`** skill — load it first, and read
+`uvcs-core/references/reviews-and-merge-requests.md` (MR and review lifecycle, reviewers, comment
+grammar) and `uvcs-core/references/diff-and-patch.md` (what each spec diffs, `--integration`,
+capture rules) rather than guessing.
 
 ## What this skill owns, and what it yields
 
@@ -85,16 +84,18 @@ cm diff <spec> --format="{status} {path} {baserevid} {revid} {repository}"
 Every finding has to be anchored later to a **server path** (`/src/Player.cs`, not a workspace
 path) and a line. An agent that throws this away has to redo the diff at publish time.
 
-Skip binaries and Unity YAML assets — a diff of them is not reviewable text. Deleted files get a
-mention, not findings; a file only moved gets a mention too.
+Binaries, Unity YAML assets (`.unity`, `.prefab` — not reviewable line by line), deleted files
+and files that only moved get a mention in the report, not findings.
 
 ## 3. Review, and keep the anchors
 
 Follow whatever governs judgement (see above). Whatever produces the findings, each one needs:
 
-- a **short ID** — `B1`, `I1`, `S1`, `N1` — carried **into the published comment text**. The
-  **`uvcs-address-review`** skill reads those IDs back out so the author can say "fix B1", so
-  dropping them at publish time breaks it.
+- a **short ID in brackets at the start of the comment text** — `[B1]`, `[I2]`… — so the author
+  can say "fix B1" and the **`uvcs-address-review`** skill can find the comment again. Under the
+  default judgement the letter is the severity: **B**locker, **I**mportant, **S**uggestion,
+  **N**it. When other rules govern, take the letter from their severity names; keep the bracket
+  and the number.
 - the **server path** and the line, taken from the diff metadata. `--line` is the line as an
   editor shows it (**1-based**) — never convert it, never subtract one.
 
@@ -151,24 +152,26 @@ One comment per finding, anchored. Findings are multi-line, so write each to a f
 
 ```
 cm mr <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
-cm mr <id> comment add -commentsfile=<file>          # a remark on the review as a whole
+cm mr <id> comment add -commentsfile=<file>                  # a remark on the review as a whole
+cm codereview <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
 ```
 
 `--type=Change` is right for a finding — it names something wrong and says what to fix. Keep
-`--type=Question` for something you genuinely need the author to answer. On a code review,
-`cm codereview <id>` substitutes for `cm mr <id>` throughout.
+`--type=Question` for something you genuinely need the author to answer. On a code review every
+subcommand is spelled `cm codereview <id> ...`, never `cm mr` — there is no merge request there.
 
 Finish with your own reviewer status, and say why in the same call:
 
 ```
 cm mr <id> reviewer status --status="Rework required" -c="<one line on what needs attention>"
 cm mr <id> reviewer status --status=Reviewed -c="<one line on why it is good to go>"
+cm codereview <id> reviewer status --status=Reviewed -c="<...>"        # on a code review
 ```
 
 Report the result with a link the user can click —
 `plastic://<server>/repos/<repo>/merge-requests/<id>`, or `/code-reviews/<id>` for a code review
-(shapes and the `@` → `.` rewrite: **deep-links**) — plus the comment count and the status you
-set.
+(shapes and the `@` → `.` rewrite: `uvcs-core/references/deep-links.md`) — plus the comment
+count and the status you set.
 
 ## Mutating, and visible to other people
 

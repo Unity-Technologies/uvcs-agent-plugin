@@ -98,7 +98,7 @@ Two traps make guessing expensive here, so route the question before composing a
   generalize syntax between verbs.
 
 So: take the invocation from `references/commands.md` (curated, verified) or from help, never from
-memory, and do not retry a failed command with speculative syntax.
+memory, and do not retry a failed command with speculative syntax. When no recipe covers it:
 
 - `cm showcommands --all` — every command with a one-line description.
 - `cm help <command>` (or `cm <command> --help`) — full syntax; `cm <command> --usage` — terse.
@@ -109,7 +109,7 @@ memory, and do not retry a failed command with speculative syntax.
 Read-only — no effect on the repository or workspace:
 `status`, `find`, `log`, `history`, `annotate`, `diff`, `patch` (generating), `cat`/`getfile`,
 `ls`, `fileinfo`, `whoami`, `version`, `showcommands`, `help`, `showfindobjects`,
-`getworkspacefrompath`, `workspace list`.
+`getworkspacefrompath`/`gwp`, `workspace list`, `lock list`.
 
 Mutating — they change the workspace or the server-side repository:
 `add`, `checkin`/`ci`, `checkout`/`co`, `switch`, `update`, `move`, `remove`, `branch`,
@@ -127,18 +127,11 @@ thread), `mergerequest <id> comment delete`.
 When and whether to confirm a mutating command with the user is workflow policy, owned by the
 higher-level skill (or agent) driving the task — not by this skill.
 
-**Batching**: 5 or more read-only commands, all known up front, can run in one `cm shell` process
-instead of one process each — measured ~3× faster, and more against a cloud server. It is purely
-an optimization, and it changes the exit-code, error-stream and process-state contract, so follow
-`references/batching-commands.md` exactly or run the commands plainly. Never batch a mutating
-command: a batch runs to the end with nothing checked in between.
-
 ## Reporting UVCS objects
 
-How results are written matters as much as getting them: a changeset the user cannot paste back
-into `cm` or click through is half an answer.
+Results must round-trip: every object named in a report should paste back into `cm` or click open.
 
-- **Name objects the way `cm` does**, so they round-trip: `cs:4207`, `br:/main/task001`,
+- **Name objects the way `cm` does**: `cs:4207`, `br:/main/task001`,
   `lb:v1.2.0`, `sh:12`. Always the **full** branch path — `task001` alone is not an identifier.
 - **Changeset ids are per-repository** integers, not global hashes. When more than one repo is in
   play (xlinks), qualify the id with its repo or the number is ambiguous.
@@ -159,11 +152,11 @@ not enough to get the order and the stopping points right, which is where the da
 
 | Skill | Use it for |
 |---|---|
-| `uvcs-merge` | Any merge, cherry-pick, or conflict resolution — including finishing a merge already in progress, or when `cm` refuses because one is. Never apply a merge (`--merge`) without it: the preview comes first, the mode is a decision, and the check-in is not yours to make. |
-| `uvcs-switch` | Moving the workspace to another branch, changeset, label or shelve — and creating the branch first. Never switch a workspace with pending changes without it: what `cm switch` does with them is a client setting, one outcome silently cancels the switch and still exits 0, and where the work goes is the user's decision between a shelve left behind and a merge onto the destination. |
-| `uvcs-root-cause` | "Why did this break / what changeset introduced this bug / who broke this line": tracing a bug, regression or error back through history. Read-only. It bounds the window, expands the suspect set through dependencies, and refuses to name a changeset it cannot connect to the symptom — the parts a bare `cm find` gets wrong. |
-| `uvcs-code-review` | Reviewing changes and publishing the findings: a branch or merge request, a changeset, a shelve, or pending changes. It routes the target to `cm mr` or `cm codereview`, keeps the analysis read-only, and never publishes a comment the user did not select. Judgement yields to any review rules the project or user already supplies. |
-| `uvcs-address-review` | The author side of the same review: applying the change requests a reviewer left, answering their questions, discarding one, re-requesting the review. It works out which comments are still pending from the thread itself, keeps one comment per changeset so the `[apply-change:]` link holds, and never switches branches or searches other ones to find work. |
+| `uvcs-merge` | Any merge, cherry-pick or conflict resolution, including finishing a merge already in progress. Never run `cm merge --merge` without it. |
+| `uvcs-switch` | Moving the workspace to another branch, changeset, label or shelve, creating the branch first if needed. Never `cm switch` a workspace with pending changes without it. |
+| `uvcs-root-cause` | "Why did this break / which changeset introduced it / who broke this line": tracing a bug or regression back through history. Read-only. |
+| `uvcs-code-review` | Reviewing a branch or merge request, a changeset, a shelve or pending changes, and publishing the findings as review comments. |
+| `uvcs-address-review` | The author side of a review: applying the change requests a reviewer left, answering questions, discarding a request, re-requesting the review. |
 
 For any task these do not cover, this skill plus judgement is the whole toolkit.
 
@@ -186,6 +179,9 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
   is not the primary repo, run content commands (`cm patch`) from inside the xlink directory,
   and add `on repository '<repo>@<server>'` inside `cm find` query strings (see
   `references/find-queries.md`).
+- **Many read-only commands, all known up front** (5 or more): one `cm shell` batch is ~3× faster
+  than one process each, but it changes the exit-code and error-stream contract. Follow
+  `references/batching-commands.md` exactly or run them plainly. Never batch a mutating command.
 
 ## References — read when the task needs them
 

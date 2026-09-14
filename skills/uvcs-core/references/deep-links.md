@@ -18,7 +18,7 @@ workspace root. Decide once per task and reuse the answer.
 The project's cloud id is the `cloudProjectId` value in `ProjectSettings/ProjectSettings.asset`:
 
 ```
-  cloudProjectId: fe3f7761-8341-46a2-a882-af9956ad3378
+  cloudProjectId: 0f1e2d3c-4b5a-4697-8877-665544332211
 ```
 
 It is empty in a project that is not linked to Unity Cloud — then use the prefix-less form below.
@@ -108,12 +108,12 @@ plastic://myorg.cloud/repos/mygame/code-reviews/311
 plastic://myorg.cloud/repos/mygame/merge-requests/312
 ```
 
-A Unity project with `cloudProjectId: 86148379-dbd7-46fa-8b11-87a11f0c5500`:
+A Unity project with `cloudProjectId: 0f1e2d3c-4b5a-4697-8877-665544332211`:
 
 ```
-unityhub://editor/project/86148379-dbd7-46fa-8b11-87a11f0c5500/Unity.PlasticSCM.Editor/show/branch/main/task001?repo=mygame%40myorg%40cloud
-unityhub://editor/project/86148379-dbd7-46fa-8b11-87a11f0c5500/Unity.PlasticSCM.Editor/show/changeset/4207?repo=mygame%40myorg%40cloud
-unityhub://editor/project/86148379-dbd7-46fa-8b11-87a11f0c5500/Unity.PlasticSCM.Editor/show/shelve/12?repo=mygame%40myorg%40cloud
+unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/branch/main/task001?repo=mygame%40myorg%40cloud
+unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/changeset/4207?repo=mygame%40myorg%40cloud
+unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/shelve/12?repo=mygame%40myorg%40cloud
 plastic://myorg.cloud/repos/mygame/code-reviews/311
 plastic://myorg.cloud/repos/mygame/merge-requests/312
 ```
