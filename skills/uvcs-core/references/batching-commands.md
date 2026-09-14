@@ -76,15 +76,13 @@ message.
 
 ### Ending the batch
 
-`exit` is how a batch says it is done, but it is not what closes the process: **end of input
-closes it** either way. Feeding a file with no `exit` line still terminates `cm shell` cleanly and
-leaves nothing running — as does a batch whose last command failed. Verified on 11.0.16; write
-`exit` anyway, so an interactively-fed shell is not left waiting on a terminal that has nothing
-more to send.
+**End of input closes the process**; `exit` is a courtesy. A file with no `exit` line, or one
+whose last command failed, still ends `cm shell` cleanly (verified on 11.0.16). Write `exit`
+anyway, so a batch fed from a terminal does not sit waiting for more.
 
-A `cm` process still alive after its input ended is therefore not garbage to clean up — it is
-**blocked**, on the stdin prompt or the GUI window restrictions 3 and 5 exist to keep out of a
-batch. Kill it. Nothing rolls back, because everything in a batch was read-only.
+So a `cm shell` process still alive after its input ended is **blocked** — on a stdin prompt or a
+GUI window, the two things restrictions 3 and 5 keep out of a batch. Kill it; nothing rolls back,
+because everything in the batch was read-only.
 
 ## Route output to files, never parse the stream
 
