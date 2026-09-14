@@ -152,18 +152,20 @@ One comment per finding, anchored. Findings are multi-line, so write each to a f
 
 ```
 cm mr <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
-cm mr <id> comment add -commentsfile=<file>          # a remark on the review as a whole
+cm mr <id> comment add -commentsfile=<file>                  # a remark on the review as a whole
+cm codereview <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
 ```
 
 `--type=Change` is right for a finding — it names something wrong and says what to fix. Keep
-`--type=Question` for something you genuinely need the author to answer. On a code review,
-`cm codereview <id>` substitutes for `cm mr <id>` throughout.
+`--type=Question` for something you genuinely need the author to answer. On a code review every
+subcommand is spelled `cm codereview <id> ...`, never `cm mr` — there is no merge request there.
 
 Finish with your own reviewer status, and say why in the same call:
 
 ```
 cm mr <id> reviewer status --status="Rework required" -c="<one line on what needs attention>"
 cm mr <id> reviewer status --status=Reviewed -c="<one line on why it is good to go>"
+cm codereview <id> reviewer status --status=Reviewed -c="<...>"        # on a code review
 ```
 
 Report the result with a link the user can click —
