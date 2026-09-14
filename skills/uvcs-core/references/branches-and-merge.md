@@ -99,9 +99,13 @@ them, so they survive both steps and follow the workspace onto the next branch; 
 that was shelved reverts to `PR` and stays on disk too.
 
 `cm shelveset apply` is itself a forced merge from the shelve, so it hits the same conflicts
-`cm merge` would — but it rejects `--conflict-markers`, leaving the configured merge tool (a GUI)
-as its only conflict path. Where a shelve can collide with the workspace, `cm merge sh:<id>` is
-the form with headless modes and a free preview.
+`cm merge` would. Both preview for free — `apply --preview`, or `cm merge sh:<id>` without
+`--merge` — but apply rejects `--conflict-markers` (`shelveset: Unexpected option
+--conflict-markers`), leaving the configured merge tool (a GUI) as its only conflict path. So:
+apply for a shelve that cannot collide with the workspace, `cm merge sh:<id>` wherever it can.
+
+`cm shelve` is an alias of `cm shelveset` for all three subcommands; `cm`'s own help mixes the
+two spellings.
 
 Shelve ids are positive in the CLI and in `cm find shelve`. Internally a shelve is stored as a
 negative changeset (`cs:-12`) — relevant only when reading raw API output or building GUI deep

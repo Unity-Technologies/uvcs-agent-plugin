@@ -217,6 +217,14 @@ It is deliberately **not** part of `uvcs-merge`: only the "bring" half is a merg
 different words, and a workflow that shelves and undoes the user's work needs its own stopping
 points. Do not fold it in.
 
+The replay itself is `cm merge sh:<id>`, **not** `cm shelveset apply` — settled after checking both
+against 11.0.16, and worth recording because apply looks like the obvious choice: it is the
+mechanism the GUIs and `cm switch --noinput` use, and it previews for free (`--preview`, so any
+claim that it has no read-only mode is wrong). But it rejects `--conflict-markers`
+(`shelveset: Unexpected option --conflict-markers`), leaving the configured merge tool — a GUI
+window no agent can drive — as its only path through a content conflict. `cm shelve` is a plain
+alias of `cm shelveset`, so the spelling is not the distinction; the conflict path is.
+
 ## Workflow for changes here
 
 1. **Use a skill-creator skill** to scaffold or refactor a skill rather than hand-rolling
@@ -229,13 +237,28 @@ points. Do not fold it in.
    Behavioral regressions are guarded by the promptfoo eval suite in `evals/`
    (`.github/workflows/skill-evals.yml`, Anthropic auth via Workload Identity Federation —
    see `evals/README.md`). If a change alters what a skill teaches, update or add an eval.
-3. Test triggering with realistic user phrasings, including ones that should *not* fire it.
-4. If the PR **adds or renames a skill, or changes a `description`** (the triggering surface),
+3. **Run only the evals the change can reach.** Every test is one independent API call whose
+   prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
+   ~1.5 minutes of API calls and re-rolls the suite's noise floor on 72 unrelated tests, which
+   buys nothing and muddies the result:
+
+   | Changed | Run |
+   |---|---|
+   | one test's `vars` or `assert` | **that test only** — nothing else loads it, so nothing else can break |
+   | a `SKILL.md` or a `references/*.md` | the tests that name that file in `skill_content` / `reference_content` (`grep -l <filename> evals/tests/*.yaml`) — but *all* of them, since an edit anywhere in a file perturbs every prompt carrying it |
+   | `promptfooconfig.yaml` (the prompt, provider or `defaultTest`), or the workflow | the whole suite — it is in every prompt |
+
+   Select with `--filter-pattern "<test description>"`: a **case-sensitive regex**, so confirm the
+   matched count is what you expected — a pattern that matches nothing reports a clean pass. Add
+   `--repeat N --no-cache` when the question is flakiness rather than correctness, and compare
+   against a baseline measured the same way on `HEAD` before concluding anything.
+4. Test triggering with realistic user phrasings, including ones that should *not* fire it.
+5. If the PR **adds or renames a skill, or changes a `description`** (the triggering surface),
    smoke-test it in a second agent: symlink the skill directory into that client's skills dir
    (e.g. `~/.codex/skills/`, `~/.cursor/skills/`) and run 2–3 realistic prompts. Content-only
    changes skip this — a reference edit cannot change how another client discovers the skill,
    and CI already covers format (validate-skill) and behavior (evals).
-5. Then re-read the skill and delete everything that did not earn its tokens.
+6. Then re-read the skill and delete everything that did not earn its tokens.
 
 Failures should degrade gracefully: per the spec, one broken skill must not take down the others,
 so keep skills independent and self-contained.
@@ -344,6 +367,20 @@ the two.
   (`show/changeset`, `show/branch`, `show/shelve`); the Hub's `merge/…`, `open/…` and `refresh/…`
   actions are deliberately out of scope, and a `merge/…` link must never appear in a report. Labels,
   ranges, code reviews and merge requests have no hub form and stay `plastic://` everywhere.
+- **`cm shell` batching is a hub reference, opt-in, read-only.** `cm shell` holds one `cm` process
+  open and reads commands from stdin, paying client startup (and the cloud handshake) once:
+  measured ~3× on 20 commands, and 12.55s → 4.83s on a realistic 10-changeset `log`+`diff` review.
+  It is `references/batching-commands.md` and **not** a skill — it is a `cm` invocation fact, and a
+  second always-on description covering `cm` vocabulary could not be kept mutually exclusive with
+  the hub's. The bar it must meet is "identical behavior, just faster", which is why the reference
+  is restrictions-first: read-only commands only, 5+ known up front, none that prompt or open a
+  GUI, output routed per command via `--shelloutputfile` (parsing the `CommandResult` stream
+  desyncs on any command whose own output contains such a line — reachable from a `--format`
+  string or a diff), and on any non-zero result fall back to that one command run plainly. Do not
+  relax those into "use shell mode when convenient", and do not let a workflow skill make batching
+  its default: the win is real but small next to inference time, and the failure modes are silent.
+  Naming: the file is `batching-commands.md`, not `shell-mode.md`, because `shell-gotchas.md`
+  already owns "shell" = the OS shell in this repo's vocabulary.
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.

@@ -127,6 +127,12 @@ thread), `mergerequest <id> comment delete`.
 When and whether to confirm a mutating command with the user is workflow policy, owned by the
 higher-level skill (or agent) driving the task — not by this skill.
 
+**Batching**: 5 or more read-only commands, all known up front, can run in one `cm shell` process
+instead of one process each — measured ~3× faster, and more against a cloud server. It is purely
+an optimization, and it changes the exit-code, error-stream and process-state contract, so follow
+`references/batching-commands.md` exactly or run the commands plainly. Never batch a mutating
+command: a batch runs to the end with nothing checked in between.
+
 ## Reporting UVCS objects
 
 How results are written matters as much as getting them: a changeset the user cannot paste back
@@ -194,4 +200,5 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
 | `references/merge-conflict-markers.md` | Resolving a conflicted merge headlessly: `--conflict-markers`, exit codes, marker format, the check-in guard. |
 | `references/history-and-annotate.md` | File history, blame tokens, `cm log` formats, walking `/main` history. |
 | `references/shell-gotchas.md` | Running `cm` from PowerShell / Git Bash / POSIX shells; quoting and comment pitfalls. |
+| `references/batching-commands.md` | Running 5+ read-only commands as one `cm shell` batch: when it pays, the restrictions, and the exit-code and error-stream contract that changes. |
 | `references/deep-links.md` | Building a clickable link to a branch, changeset, label, shelve, code review or merge request: `unityhub://` in a Unity project, `plastic://` everywhere else. |

@@ -73,3 +73,4 @@ tests:
   - file://tests/root-cause.yaml
   - file://tests/code-review.yaml
   - file://tests/address-review.yaml
+  - file://tests/batching.yaml

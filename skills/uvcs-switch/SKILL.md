@@ -111,17 +111,21 @@ stale shelve.
 ## 4. Bring changes to the destination
 
 The shelve from step 3 is now replayed onto the new branch. That replay is an ordinary merge, so
-**`uvcs-merge` owns it from here** and the steps below are not a script to run in one go:
+**`uvcs-merge` owns it from here**. Three commands, run one at a time and each one read before
+the next is issued:
 
-1. **Preview, and read it.** `cm merge sh:5` — read-only, nothing is touched. The shelve was
-   made against a different changeset, so a file both sides touched needs a content merge. If the
-   preview shows conflicts, tell the user before applying anything: that is the "you will be
-   notified" half of the promise made in step 2.
-2. **Apply it** — `cm merge sh:5 --merge`, in the mode `uvcs-merge` picks, then resolve and
-   verify there. Use `cm merge`, never `cm shelveset apply`: apply has no headless conflict mode
-   and reaches for a merge tool window no agent can close.
-3. **Only if that came back clean, with nothing left to resolve**, delete the shelve:
-   `cm shelveset delete sh:5` — irreversible, and the last thing that happens.
+```
+cm merge sh:5              # 1. preview, read-only; report conflicts before applying anything
+cm merge sh:5 --merge      # 2. apply, in the mode uvcs-merge picks, then resolve and verify there
+cm shelveset delete sh:5   # 3. only if nothing is left to resolve — irreversible, and last
+```
+
+- **The preview is never skipped.** The shelve was made against a different changeset, so a file
+  both sides touched needs a content merge. Conflicts it reports go to the user *before* anything
+  is applied: that is the "you will be notified" half of the promise made in step 2.
+- Use `cm merge`, not `cm shelveset apply`. Apply previews fine (`--preview`) but rejects
+  `--conflict-markers`, so the first file both sides touched falls to the configured merge tool —
+  a GUI window no agent can drive (**branches-and-merge**).
 
 The shelve is the user's backup for the whole operation. Anything unresolved, anything they still
 have to decide, any doubt at all: **leave it**, report its id, and say why it is still there. A

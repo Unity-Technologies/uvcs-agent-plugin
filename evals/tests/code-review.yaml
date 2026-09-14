@@ -32,7 +32,8 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
       Do a code review of changeset 4207 and publish whatever you find — there's no review open
-      on it yet, so set one up too.
+      on it yet, so set one up too. List every cm command the job needs, including the ones that
+      only run after I approve the findings.
   assert:
     - type: icontains
       value: "cm codereview cs:4207"

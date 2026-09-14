@@ -1,8 +1,13 @@
 # Shell gotchas when running `cm`
 
-`cm` runs on Windows (PowerShell, cmd, Git Bash), macOS, and Linux. Prefer a single `cm`
-command with `--format="..."` over pipes and post-processing — the output is already
-structured, and one plain command is portable across all shells.
+`cm` runs on Windows (PowerShell, cmd, Git Bash), macOS, and Linux. Prefer `--format="..."` on
+the `cm` command itself over pipes and post-processing — the output is already structured, and a
+command that needs no shell plumbing is portable across all shells.
+
+That is a rule about avoiding *pipelines*, not about how many `cm` commands a task takes. When a
+task genuinely needs many read-only commands, `references/batching-commands.md` runs them in one
+process — and this rule is a precondition there, not an exception to it, because a `cm shell`
+batch has no OS shell inside it at all.
 
 ## PowerShell: backticks in comments are eaten
 
