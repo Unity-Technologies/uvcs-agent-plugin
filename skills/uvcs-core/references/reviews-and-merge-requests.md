@@ -211,12 +211,9 @@ cm find changereviewcomment "where reviewid=<id> and type='change'" --nototal
 - `cm find mergerequest` returns only reviews that are MRs; `cm find review` returns both — and a
   branch can carry a plain code review rather than an MR, so **query `review` when you need
   whatever review exists** on a branch and `mergerequest` only when you specifically need MRs.
-- `{mergerequeststatus}` and `{status}` render with their field name inline
-  (`MergeRequestStatus Open`, `Status Reviewed`), not as a bare value — strip the prefix when
-  parsing.
-- `{target}` prints an internal `id:<n>`, not a branch name; it is still usable as a **filter**
-  value with a `br:` spec, which is the reliable branch → MR lookup.
-- `{guid}` is not a valid format token for `review` / `mergerequest`.
+- Format-token quirks of `review` / `mergerequest` (`{status}` prints its field name, `{target}`
+  prints an internal id, `{guid}` is not a token) are under *Review and merge request quirks* in
+  `find-queries.md`.
 
 ## Deep links
 

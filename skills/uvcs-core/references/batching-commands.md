@@ -4,10 +4,8 @@
 commands pays the client's startup — and, against a cloud server, the connection handshake —
 **once** instead of per command.
 
-This is `cm`'s own shell mode, not the OS shell. For PowerShell / Git Bash quoting, see
-`references/shell-gotchas.md` — its "prefer `--format` over pipes and post-processing" rule is
-required by batching rather than in tension with it: there is no OS shell inside a batch, so
-`--format` is the only way to shape output.
+This is `cm`'s own shell mode, not the OS shell (whose quoting rules are in `shell-gotchas.md`).
+There are no pipes or redirections inside a batch, so `--format` is the only way to shape output.
 
 Batching is an optimization and nothing else. It changes the exit-code, error-stream and
 process-state contract, so it is only safe inside the restrictions below. When a batch does not

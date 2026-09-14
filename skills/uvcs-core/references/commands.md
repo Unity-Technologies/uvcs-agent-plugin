@@ -50,17 +50,13 @@ revisions, attributes, merges, reviews:
 
 ```
 cm find branch "where owner='me' order by date desc limit 5" --format="{name} {date}" --nototal
-cm find changeset "where branch='/main/task001'" --format="{changesetid} {owner} {comment}" --nototal
+cm find changeset "where branch='/main/task001' order by changesetid desc limit 10" --format="{changesetid} {owner} {comment}" --nototal   # "recent history": cm log cannot list a branch
 ```
 
 The query language has fixed clause order, per-object field names, distinct sort-field names, and
 objects that reject `order by` entirely. **Before composing any non-trivial query, read
 `find-queries.md`** — do not improvise from SQL or memory, and do not retry a failed query with
 speculative syntax.
-
-Listing changesets ("recent history", "the last N commits") is a **`cm find changeset`** query
-with `order by changesetid desc limit N`. `cm log` only details one changeset (or a `--from`
-range) and accepts neither branch specs nor a limit.
 
 ## Branches
 
@@ -97,13 +93,12 @@ The `uvcs-merge` skill owns the merge workflow; these are the invocations it run
 `branches-and-merge.md` (preview output tokens) and `merge-conflict-markers.md` (headless mode).
 
 ```
-cm merge br:/main/task001                        # dry run: what the merge would do
+cm merge br:/main/task001                        # dry run (read-only): what the merge would do
 cm merge br:/main/task001 --merge                # merge into the current branch
 ```
 
-The dry run is read-only and lists the conflicts — run it first. A conflicted file otherwise
-launches the configured merge tool, which blocks the command on a window no agent can drive.
-Newer `cm` builds add `--conflict-markers` for a merge that never launches a tool.
+Run the dry run first. Applying a merge with a content conflict launches the configured merge
+tool, a window no agent can drive; the headless modes are in `merge-conflict-markers.md`.
 
 ## What changed
 
@@ -114,9 +109,6 @@ the parent if merged now", the GitHub-PR-style diff.
 cm diff br:/main/task001 --format="{status} {path} {baserevid} {revid} {repository}"
 cm patch br:/main/task001        # unified diff; also takes cs: and sh: specs
 ```
-
-Never run `cm diff` on a bare workspace path or with no arguments — it launches the GUI diff tool
-and returns nothing on stdout.
 
 ## File content at any point in history
 
