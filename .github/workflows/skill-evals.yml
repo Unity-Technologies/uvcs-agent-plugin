@@ -70,9 +70,14 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "ANTHROPIC_API_KEY=wif-placeholder-real-auth-is-bearer-header" >> "$GITHUB_ENV"
 
+      # Node 24 for its bundled npm 11, which must match the npm that writes
+      # evals/package-lock.json: npm 10 (bundled with Node 22) insists the nested
+      # mongodb's *optional* peer deps be present in the lock, npm 11 prunes them,
+      # and `npm ci` rejects a lock built by the other one. promptfoo 0.122.2 also
+      # requires node >=22.22.0, so Node 22 sat right on its floor.
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       # promptfoo's dependency tree is large; a cold `npx promptfoo@latest` costs
       # ~2 minutes per run. Pinning the version in evals/package-lock.json and
