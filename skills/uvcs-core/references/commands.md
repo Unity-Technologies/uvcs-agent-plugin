@@ -152,7 +152,8 @@ A merge request is the UVCS pull request: it proposes merging a branch into anot
 reviews cover changesets and shelves. Both carry reviewers and a comment thread, inline comments
 included. **Read `reviews-and-merge-requests.md` before any of this** — the subcommand groups
 have their own grammar, comments are addressed by GUID, and `--status` means a different field
-on create than on edit.
+on create than on edit. The `reviewer` and `comment` groups and `--users`/`--groups` are **newer
+than 11.0.16** (that release has only `--assignee`); the reference says how to detect them.
 
 ```
 cm mergerequest create br:/main/task001 "MR title" --destination=br:/main --users=<user>
