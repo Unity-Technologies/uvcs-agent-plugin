@@ -168,10 +168,10 @@ cm mr <id> reviewer status --status=Reviewed -c="<one line on why it is good to 
 cm codereview <id> reviewer status --status=Reviewed -c="<...>"        # on a code review
 ```
 
-Report the result with a link the user can click —
-`plastic://<server>/repos/<repo>/merge-requests/<id>`, or `/code-reviews/<id>` for a code review
-(shapes and the `@` → `.` rewrite: `uvcs-core/references/deep-links.md`) — plus the comment
-count and the status you set.
+Report the result with a link the user can click — `[merge request <id>](<deep link>)`, or the
+code review's — and one on every branch, changeset and shelve the report names; each link chosen
+per object by `uvcs-core/references/deep-links.md`, never from memory. Add the comment count and
+the status you set.
 
 ## Mutating, and visible to other people
 

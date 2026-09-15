@@ -183,9 +183,9 @@ so no half-applied edit is left behind.
 ## 7. Wrap up
 
 Show what happened to every item — applied, discarded, answered, skipped — with the changeset or
-shelve it produced, and a deep link for the review and for each of those objects — `unityhub://`
-or `plastic://`, chosen per object as `uvcs-core/references/deep-links.md` says. Whether you
-re-request at all depends on the mode:
+shelve it produced, and the review, each as a `[cs:<id>](<deep link>)` markdown link — links
+chosen per object as `uvcs-core/references/deep-links.md` says. Whether you re-request at all
+depends on the mode:
 
 - **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded:
 

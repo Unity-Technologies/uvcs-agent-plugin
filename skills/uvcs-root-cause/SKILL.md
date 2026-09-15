@@ -165,12 +165,13 @@ A compact table, strongest evidence first:
 
 | Changeset | Author | Date | Evidence |
 |---|---|---|---|
-| `cs:1205` on `/main` | `<user>` | 2026-04-16 | Dropped the null guard in `Cache.Get()`, which `SessionStore.cs:118` calls |
+| [`cs:1205`](<url>) on [`/main`](<url>) | `<user>` | 2026-04-16 | Dropped the null guard in `Cache.Get()`, which `SessionStore.cs:118` calls |
 
-Follow `uvcs-core`'s reporting conventions: full object names, clickable deep links when repo and
-server are known (`uvcs-core/references/deep-links.md`), and nothing — id, author, date, branch
-— that no command printed. If no candidate qualifies, say so and offer a wider window: "not
-found in the last 4 weeks" is a useful answer, an unsupported guess is not.
+Follow `uvcs-core`'s reporting conventions: full object names, each a `[cs:<id>](<deep link>)`
+markdown link once repo and server are known (`uvcs-core/references/deep-links.md`) — table cells
+included — and nothing — id, author, date, branch — that no command printed. If no candidate
+qualifies, say so and offer a wider window: "not found in the last 4 weeks" is a useful answer,
+an unsupported guess is not.
 
 Then offer the follow-ups; the ids are already in hand, so they cost one command each — the full
 diff of a suspect, blame on another file or line (step 5), or the file as it was *before* a
