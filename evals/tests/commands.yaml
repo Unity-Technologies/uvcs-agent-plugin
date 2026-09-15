@@ -26,6 +26,21 @@
     - type: icontains
       value: "--includeRevId"
 
+- description: "Telling an edited checkout from an empty one needs --iscochanged"
+  vars:
+    user_message: >-
+      Four files are checked out in my workspace but I think only one of them was actually
+      edited. Which cm command tells me which checked-out files have content changes?
+    reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
+  assert:
+    - type: icontains
+      value: "--iscochanged"
+    - type: llm-rubric
+      value: >-
+        The response must explain that without --iscochanged every checked-out file reports
+        plain CO whether its contents changed or not, and that with the flag an edited
+        checkout reports CO+CH. Proposing cm diff on a workspace path is a failure.
+
 - description: "Per-line attribution uses cm annotate with the {changeset} token"
   vars:
     user_message: "Which changeset last modified line 120 of Assets/Player.cs, and who wrote it?"

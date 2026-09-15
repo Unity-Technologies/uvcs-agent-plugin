@@ -6,18 +6,28 @@
 cm status --header        # one line: branch@repo@server (cs:<head> - head)
 cm status                 # human-readable pending changes
 cm status --machinereadable --all --includeRevId --fieldseparator="|"
+cm status --machinereadable --all --includeRevId --iscochanged --fieldseparator="|"
 ```
 
-Machine-readable output shape:
+Machine-readable output shape — last field is merge info (`NO_MERGES`, or e.g.
+`Cherrypick from 50 to 51`):
 
 ```
 STATUS|<workspace head changeset>|<repo>|<server>
-<CODE>|<workspace path>|<is_dir>|<base_revid>|...
+<CODE>|<workspace path>|<is_dir>|<base_revid>|<merges_info>
+CO+CH|/wk/src/Player.cs|False|-1|NO_MERGES
+CH|/wk/src/Enemy.cs|False|1072|NO_MERGES
 ```
 
 Change codes: `CH` changed (edited without checkout — the common case), `CO` checked-out,
-`AD` added, `DE` deleted, `MV` moved, `CP` copied, `RP` replaced, `PR` private (uncontrolled),
-`IG` ignored. `cm help status` lists the full set and the matching `--<type>` filter flags.
+`CO+CH` checked out **and** edited (`--iscochanged` only), `AD` added, `DE` deleted, `MV` moved,
+`CP` copied, `RP` replaced, `PR` private (uncontrolled), `IG` ignored. `cm help status` lists
+the full set and the matching `--<type>` filter flags.
+
+Add **`--iscochanged`** whenever the next step acts on the *content* — reviewing, diffing,
+checking in. Without it every checked-out item prints plain `CO` whether its contents changed
+or not, so an edited checkout is indistinguishable from an untouched one and the agent reviews
+or checks in files with no changes. Listing what is pending or checked out does not need it.
 
 `--all` expands to `--controlledchanged --changed --localdeleted --localmoved --private`.
 
@@ -47,9 +57,9 @@ Gotchas, all verified:
 - **`CH` files bundled with a `DE` (removed) item in one checkin** can be mis-detected as
   unchanged: with explicit paths the checkin aborts (`The item ... is not changed`); with the
   cwd form it may silently commit **only the deletion**. Fix: `cm checkout <files>` the
-  modified files first (turning `CH` into `CO`), then check in everything together. If a
-  checkin misbehaves, stop and fix the cause — do not fragment one logical change across
-  changesets.
+  modified files first (`CH` becomes `CO+CH`, or plain `CO` without `--iscochanged` — the edits
+  are still there either way), then check in everything together. If a checkin misbehaves, stop
+  and fix the cause — do not fragment one logical change across changesets.
 - **Checkin refused because conflict markers are pending** (`... file(s) merged with conflict
   markers still contain them`): a merge run with `--conflict-markers` left markers in those
   files. Remove them, or `cm merge --mark-resolved <path>` when the marker text is intentional
