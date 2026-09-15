@@ -24,11 +24,13 @@ Change codes: `CH` changed (edited without checkout — the common case), `CO` c
 `CP` copied, `RP` replaced, `PR` private (uncontrolled), `IG` ignored. `cm help status` lists
 the full set and the matching `--<type>` filter flags.
 
-Add **`--iscochanged`** only to review or diff the workspace *contents*: without it every
-checked-out item prints plain `CO` whether its contents changed or not, so an edited checkout
-is indistinguishable from an untouched one and the agent reviews files with no changes. Do not
-use it to drive a checkin or an undo — those operate on the whole pending set, and an unchanged
-checkout belongs in it.
+Add **`--iscochanged`** only to review or diff the workspace *contents*: the parseable forms
+(`--machinereadable`, `--xml`, `--compact` — the only ones it applies to) print plain `CO` for a
+checked-out file whether its contents changed or not, so an edited checkout is indistinguishable
+from an untouched one and the agent reviews files with no changes. Plain `cm status` already
+says `Checked-out (changed)` / `(unchanged)` and takes the flag as a no-op. Do not use it to
+drive a checkin or an undo — those operate on the whole pending set, and an unchanged checkout
+belongs in it.
 
 `--all` expands to `--controlledchanged --changed --localdeleted --localmoved --private`.
 
