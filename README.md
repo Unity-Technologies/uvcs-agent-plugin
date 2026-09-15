@@ -86,8 +86,17 @@ client's documentation. If you verify one, please [tell us](CONTRIBUTING.md).
 
 | Installed with | You get | Update with |
 | -------------- | ------- | ----------- |
-| `/plugin install` | the latest release | `/plugin update unity-version-control` |
+| `/plugin install` | the latest release | `claude plugin update unity-version-control` (see below) |
 | `npx skills add` | the `main` branch | `npx skills update` |
+
+Claude Code reads the available versions from its cached copy of the marketplace, so refresh that
+first or the update finds nothing new. Both commands run from a terminal, and Claude Code has to
+be restarted for the new version to load.
+
+```bash
+claude plugin marketplace update unity
+claude plugin update unity-version-control      # or unity-version-control@unity
+```
 
 `main` is kept release-quality. Every change passes skill validation and a behavioral test
 suite before merge.
