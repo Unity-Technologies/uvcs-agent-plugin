@@ -43,13 +43,14 @@ cm cat "serverpath:/<path in repo>#cs:<head>" --file=<tmp>   # <head> from the S
 ```
 
 then diff `<tmp>` against the workspace file locally. On a branch selector the workspace head
-changeset is the base of every `CH`/`CO` item, so this form needs no revid.
+changeset is the base of every `CH`/`CO` item, so this works for any pending change and needs
+no revid.
 
-The `<base_revid>` column is an alternative **only when it is positive**: on 11.0.16 it carries
-the real base revid for `CH` items and `-1` for every `CO`, `CO+CH`, `AD` and `PR` item, so the
-recipe dead-ends on a checked-out file. Where it is positive — and across xlinks, since revids
-are per-repository — use
-`cm cat "revid:<base_revid>@rep:<repo>@repserver:<server>" --file=<tmp>`.
+Do **not** build a `revid:` spec from the status `<base_revid>` column unless that column is
+positive: on 11.0.16 it is `-1` for every `CO`, `CO+CH`, `AD` and `PR` item and only carries a
+real revid for `CH` items, so on a checked-out file there is nothing to build a spec from. Where
+it is positive — and across xlinks, since revids are per-repository —
+`cm cat "revid:<base_revid>@rep:<repo>@repserver:<server>" --file=<tmp>` works too.
 
 ## Checkin
 
