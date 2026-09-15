@@ -34,11 +34,21 @@ or checks in files with no changes. Listing what is pending or checked out does 
 ## Diffing pending changes as text
 
 Do **not** run `cm diff <path>` — it opens the GUI diff tool. To compare a locally modified
-file against its base revision:
+file against its base revision, from inside the workspace (`cm cat` resolves a `serverpath:`
+against the current workspace):
 
-1. Get `<base_revid>` and `<repo>@<server>` from the machine-readable status line.
-2. `cm cat "revid:<base_revid>@rep:<repo>@repserver:<server>" --file=<tmp>`
-3. Compare `<tmp>` with the workspace file using a local diff tool.
+```
+cm cat "serverpath:/<path in repo>#cs:<head>" --file=<tmp>   # <head> from the STATUS line
+```
+
+then diff `<tmp>` against the workspace file locally. On a branch selector the workspace head
+changeset is the base of every `CH`/`CO` item, so this form needs no revid.
+
+The `<base_revid>` column is an alternative **only when it is positive**: on 11.0.16 it carries
+the real base revid for `CH` items and `-1` for every `CO`, `CO+CH`, `AD` and `PR` item, so the
+recipe dead-ends on a checked-out file. Where it is positive — and across xlinks, since revids
+are per-repository — use
+`cm cat "revid:<base_revid>@rep:<repo>@repserver:<server>" --file=<tmp>`.
 
 ## Checkin
 
