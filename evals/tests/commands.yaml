@@ -37,9 +37,9 @@
       value: "--iscochanged"
     - type: llm-rubric
       value: >-
-        The response must explain that without --iscochanged every checked-out file reports
-        plain CO whether its contents changed or not, and that with the flag an edited
-        checkout reports CO+CH. Proposing cm diff on a workspace path is a failure.
+        The response must use --iscochanged and say that an edited checkout then reports
+        CO+CH (an untouched one plain CO). Proposing cm diff on a workspace path is a
+        failure. Whether it also explains the behaviour without the flag is not judged.
 
 - description: "Pending change diffed as text via serverpath:#cs:<head>, never cm diff <path>"
   vars:

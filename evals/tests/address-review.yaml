@@ -92,29 +92,48 @@
         revisionid 5501234 to cm find revision; searching the filesystem, grepping for a
         filename, or guessing a path from the comment text is a failure.
 
-- description: "Pending is derived from the thread: applied, discarded and answered items are excluded"
+- description: "A change with a discarded child is not pending, and neither is an applied one"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: |
-      Review 311's thread (cm find changereviewcomment --xml) contains:
+      Review 311's thread (cm find changereviewcomment --xml), replies indented under the
+      comment their parent field points at:
       - id=900 type=change parent=-1 appliedinchangeset=-1 location=88
       - id=901 type=change parent=-1 appliedinchangeset=4210 location=120
       - id=902 type=change parent=-1 appliedinchangeset=-1 location=140
-      - id=903 type=discarded parent=902 location=140
-      - id=904 type=question parent=-1 location=200
-      - id=905 type=comment parent=904 location=200
-      - id=906 type=question parent=-1 location=250
+          - id=903 type=discarded parent=902 location=140
       - id=907 type=timeline parent=-1 location=-1
-      Which items go in the work queue? Do not run anything.
+      Go through the top-level ids in order and say for each whether it is pending and why;
+      then, on the last line, list the ids that go in the work queue. Do not run anything.
   assert:
     - type: llm-rubric
       value: >-
-        The queue must contain exactly two items: the change id=900 (nothing applied it, no
-        discarded child) and the question id=906 (no reply). Every other item must be excluded:
-        901 is already applied (appliedinchangeset 4210), 902 was discarded by its child 903, 904
-        was answered by its child 905, and 907 is a timeline entry. Including any of those, or
-        treating -1 as a real changeset or comment id, is a failure.
+        The final work queue must contain exactly one item: the change id=900. 901 is already
+        applied (appliedinchangeset 4210); 902 was discarded by its child 903, so it is settled
+        even though its own fields still read type=change and appliedinchangeset=-1; 903 is a
+        child and 907 is a timeline entry. A final queue that includes 901, 902, 903 or 907, or
+        treating -1 as a real changeset or comment id, is a failure. Judge the final queue line,
+        not the reasoning steps before it.
+
+- description: "A question with a reply is answered, a question without one is pending"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |
+      Review 311's thread (cm find changereviewcomment --xml) has two top-level questions from
+      the reviewer, 904 and 906, plus a timeline entry 907. Question 904 has one reply, 905
+      (type=comment, parent=904), posted by me last week. Question 906 has no reply.
+      Say for each of 904 and 906 whether it is still pending and why; then, on the last line,
+      list the ids that go in the work queue. Do not run anything.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The final work queue must contain exactly one item: the question id=906, which has no
+        reply. 904 was answered by its child 905 (a reply of type comment settles a question),
+        so it is excluded; 905 is a child and 907 is a timeline entry. A final queue that
+        includes 904, 905 or 907 is a failure. Judge the final queue line, not the reasoning
+        steps before it.
 
 - description: "Assisted mode checks in one comment per changeset with the apply-change tag"
   vars:
@@ -156,10 +175,12 @@
     - type: llm-rubric
       value: >-
         Each fix gets its own cm shelveset create followed by a cm undo of exactly the path that
-        was edited, so the next shelve contains only its own fix. Checking in is a failure in this
-        mode. Running cm undo recursively over the workspace (cm undo -r, cm undo ., or
-        undoing everything) instead of the named paths is a failure. Asking the user for approval
-        per item is also a failure — they chose not to be interrupted.
+        was edited, so the next shelve contains only its own fix. Running cm checkin itself is a
+        failure in this mode; telling the user they will review the shelves and check them in
+        afterwards is expected and correct. Running cm undo recursively over the workspace
+        (cm undo -r, cm undo ., or undoing everything) instead of the named paths is a failure.
+        Asking the user for approval per item is also a failure — they chose not to be
+        interrupted.
 
 - description: "Unattended wrap-up does not re-request the review"
   vars:
@@ -167,14 +188,18 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
       Unattended mode on review 311 is finished: B1 shelved as sh:101, S1 shelved as sh:102, Q1
-      answered. Write the wrap-up.
+      answered. Write the wrap-up and give me the commands I run next.
   assert:
-    - type: not-icontains
-      value: "reviewer rerequest"
+    - type: icontains
+      value: "cm shelveset apply sh:101"
+    # No re-request *command line*; saying "ask me to re-request afterwards" in prose is fine.
+    - type: not-regex
+      value: "(^|\\n)\\s*cm mr 311 reviewer rerequest"
     - type: llm-rubric
       value: >-
-        Nothing has been checked in yet, so the response must not re-request the review. It must
-        tell the user to apply the shelves and check them in — reusing the shelve comment so the
+        Nothing has been checked in yet, so the response must not re-request the review now:
+        running cm mr 311 reviewer rerequest as one of its commands is a failure. It must tell
+        the user to apply the shelves and check them in — reusing the shelve comment so the
         [apply-change:] tag fires at check-in — and to ask for the re-request afterwards.
 
 - description: "A reply is posted against the comment GUID, and a discard is never proposed"
