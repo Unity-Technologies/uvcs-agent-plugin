@@ -18,7 +18,8 @@ cm status --machinereadable --all --includeRevId --fieldseparator="|"
 cm status --machinereadable --all --includeRevId --iscochanged --fieldseparator="|"
 ```
 
-`--iscochanged` splits `CO` into `CO`/`CO+CH` — add it before diffing or checking in.
+`--iscochanged` splits `CO` into `CO`/`CO+CH` — add it to review or diff the contents, not to
+drive a checkin or an undo.
 
 ## Workspaces — extra working copies
 
