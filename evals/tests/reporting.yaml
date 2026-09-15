@@ -64,6 +64,34 @@
     - type: not-icontains
       value: "show/branch//main"
 
+- description: "Every object in a report is a markdown link, not just the first one"
+  vars:
+    user_message: >-
+      My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. Write me a
+      two-line summary I can paste in our chat channel: changeset 4207 is the branch head, it was
+      reviewed in code review 311, and I left the leftovers on shelve 12.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
+  assert:
+    - type: icontains
+      value: "[cs:4207](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+    - type: icontains
+      value: "[sh:12](plastic://myorg.cloud/repos/mygame/shelvesets/12/diff)"
+    - type: icontains
+      value: "](plastic://myorg.cloud/repos/mygame/code-reviews/311)"
+
+- description: "A link published into a UVCS review comment is bare, not markdown"
+  vars:
+    user_message: >-
+      My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I want to
+      post a conversation comment on merge request 312 that points the reviewer at changeset
+      4207. Give me the comment text itself and the command that posts it, nothing else.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
+  assert:
+    - type: icontains
+      value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
+    - type: not-icontains
+      value: "](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+
 - description: "An id the output does not contain is not invented"
   vars:
     user_message: >-
