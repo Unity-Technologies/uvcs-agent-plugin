@@ -408,6 +408,18 @@ the two.
   hub was named
   `uvcs-cli-reference` until it grew into a real hub; the name now describes the body and the
   `cm` reference sits in its `references/`.
+- **The review report layout is fixed, and it lives in `uvcs-code-review` step 4.** A header
+  table, then one section per severity (🔴 BLOCKERS, 🟡 IMPORTANT, 💡 SUGGESTIONS, ⚪ NITS) carrying
+  its count, with **no section at all** for a severity that has no findings; each finding is a
+  short title, its location on the line below (`` `<path>` `` then `line 106`, never `path:106`),
+  and the fix with any code in its own fenced block. Settled with the user over several passes
+  against real terminal output, so do not re-open the shape. Rejected on the way: repeating the
+  severity icon on the finding heading as well as the section (noise — `##` and `###` render
+  alike in a terminal, so caps sections against sentence-case titles is what carries the
+  hierarchy) and a "checked and fine" list (replaced by a single **Verified** row, only when a
+  check closes a concern that was already raised). The layout is **chat-side only**: what
+  `comment add` publishes is the finding body, since a UVCS thread renders no headings and
+  already shows the anchor.
 - **Deep links: one scheme per workspace, chosen by the workspace.** A Unity project (`Assets/` +
   `ProjectSettings/ProjectVersion.txt`) gets a `unityhub://` link that the Hub routes to that
   project's Editor; anything else gets `plastic://` for the desktop GUI. Both live in one hub
