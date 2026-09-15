@@ -47,9 +47,10 @@ cm find changeset "where branch='/main/task001' order by changesetid desc limit 
 ## Sorting — the rules that bite
 
 1. **Only `branch`, `changeset`, `label`, and `review` support `order by`.** `shelve`, `merge`,
-   `attribute`, `attributetype`, `revision`, and `replicationlog` reject it (e.g. *"The object
-   type shelve cannot order by date"*). To get the newest shelve, fetch unsorted and pick the
-   max `shelveid` yourself.
+   `attribute`, `attributetype`, `revision`, and `replicationlog` reject it on **every** field —
+   the error just names the one you tried (*"The object type shelve cannot order by date"*;
+   `shelveid` fails the same way). To get the newest shelve, fetch unsorted and pick the max
+   `shelveid` yourself.
 2. **Sort field names differ from filter field names.** You filter branches by `name` but sort
    by `branchname`:
 

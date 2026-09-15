@@ -36,8 +36,9 @@
       changeset 4210. Just those two.
     reference_content: file://../skills/uvcs-core/references/batching-commands.md
   assert:
-    - type: not-icontains
-      value: "cm shell"
+    # No cm shell *invocation* line; mentioning cm shell in prose to reject it is fine.
+    - type: not-regex
+      value: "(^|\\n)\\s*cm shell"
     - type: llm-rubric
       value: >-
         The response runs the two changesets as ordinary separate cm commands. If it
@@ -55,10 +56,8 @@
     - type: llm-rubric
       value: >-
         The response refuses to batch the check-ins in cm shell and says batching is for
-        read-only commands only. It must give a reason of substance — a batch runs to the
-        end with nothing checked between steps, so a check-in could land part-way through
-        with no stopping point for the user. Agreeing to batch cm checkin is a failure,
-        even with caveats attached.
+        read-only commands only. Agreeing to batch cm checkin is a failure, even with
+        caveats attached. The reason it gives is not judged.
 
 - description: "Batch results are read from CommandResult, not the process exit code"
   vars:

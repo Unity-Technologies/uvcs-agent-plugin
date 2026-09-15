@@ -37,7 +37,8 @@ Both are read-only, so run them together. Then:
 - **Workspace clean** — switch and report where they landed:
   `cm switch br:/main/task001`, then `cm status --header`.
 - **Workspace dirty** — go to step 2 and stop there until the user answers. Do **not** run, or
-  line up, `cm switch` or step 3 yet.
+  line up, `cm switch` or step 3 yet. If the request already says which option they want ("bring
+  my changes", "shelve them and go"), that *is* the answer: skip the question, go to step 3.
 
 Never fire a bare `cm switch` on an unchecked workspace. What it does with pending changes is a
 client setting, and one of its outcomes is a prompt on stdin that silently answers itself with
@@ -93,8 +94,8 @@ Order matters and the middle step is the dangerous one:
   It clears the whole workspace, not just the files in play.
 
 **Leaving the changes behind ends here.** Report the shelve as `sh:<id>` with its comment, plus a
-deep link (`uvcs-core/references/deep-links.md`), and say in one line how to get the work back:
-`cm shelveset apply sh:<id>`. Bringing them along continues to step 4.
+markdown link on that name (`uvcs-core/references/deep-links.md`), and say in one line how to get
+the work back: `cm shelveset apply sh:<id>`. Bringing them along continues to step 4.
 
 An earlier automatic shelve off the same branch is worth checking for first, since that is what
 the GUI overwrites when the user leaves changes behind a second time:

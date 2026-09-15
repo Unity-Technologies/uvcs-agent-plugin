@@ -136,9 +136,9 @@ Results must round-trip: every object named in a report should paste back into `
 - **Changeset ids are per-repository** integers, not global hashes. When more than one repo is in
   play (xlinks), qualify the id with its repo or the number is ambiguous.
 - **Make objects clickable when the repo and server are known** (`cm status --header`, or
-  `{repository}` in `cm diff` output): one link, `unityhub://` in a Unity project (`Assets/` +
-  `ProjectSettings/`) and `plastic://` anywhere else. Shapes and encoding:
-  `references/deep-links.md`.
+  `{repository}` in `cm diff` output): one markdown link per object, `unityhub://` in a Unity
+  project (`Assets/` + `ProjectSettings/`) and `plastic://` anywhere else. Shapes, rendering and
+  encoding: `references/deep-links.md`.
 - **Report only what command output shows.** Never fill in a changeset id, branch name, author or
   date from inference — if a command did not print it, say it is unknown and name the command
   that would answer it.
@@ -197,4 +197,4 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
 | `references/history-and-annotate.md` | File history, blame tokens, `cm log` formats, walking `/main` history. |
 | `references/shell-gotchas.md` | Running `cm` from PowerShell / Git Bash / POSIX shells; quoting and comment pitfalls. |
 | `references/batching-commands.md` | Running 5+ read-only commands as one `cm shell` batch: when it pays, the restrictions, and the exit-code and error-stream contract that changes. |
-| `references/deep-links.md` | Building a clickable link to a branch, changeset, label, shelve, code review or merge request: `unityhub://` in a Unity project, `plastic://` everywhere else. |
+| `references/deep-links.md` | Building a clickable link to a branch, changeset, label, shelve, code review or merge request: `unityhub://` in a Unity project, `plastic://` everywhere else, rendered as a markdown link. |

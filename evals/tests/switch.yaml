@@ -5,10 +5,18 @@
 - description: "Pending changes stop the switch and produce the two options, not a bare cm switch"
   vars:
     skill_content: file://../skills/uvcs-switch/SKILL.md
-    user_message: >-
-      Switch me to /main/task002. cm status --header prints
-      /main/task001@mygame@myorg@cloud (cs:4207 - head), and cm status lists 3 changed files
-      and 1 added file.
+    user_message: |
+      Switch me to /main/task002. I already ran both status commands for you:
+
+      cm status --header
+      /main/task001@mygame@myorg@cloud (cs:4207 - head)
+
+      cm status --machinereadable --all --fieldseparator="|"
+      STATUS|4207|mygame|myorg@cloud
+      CH|/wk/src/Player.cs|False|1072|NO_MERGES
+      CH|/wk/src/Enemy.cs|False|1073|NO_MERGES
+      CH|/wk/src/Inventory.cs|False|1074|NO_MERGES
+      AD|/wk/src/Loot.cs|False|-1|NO_MERGES
   assert:
     - type: llm-rubric
       value: >-
@@ -16,7 +24,7 @@
         pending changes, offering both leaving them behind on a shelve on /main/task001 and
         bringing them to /main/task002. Running cm switch now, or picking one of the two
         options on the user's behalf, is a failure. Naming the commands it would run after the
-        answer is fine.
+        answer is fine; re-running cm status or asking for its output is not required.
 
 - description: "Leaving the changes behind shelves before it undoes, and marks the shelve the way the GUI does"
   vars:
@@ -43,10 +51,20 @@
   vars:
     skill_content: file://../skills/uvcs-switch/SKILL.md
     reference_content: file://../skills/uvcs-core/references/branches-and-merge.md
-    user_message: >-
-      Take me over to /main/task002 and bring my pending changes with me. cm status --header
-      prints /main/task001@mygame@myorg@cloud (cs:4207 - head), and cm status lists 2 changed
-      files.
+    user_message: |
+      Take me over to /main/task002 and bring my pending changes with me — I have already
+      decided, do not ask me again. I already ran both status commands for you:
+
+      cm status --header
+      /main/task001@mygame@myorg@cloud (cs:4207 - head)
+
+      cm status --machinereadable --all --fieldseparator="|"
+      STATUS|4207|mygame|myorg@cloud
+      CH|/wk/src/Player.cs|False|1072|NO_MERGES
+      CH|/wk/src/Enemy.cs|False|1073|NO_MERGES
+
+      List every cm command from the shelve to the replay on /main/task002, including the ones
+      that run after the switch.
   assert:
     - type: icontains
       value: "cm merge sh:"
@@ -56,7 +74,8 @@
         previewing it before applying. Using cm shelveset apply as the way to bring the changes
         across is a failure. If it deletes the shelve at all, that must be the final step and
         conditioned on the merge being finished with nothing left to resolve; deleting it before
-        or regardless of the merge result is a failure.
+        or regardless of the merge result is a failure. Naming the commands is enough — nothing
+        is executed here.
 
 - description: "A clean workspace just switches, with no shelve ceremony"
   vars:
