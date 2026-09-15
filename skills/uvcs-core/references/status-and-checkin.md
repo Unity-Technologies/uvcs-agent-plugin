@@ -6,29 +6,53 @@
 cm status --header        # one line: branch@repo@server (cs:<head> - head)
 cm status                 # human-readable pending changes
 cm status --machinereadable --all --includeRevId --fieldseparator="|"
+cm status --machinereadable --all --includeRevId --iscochanged --fieldseparator="|"
 ```
 
-Machine-readable output shape:
+Machine-readable output shape — last field is merge info (`NO_MERGES`, or e.g.
+`Cherrypick from 50 to 51`):
 
 ```
 STATUS|<workspace head changeset>|<repo>|<server>
-<CODE>|<workspace path>|<is_dir>|<base_revid>|...
+<CODE>|<workspace path>|<is_dir>|<base_revid>|<merges_info>
+CO+CH|/wk/src/Player.cs|False|-1|NO_MERGES
+CH|/wk/src/Enemy.cs|False|1072|NO_MERGES
 ```
 
 Change codes: `CH` changed (edited without checkout — the common case), `CO` checked-out,
-`AD` added, `DE` deleted, `MV` moved, `CP` copied, `RP` replaced, `PR` private (uncontrolled),
-`IG` ignored. `cm help status` lists the full set and the matching `--<type>` filter flags.
+`CO+CH` checked out **and** edited (`--iscochanged` only), `AD` added, `DE` deleted, `MV` moved,
+`CP` copied, `RP` replaced, `PR` private (uncontrolled), `IG` ignored. `cm help status` lists
+the full set and the matching `--<type>` filter flags.
+
+Add **`--iscochanged`** only to review or diff the workspace *contents*: the parseable forms
+(`--machinereadable`, `--xml`, `--compact` — the only ones it applies to) print plain `CO` for a
+checked-out file whether its contents changed or not, so an edited checkout is indistinguishable
+from an untouched one and the agent reviews files with no changes. Plain `cm status` already
+says `Checked-out (changed)` / `(unchanged)` and takes the flag as a no-op. Do not use it to
+drive a checkin or an undo — those operate on the whole pending set, and an unchanged checkout
+belongs in it.
 
 `--all` expands to `--controlledchanged --changed --localdeleted --localmoved --private`.
 
 ## Diffing pending changes as text
 
 Do **not** run `cm diff <path>` — it opens the GUI diff tool. To compare a locally modified
-file against its base revision:
+file against its base revision, from inside the workspace (`cm cat` resolves a `serverpath:`
+against the current workspace):
 
-1. Get `<base_revid>` and `<repo>@<server>` from the machine-readable status line.
-2. `cm cat "revid:<base_revid>@rep:<repo>@repserver:<server>" --file=<tmp>`
-3. Compare `<tmp>` with the workspace file using a local diff tool.
+```
+cm cat "serverpath:/<path in repo>#cs:<head>" --file=<tmp>   # <head> from the STATUS line
+```
+
+then diff `<tmp>` against the workspace file locally. On a branch selector the workspace head
+changeset is the base of every `CH`/`CO` item, so this works for any pending change and needs
+no revid.
+
+Do **not** build a `revid:` spec from the status `<base_revid>` column unless that column is
+positive: on 11.0.16 it is `-1` for every `CO`, `CO+CH`, `AD` and `PR` item and only carries a
+real revid for `CH` items, so on a checked-out file there is nothing to build a spec from. Where
+it is positive — and across xlinks, since revids are per-repository —
+`cm cat "revid:<base_revid>@rep:<repo>@repserver:<server>" --file=<tmp>` works too.
 
 ## Checkin
 
@@ -47,9 +71,9 @@ Gotchas, all verified:
 - **`CH` files bundled with a `DE` (removed) item in one checkin** can be mis-detected as
   unchanged: with explicit paths the checkin aborts (`The item ... is not changed`); with the
   cwd form it may silently commit **only the deletion**. Fix: `cm checkout <files>` the
-  modified files first (turning `CH` into `CO`), then check in everything together. If a
-  checkin misbehaves, stop and fix the cause — do not fragment one logical change across
-  changesets.
+  modified files first (`CH` becomes `CO+CH`, or plain `CO` without `--iscochanged` — the edits
+  are still there either way), then check in everything together. If a checkin misbehaves, stop
+  and fix the cause — do not fragment one logical change across changesets.
 - **Checkin refused because conflict markers are pending** (`... file(s) merged with conflict
   markers still contain them`): a merge run with `--conflict-markers` left markers in those
   files. Remove them, or `cm merge --mark-resolved <path>` when the marker text is intentional

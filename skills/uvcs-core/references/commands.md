@@ -15,7 +15,11 @@ See `status-and-checkin.md` for change codes and parsing.
 cm status --header                                                  # current branch + head cset
 cm status                                                           # pending changes
 cm status --machinereadable --all --includeRevId --fieldseparator="|"
+cm status --machinereadable --all --includeRevId --iscochanged --fieldseparator="|"
 ```
+
+`--iscochanged` splits the machine-readable `CO` into `CO`/`CO+CH` (plain `cm status` always
+says `Checked-out (changed)`) — use it to review or diff contents, not to drive a checkin.
 
 ## Workspaces — extra working copies
 

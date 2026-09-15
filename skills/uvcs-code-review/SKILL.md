@@ -72,7 +72,7 @@ Read the captured file **completely**. For pending changes, the workspace files 
 "after" side:
 
 ```
-cm status --machinereadable --all --includeRevId --fieldseparator="|"
+cm status --machinereadable --all --includeRevId --iscochanged --fieldseparator="|"
 ```
 
 Alongside the patch, take the per-file metadata once and **keep it for the whole review**:
