@@ -151,6 +151,36 @@
         locating the merge request, anchoring inline comments, setting reviewer status). Insisting
         on its own severity taxonomy or review format over the team's is a failure.
 
+- description: "A published comment carries the finding body, not the report's chat structure"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Publish this one finding on merge request 311, exactly as I approved it in your report:
+
+      ## 🔴 BLOCKERS (1)
+
+      ### [B1] Air jumps play the jump clip twice
+
+      **`/src/PlayerController.cs`** line 106
+
+      The air-jump branch calls PlayOneShot, and PlayerJumped plays the same clip a frame later.
+
+      **Fix** — delete line 106; PlayerJumped already handles the audio.
+  assert:
+    - type: icontains
+      value: "--path=/src/PlayerController.cs"
+    - type: icontains
+      value: "--line=106"
+    - type: llm-rubric
+      value: >-
+        The comment written to the file must be the finding body — it starts with the [B1] id and
+        states what is wrong and the fix. Carrying the report's chat structure into the comment
+        is a failure: no "BLOCKERS" section heading and no "### [B1] ..." heading line in the
+        comment text itself. Saying that those are dropped because they are chat structure is
+        fine and not a failure. Rewording or summarizing the finding is also a failure, since the
+        user approved this exact text.
+
 - description: "Approving a merge request is not merging it"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
