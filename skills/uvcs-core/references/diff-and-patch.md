@@ -45,6 +45,10 @@ about the patch content, read it **completely** (in sequential chunks if large).
 it with grep/head/tail and reason from the sample: that silently drops everything past the
 cutoff.
 
+A file with CR-only (classic Mac) terminators has no lines as far as `diff` is concerned: the
+patch looks ordinary but is a whole-file replacement whose two "lines" are the entire file,
+unreadable and past any read limit. Copy both sides with `\r` → `\n` and diff those.
+
 Known failure modes that produce an empty/aborted patch:
 - `Error: diff: a/<path>: No such file or directory` — a dangling symlink in the branch's file
   set aborts the whole patch. Fall back to per-file `cm cat` + local diff for the paths you
