@@ -8,6 +8,36 @@ chat, and release notes. Which one to emit depends on the workspace, and only on
 | A Unity project | `unityhub://` | the object in that project's Unity Editor, routed by the Hub |
 | Anything else | `plastic://` | the object in the UVCS desktop GUI (Windows, macOS) |
 
+## Render it as a markdown link
+
+Where markdown is rendered — chat answers, reports, tickets, PR and MR bodies — every object is
+`[<object name>](<url>)`, assembled in two steps:
+
+1. **Link text** = the object's `cm` name, exactly as the *Reporting UVCS objects* rules give it:
+   `cs:4207`, `br:/main/task001`, `lb:v1.2.0`, `sh:12`, or `merge request 312` / `code review 311`
+   for the objects with no spec prefix.
+2. **Target** = the URL for that object *from the tables in this file*, in the scheme the
+   workspace selects above — never a shape recalled from memory or copied from another object.
+
+```
+[cs:4207](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)          # non-Unity workspace
+```
+
+- **Link every object that has a shape below, every time it is named** — changesets, branches,
+  labels, shelves, ranges, code reviews, merge requests — not just the first mention and not just
+  the headline object. A table cell, a list item and a sentence all take a link.
+- **Never emit the name and its URL as two separate pieces** — not `cs:4207` followed by a bare
+  `plastic://...`, not a trailing list of links. One of the two is redundant and neither reads.
+- **Link text is the object's name, never prose**: `[br:/main/task001](...)`, not `[the branch](...)`.
+- **Bare URL where markdown is not rendered**: text published into UVCS itself (review and
+  check-in comments) or any plain-text destination. Unrendered, `[cs:4207](plastic://...)` shows
+  both pieces as punctuation soup, so when the destination is unknown the bare URL is the safe
+  form — it loses the link text, not the address.
+- A URL that contains `)` (a branch or label name can) ends the markdown target early. Wrap that
+  target in angle brackets: `[lb:fix(2)](<plastic://myorg.cloud/repos/mygame/labels/fix(2)/diff>)`.
+- The scheme is chosen per object, so one report can mix them: in a Unity project a changeset
+  gets `unityhub://` while the label or merge request next to it stays `plastic://`.
+
 ## Is this workspace a Unity project?
 
 A Unity project root holds both `Assets/` and `ProjectSettings/ProjectVersion.txt`. Check the
@@ -101,19 +131,24 @@ review `311`, merge request `312`.
 Not a Unity project:
 
 ```
-plastic://myorg.cloud/repos/mygame/branches/main/task001/diff
-plastic://myorg.cloud/repos/mygame/changesets/4207/diff
-plastic://myorg.cloud/repos/mygame/shelvesets/12/diff
-plastic://myorg.cloud/repos/mygame/code-reviews/311
-plastic://myorg.cloud/repos/mygame/merge-requests/312
+[br:/main/task001](plastic://myorg.cloud/repos/mygame/branches/main/task001/diff)
+[cs:4207](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)
+[sh:12](plastic://myorg.cloud/repos/mygame/shelvesets/12/diff)
+[code review 311](plastic://myorg.cloud/repos/mygame/code-reviews/311)
+[merge request 312](plastic://myorg.cloud/repos/mygame/merge-requests/312)
 ```
 
-A Unity project with `cloudProjectId: 0f1e2d3c-4b5a-4697-8877-665544332211`:
+A Unity project with `cloudProjectId: 0f1e2d3c-4b5a-4697-8877-665544332211` — the reviews have no
+hub form, so they keep `plastic://`:
 
 ```
-unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/branch/main/task001?repo=mygame%40myorg%40cloud
-unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/changeset/4207?repo=mygame%40myorg%40cloud
-unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/shelve/12?repo=mygame%40myorg%40cloud
-plastic://myorg.cloud/repos/mygame/code-reviews/311
-plastic://myorg.cloud/repos/mygame/merge-requests/312
+[br:/main/task001](unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/branch/main/task001?repo=mygame%40myorg%40cloud)
+[cs:4207](unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/changeset/4207?repo=mygame%40myorg%40cloud)
+[sh:12](unityhub://editor/project/0f1e2d3c-4b5a-4697-8877-665544332211/Unity.PlasticSCM.Editor/show/shelve/12?repo=mygame%40myorg%40cloud)
+[code review 311](plastic://myorg.cloud/repos/mygame/code-reviews/311)
+[merge request 312](plastic://myorg.cloud/repos/mygame/merge-requests/312)
 ```
+
+Published as a review comment instead, the same changeset is
+`cs:4207 plastic://myorg.cloud/repos/mygame/changesets/4207/diff` — bare, because that text is
+not rendered.
