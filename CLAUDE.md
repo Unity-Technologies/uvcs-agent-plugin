@@ -268,6 +268,52 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
 Failures should degrade gracefully: per the spec, one broken skill must not take down the others,
 so keep skills independent and self-contained.
 
+### Writing evals that do not flake
+
+The evaluated model runs at `temperature: 0`, so one prompt gives the **same output every time**.
+A test that is red after an edit is therefore not noise: its prompt sits on a decision boundary,
+and the edit moved it across. Re-running does not fix that, and neither does word-golfing the
+skill until the test flips back — the next edit flips it again. Move the scenario away from the
+boundary instead. The rules below each come from a test that flaked for exactly that reason:
+
+- **One behavior per test.** An 8-entry review thread asking which items are pending was a
+  reasoning exercise the small model failed half the time; two tests of 3–4 entries each pass.
+- **For a derivation, ask for the reasoning first and the verdict last.** The template's
+  "commands, then three sentences" shape makes the model write a bold answer line and *then*
+  reason — and it reasoned its way to the opposite conclusion under its own verdict. "Go through
+  each id and say why; then list the queue on the last line" puts the conclusion after the work.
+- **Test the rule, not the parsing.** Given a flat list of `parent=` rows, the small model held
+  that a question "has no children" while quoting its reply on the next line — indenting the rows
+  did not help, and neither did spelling out in the skill how a child is found. Stating the
+  relation in words ("904 has one reply, 905") made the test 4/4: the behavior under test was
+  "a reply settles a question", and the parsing was an unrelated way to fail it.
+- **Give complete inputs.** Paste the command output the scenario rests on — the `cm status
+  --header` line, the `--machinereadable` rows with file names — never "3 changed files". An
+  unnamed input invites "let me check first", and the response ends before the behavior under test.
+- **State the decisions the workflow would stop for.** If the skill's next step is to ask the user
+  a question, asking it *is* the correct answer, and the command you assert on never appears. Put
+  the answer in the user message ("I have already decided: bring them along, do not ask again") and
+  ask for every command through to the end of the flow.
+- **The prompt template demands `cm` commands in code blocks.** A test whose right answer contains
+  no command forces the model to invent one — usually the only command in the nearest skill
+  section, whether it fits or not. Give the scenario a legitimate command to emit.
+- **Never `not-icontains` a token a correct answer may mention while rejecting it** (`cm shell`,
+  `reviewer rerequest`). A rubric that permits the mention plus a string assert that forbids it
+  fails correct answers by construction. Assert on the invocation *line* instead:
+  `not-regex: "(^|\\n)\\s*cm shell"` — `regex` compiles with no flags, so `^` alone is start of
+  string, not start of line.
+- **A rubric judges behavior, not explanation.** "Must explain why", "must give a reason of
+  substance", "must explain the behavior without the flag" grade prose the skill does not teach.
+  Name the command or fact that must appear and the one that must not; say the rest is not judged.
+- **A rubric must not contradict the skill.** "Checking in is a failure" failed a response that
+  followed the skill's own instruction to tell the user to check the shelves in afterwards.
+- **Skill side: a command the model must emit goes in its own fenced block**, on the step where it
+  runs. Inline in prose next to another step's block, the model copies the block and drops the
+  prose command — seen twice (the switch preview, the unattended wrap-up).
+- **Measure, both sides, before committing.** Run every test that loads the edited file with
+  `--repeat 4 --no-cache`, require 4/4 on each, and compare with the same run on `HEAD`. A test that
+  got worse means the edit moved it — revert that edit rather than adjusting the test to fit.
+
 ## Cutting a release
 
 One button, no local steps: **Actions ▸ Release ▸ Run workflow**, pick the branch and the bump

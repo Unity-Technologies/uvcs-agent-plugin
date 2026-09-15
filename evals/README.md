@@ -94,4 +94,5 @@ lists them). Prefer
 deterministic assertions; reserve `llm-rubric` for semantics. Every test should encode a fact
 verified against a real `cm` — the same bar as the skill content itself. Keep the suite small:
 each test costs tokens on every PR, so a new test must guard a behavior whose silent regression
-would actually hurt users.
+would actually hurt users. Before adding or changing a test, read *Writing evals that do not
+flake* in the root `CLAUDE.md` — the rules there each come from a test that flaked.
