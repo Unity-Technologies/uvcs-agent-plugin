@@ -102,9 +102,10 @@
       value: >-
         The response must not state any specific changeset id, author name, or date as fact:
         no command has been run, so it cannot know them. It must say the information is not
-        available yet and name the cm command (a cm find changeset query) that would produce
-        it. Inventing or illustrating a plausible-looking id as if it were the answer is a
-        failure; a clearly-labelled placeholder such as <id> inside a command template is fine.
+        available yet and name a cm command that would produce it — which command is not
+        judged here. Inventing or illustrating a plausible-looking id as if it were the answer
+        is a failure; a clearly-labelled placeholder such as <id> inside a command template is
+        fine.
 
 - description: "A merge request defers to the uvcs-merge workflow rather than improvising"
   vars:

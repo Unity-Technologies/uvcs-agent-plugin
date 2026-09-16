@@ -272,14 +272,22 @@ so keep skills independent and self-contained.
 
 ### Writing evals that do not flake
 
-The evaluated model runs at `temperature: 0`, so one prompt gives the **same output every time**.
-A test that is red after an edit is therefore not noise: its prompt sits on a decision boundary,
-and the edit moved it across. Re-running does not fix that, and neither does word-golfing the
-skill until the test flips back — the next edit flips it again. Move the scenario away from the
-boundary instead. The rules below each come from a test that flaked for exactly that reason:
+The evaluated model runs at `temperature: 0`, so one prompt gives **nearly the same output every
+time** — not byte-identical: a prompt that sits on a decision boundary still flips about one run
+in eight (measured 2026-09-16 on the not-invented-id test: 7/8 on `main`, then 8/8 after the fix
+below), and a run of the suite can therefore go red on a test nobody touched. That is not
+noise to re-roll either: it means the prompt has no margin, and the next skill edit will tip it
+for good. Re-running does not fix that, and neither does word-golfing the skill until the test
+flips back — the next edit flips it again. Move the scenario away from the boundary instead.
+The rules below each come from a test that flaked for exactly that reason:
 
 - **One behavior per test.** An 8-entry review thread asking which items are pending was a
   reasoning exercise the small model failed half the time; two tests of 3–4 entries each pass.
+  The same rule for rubrics: "must not invent an id **and** must name a `cm find changeset`
+  query" failed a response that invented nothing but reached for a git-shaped
+  `cm log br:… --limit` — a wrong command, but a different behavior, and one already asserted
+  deterministically in three other tests. A rubric names one behavior; the command that gets
+  there is asserted where that command is the behavior under test.
 - **For a derivation, ask for the reasoning first and the verdict last.** The template's
   "commands, then three sentences" shape makes the model write a bold answer line and *then*
   reason — and it reasoned its way to the opposite conclusion under its own verdict. "Go through
@@ -315,6 +323,9 @@ boundary instead. The rules below each come from a test that flaked for exactly 
 - **Measure, both sides, before committing.** Run every test that loads the edited file with
   `--repeat 4 --no-cache`, require 4/4 on each, and compare with the same run on `HEAD`. A test that
   got worse means the edit moved it — revert that edit rather than adjusting the test to fit.
+  When a test fails once in a full run, `--repeat 8` on both sides is the minimum that separates
+  "the edit moved it" from "it had no margin to begin with" (4/4 misses a one-in-eight flip half
+  the time); either way the fix is the scenario or the skill wording, never a re-run.
 
 ## Cutting a release
 
