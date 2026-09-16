@@ -23,6 +23,7 @@ Once installed, just describe the task. The agent picks the right skill.
 - "Merge `/main` into my branch and resolve the conflicts."
 - "Switch to a new branch for this task. Keep my pending changes."
 - "Give me a link to changeset 41827 so I can paste it in the ticket."
+- "That command you gave me was wrong. Report it as a plugin bug."
 
 Read-only work such as searching, diffing and reviewing runs without asking. Anything that
 changes a repository, such as check-in, merge, undo or deleting a branch, asks you first.
@@ -111,6 +112,7 @@ suite before merge.
 | `uvcs-root-cause` | Trace a bug, crash or failing test back to the changeset that introduced it. Read-only. |
 | `uvcs-merge` | Merge a branch, changeset, label or shelve and resolve conflicts without opening a merge tool. |
 | `uvcs-switch` | Switch the workspace to another branch, creating it if needed, and keep or shelve pending changes. |
+| `uvcs-report-issue` | Report a defect or a gap in this plugin as a GitHub issue: a rejected command, a missing recipe, a skill that misbehaved. Redacts, shows you the text, then files it. |
 
 ## Project-specific review rules
 
@@ -148,7 +150,11 @@ Contributions are welcome, especially real `cm` recipes and workflows. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) first. One rule matters above all: every `cm` command must be
 verified against a real CLI, never remembered.
 
-- **Bugs and feature requests:** [GitHub issues](https://github.com/Unity-Technologies/unity-version-control-plugin/issues)
+- **Bugs and feature requests:** [GitHub issues](https://github.com/Unity-Technologies/unity-version-control-plugin/issues).
+  Or tell the agent: *"Report this as a plugin bug"*. The `uvcs-report-issue` skill writes the
+  report with server, repository and user names replaced by placeholders, shows you the full
+  text, and files it with the `gh` CLI or gives you the text to paste. When a command from the
+  plugin is rejected by `cm`, the agent offers this on its own.
 - **Security reports:** [SECURITY.md](SECURITY.md)
 
 ## License
