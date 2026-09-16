@@ -121,7 +121,9 @@ Use progressive disclosure — three levels, no more:
    `body-progressive-disclosure` rule warns — so the job fails — at a body of **more than 200
    lines** in a skill with no `references/`, `scripts/` or `assets/` directory. For a workflow
    skill, which by our own convention has no `references/`, 200 body lines is therefore a hard
-   ceiling. Cut prose to fit; do not add a directory just to clear the rule.
+   ceiling. Cut prose to fit; do not add a directory just to clear the rule. (`uvcs-code-review`
+   has an `assets/` directory because the reviewer prompt genuinely is a template handed to
+   another agent — not to buy lines.)
 3. `references/*.md`, `scripts/`, `assets/` — loaded only when the task needs them.
 
 Keep references one level deep from `SKILL.md`; no nested reference chains. Name reference files
@@ -408,18 +410,42 @@ the two.
   hub was named
   `uvcs-cli-reference` until it grew into a real hub; the name now describes the body and the
   `cm` reference sits in its `references/`.
-- **The review report layout is fixed, and it lives in `uvcs-code-review` step 4.** A header
-  table, then one section per severity (🔴 BLOCKERS, 🟡 IMPORTANT, 💡 SUGGESTIONS, ⚪ NITS) carrying
-  its count, with **no section at all** for a severity that has no findings; each finding is a
-  short title, its location on the line below (`` `<path>` `` then `line 106`, never `path:106`),
-  and the fix with any code in its own fenced block. Settled with the user over several passes
-  against real terminal output, so do not re-open the shape. Rejected on the way: repeating the
-  severity icon on the finding heading as well as the section (noise — `##` and `###` render
-  alike in a terminal, so caps sections against sentence-case titles is what carries the
-  hierarchy) and a "checked and fine" list (replaced by a single **Verified** row, only when a
-  check closes a concern that was already raised). The layout is **chat-side only**: what
-  `comment add` publishes is the finding body, since a UVCS thread renders no headings and
-  already shows the anchor.
+- **The review itself runs in a fresh agent, from `uvcs-code-review/assets/review-prompt.md`.**
+  The skill body is UVCS mechanics only (route, patch, publish); everything about *judgement* —
+  what is a finding, the severity table, the BLOCKER tracing rule, `[PRE-EXISTING]`, the
+  confidence gate, nits on by default, the report layout — is the prompt, and nothing about
+  judgement may be duplicated back into `SKILL.md`. The prompt is an asset and not a reference
+  because it is handed to another agent verbatim, with an **Inputs** block the parent fills
+  (target, patch path, `cm diff` rows, a read-only `cm cat` command for whole files, the user's
+  request, the project rules). Delegation is phrased portably ("an agent of its own, with a clean
+  context") with an explicit inline fallback for clients that cannot start one — never as one
+  client's tool. Reason for the split: the diff plus the surrounding code fill a context window
+  on their own, and a reviewer still carrying the conversation and the publishing commands
+  reviews worse.
+- **Project review rules are a project skill named `code-review-rules`**, found by name (or by a
+  description that says it holds the project's review rules), pasted whole into the prompt's
+  **Project rules** input, and *merged*: project rules win over the general rules on conflict,
+  including a severity scheme of their own; the report layout and the id/anchor contract stay,
+  because `uvcs-address-review` parses them. The parent does **not** search the repository for a
+  rules file — one predictable location, documented in the README. The template ships as
+  `assets/code-review-rules-template.md`, deliberately **not** as a nested `SKILL.md`: skill
+  installers scan for that filename and would install the template as a real skill. The portable
+  location for the copy is `.agents/skills/` (Codex, Cursor and Copilot all read it) and
+  `.claude/skills/` for Claude Code.
+- **The review report layout is fixed, and it lives in the reviewer prompt.** A verdict line,
+  then one section per severity (🔴 BLOCKERS, 🟡 IMPORTANT, 💡 SUGGESTIONS, ⚪ NITS, then
+  ❓ QUESTIONS for `[Q]` items that ask rather than tell) carrying its count, with **no section at
+  all** for a severity that has no findings; each finding is a short title, its location on the
+  line below (`` `<path>` `` then `line 106`, never `path:106`), and the fix with any code in its
+  own fenced block. The parent adds the title and inserts the header table right after the
+  verdict line. Settled with the user over several passes against real terminal output, so do not
+  re-open the shape. Rejected on the way: repeating the severity icon on the finding heading as
+  well as the section (noise — `##` and `###` render alike in a terminal, so caps sections against
+  sentence-case titles is what carries the hierarchy) and a "checked and fine" list (replaced by a
+  single **Verified** row, only when a check closes a concern that was already raised). The
+  layout is **chat-side only**: what `comment add` publishes is the finding body, since a UVCS
+  thread renders no headings and already shows the anchor. Every finding publishes as
+  `--type=Change`; only `[Q]` items are `--type=Question`.
 - **Deep links: one scheme per workspace, chosen by the workspace.** A Unity project (`Assets/` +
   `ProjectSettings/ProjectVersion.txt`) gets a `unityhub://` link that the Hub routes to that
   project's Editor; anything else gets `plastic://` for the desktop GUI. Both live in one hub
