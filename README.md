@@ -44,21 +44,21 @@ Results include clickable links: `unityhub://` when the workspace is a Unity pro
 ### Claude Code
 
 ```
-/plugin marketplace add Unity-Technologies/unity-version-control-plugin
+/plugin marketplace add Unity-Technologies/uvcs-agent-plugin
 /plugin install unity-version-control@unity
 ```
 
 Or from a terminal:
 
 ```bash
-claude plugin marketplace add Unity-Technologies/unity-version-control-plugin
+claude plugin marketplace add Unity-Technologies/uvcs-agent-plugin
 claude plugin install unity-version-control@unity
 ```
 
 ### Codex, Cursor, Copilot, Gemini CLI, OpenCode, Zed and others
 
 ```bash
-npx skills add Unity-Technologies/unity-version-control-plugin --skill '*'
+npx skills add Unity-Technologies/uvcs-agent-plugin --skill '*'
 ```
 
 Keep `--skill '*'`. Every skill depends on `uvcs-core`, so installing one skill alone does not
@@ -71,13 +71,13 @@ Install the plugin from the repository URL. In VS Code, run *Chat: Install Plugi
 Other clients have an equivalent "install plugin from Git URL" command.
 
 ```
-https://github.com/Unity-Technologies/unity-version-control-plugin
+https://github.com/Unity-Technologies/uvcs-agent-plugin
 ```
 
 ### Manual
 
 Clone the repository, or download the zip from the
-[Releases page](https://github.com/Unity-Technologies/unity-version-control-plugin/releases).
+[Releases page](https://github.com/Unity-Technologies/uvcs-agent-plugin/releases).
 Then copy the `skills/*` directories to wherever your agent looks for skills.
 
 We have tested the Claude Code and `npx skills` routes ourselves. The other routes follow each
@@ -150,7 +150,7 @@ Contributions are welcome, especially real `cm` recipes and workflows. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) first. One rule matters above all: every `cm` command must be
 verified against a real CLI, never remembered.
 
-- **Bugs and feature requests:** [GitHub issues](https://github.com/Unity-Technologies/unity-version-control-plugin/issues).
+- **Bugs and feature requests:** [GitHub issues](https://github.com/Unity-Technologies/uvcs-agent-plugin/issues).
   Or tell the agent: *"Report this as a plugin bug"*. The `uvcs-report-issue` skill writes the
   report with server, repository and user names replaced by placeholders, shows you the full
   text, and files it with the `gh` CLI or gives you the text to paste. When a command from the

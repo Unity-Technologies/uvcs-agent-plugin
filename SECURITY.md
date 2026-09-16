@@ -6,7 +6,7 @@
 
 Report vulnerabilities to Unity's security team following the process at
 <https://unity.com/security> (or use GitHub's private
-[security advisory](https://github.com/Unity-Technologies/unity-version-control-plugin/security/advisories/new)
+[security advisory](https://github.com/Unity-Technologies/uvcs-agent-plugin/security/advisories/new)
 form on this repository).
 
 Please include what you found, how to reproduce it, and the impact you believe it has. We will
