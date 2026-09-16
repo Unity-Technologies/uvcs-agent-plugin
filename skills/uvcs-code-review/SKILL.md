@@ -6,9 +6,9 @@ description: >-
   workspace's pending changes in chat. Use when the user says review my changes, review this
   branch, review changeset 42 or shelve 12, code review, open a merge request or pull request,
   request a review from someone, publish review comments, approve, LGTM, or set my status to
-  rework required. Works with any review rules or checklist the project already supplies.
-  Performing the merge is uvcs-merge; fixing a review as its author is uvcs-address-review. All
-  cm syntax comes from the uvcs-core skill — load it first.
+  rework required. Merges the project's own code-review-rules skill into its general review
+  rules when the project has one. Performing the merge is uvcs-merge; fixing a review as its
+  author is uvcs-address-review. All cm syntax comes from the uvcs-core skill — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
@@ -19,21 +19,14 @@ Every `cm` flag, output token and availability note this skill names belongs to 
 `uvcs-core/references/reviews-and-merge-requests.md` (MR and review lifecycle, reviewers, comment
 grammar) and `uvcs-core/references/diff-and-patch.md` (what each spec diffs, `--integration`).
 
-## What this skill owns, and what it yields
+## Two halves
 
-Two kinds of content, and they are not equal in authority:
-
-- **UVCS mechanics — always this skill.** Which object to diff and how, getting real content
-  instead of a file list, anchoring a finding to a file and line, publishing comments, setting
-  reviewer status. Nothing else knows these.
-- **Review judgement — yielded the moment anything else governs it.** Severity names and
-  definitions, what counts as a finding, how many to report, and the report layout when they
-  supply one. **If the project or the user supplies code-review rules, a review checklist, or
-  another review skill, follow those** and use this skill only to carry the result into UVCS.
-
-Only when nothing else governs does the default apply: point at the exact line, name the exact
-expression that is wrong, give a concrete fix, and drop anything you cannot say precisely why is
-wrong. Style preferences are not defects.
+- **UVCS mechanics — this file.** Which object to diff and how, getting real content instead of a
+  file list, publishing comments anchored to a file and line, setting reviewer status.
+- **Review judgement — `assets/review-prompt.md`.** What counts as a finding, the severities, how
+  a finding is worded and laid out. It is the prompt the review itself runs from (step 3), and it
+  is where the project's own rules are merged in: a project skill named `code-review-rules` wins
+  over its general rules wherever they conflict. Nothing about judgement lives here.
 
 ## 1. Route the target
 
@@ -66,7 +59,7 @@ cm patch cs:4100 cs:4207 > <tmp> 2>&1
 cm patch sh:12 > <tmp> 2>&1
 ```
 
-Read it **completely**. For pending changes, the workspace files on disk are the "after" side:
+For pending changes, the workspace files on disk are the "after" side:
 
 ```
 cm status --machinereadable --all --includeRevId --iscochanged --fieldseparator="|"
@@ -81,24 +74,46 @@ cm diff <spec> --format="{status} {path} {baserevid} {revid} {repository}"
 Every finding is anchored to a **server path** (`/src/Player.cs`, not a workspace path) and a
 line. Binaries, deleted files and files that only moved get a mention in the report, not findings.
 
-## 3. Review, and keep the anchors
+## 3. Run the review in a fresh agent
 
-Follow whatever governs judgement (see above). Each finding needs a **short ID in brackets** —
-`[B1]`, `[I2]`… — so the author can say "fix B1" and **`uvcs-address-review`** can find the
-comment again; the letter is its severity (**B**locker, **I**mportant, **S**uggestion, **N**it,
-or the initials of whatever scheme governs). It also needs the **server path** and the line from
-the diff metadata: `--line` is **1-based**, the line as an editor shows it — never subtract one.
+The review runs from `assets/review-prompt.md` in an agent of its own, with a clean context: the
+diff and the code around it fill a context window by themselves, and a reviewer that still
+carries this conversation, the routing and the publishing commands reviews worse. Where the
+client cannot start one, follow that prompt yourself, in this session, right after step 2 — the
+prompt is the review either way, never a step to skip.
 
-## 4. Show the findings, then ask what to publish
+First collect what the prompt's **Inputs** block asks for:
 
-**Nothing is published automatically.** Show every finding in chat first, in this layout: a
-header table, then one section per severity in the order 🔴 BLOCKERS, 🟡 IMPORTANT, 💡 SUGGESTIONS,
-⚪ NITS — each with its count, and **no section at all for a severity with no findings**.
+- **Project rules.** A skill named `code-review-rules`, or any loaded skill whose description
+  says it holds this project's code review rules or checklist: read it and paste its body in
+  whole. Rules the user pasted or pointed at count too. Nothing found means `none` — do not
+  search the repository for a rules file. When the user asks to *set up* review rules for the
+  project, create `code-review-rules/SKILL.md` in the client's project skills directory from
+  `assets/code-review-rules-template.md`.
+- **A read command** for whole files, so the reviewer can see callers and context the diff omits:
+
+  ```
+  cm cat "serverpath:<path>#br:/main/task001"                     # the after side (#br: or #cs:)
+  cm cat "revid:<revid>@rep:<repo>@repserver:<server>"            # either side, from the diff rows
+  ```
+
+  For pending changes the after side is the file on disk.
+- **The request**, in the user's words: a focus, "skip nits", a concern to verify.
+
+Read the prompt file, fill the block in, and hand the whole text to the new agent together with
+the patch path. What comes back is the report body: a verdict line, one section per severity, and
+findings with a bracketed id, a path and a 1-based line. Keep it exactly — the `[B1]` ids are how
+the author says "fix B1" and how **`uvcs-address-review`** finds the comment again.
+
+## 4. Show the report, then ask what to publish
+
+**Nothing is published automatically.** Show the whole report first: a title, then the header
+table inserted right after the reviewer's verdict line, then the rest untouched.
 
 ````markdown
 # Review — <branch link>
 
-> **Rework required** — <one sentence on why>
+> **Rework required** — <the reviewer's sentence>
 
 | Branch | <link> → <destination> |
 |---|---|
@@ -109,36 +124,17 @@ header table, then one section per severity in the order 🔴 BLOCKERS, 🟡 IMP
 | **Published** | nothing |
 
 ## 🔴 BLOCKERS (2)
-
-### [B1] Air jumps play the jump clip twice
-
-**`/src/PlayerController.cs`** line 106
-
-The air-jump branch calls `PlayOneShot`, and `PlayerJumped` plays the same clip a frame later.
-
-**Fix** — delete line 106; `PlayerJumped` already handles the audio:
-
-```diff
-- audioSource.PlayOneShot(jumpAudio);
-```
-
----
-
-### [B2] …
+…
 ````
 
-A `---` goes between findings, never before the first or after the last in a section. The icon
-goes on the **section** heading only: repeated per finding it is noise, and the two heading
-levels look alike in a terminal — caps sections against sentence-case finding titles is what
-carries the hierarchy. Code goes in a fenced block, never inline in prose: `diff` with `-`/`+`
-when a line is replaced or deleted, the file's own language for added code. No "checked and
-fine" list; add a **Verified** row only when a check closes a concern already raised.
+A **Verified** row goes in the table only when the reviewer emitted one, closing a concern the
+user raised. Nothing else is added: no "checked and fine" list, no reworded findings.
 
 What gets published is the finding **body** — `[B1] /src/PlayerController.cs line 106 — <what is
 wrong>. Fix: …`. Titles, section headings and rules are chat structure: a UVCS thread renders no
 headings and already shows the anchor. Beyond dropping them, do not reword what the user approved.
 
-Then let the user choose: all, all of one severity, specific IDs, all except some, or none —
+Then let the user choose: all, all of one severity, specific ids, all except some, or none —
 "none" stops the workflow with nothing published. What you offer depends on the target:
 
 - **Pending changes** — no review object; the files are in the current workspace, so offer to fix
@@ -175,13 +171,15 @@ One comment per finding, anchored. Findings are multi-line, so write each to a f
 
 ```
 cm mr <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
+cm mr <id> comment add --path=/src/Player.cs --line=58 --type=Question -commentsfile=<file>   # a [Q] item
 cm mr <id> comment add -commentsfile=<file>                  # a remark on the review as a whole
 cm codereview <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
 ```
 
-`--type=Change` is right for a finding; keep `--type=Question` for something you genuinely need
-the author to answer. On a code review every subcommand is spelled `cm codereview <id> ...`,
-never `cm mr` — there is no merge request there.
+Every finding — blocker, important, suggestion, nit — is `--type=Change`: it names something
+wrong and tells the author what to fix. `--type=Question` is only for the report's `[Q]` items,
+which ask the author something instead. On a code review every subcommand is spelled
+`cm codereview <id> ...`, never `cm mr` — there is no merge request there.
 
 Finish with your own reviewer status, and say why in the same call:
 
@@ -197,12 +195,12 @@ the review's link, the comment count and the status. Links come from
 
 ## Mutating, and visible to other people
 
-Steps 1–4 are read-only end to end: analysis must never mutate anything, and a review that stops
-after step 4 has cost nobody anything. From step 5 on, every command is visible to the team —
-creating the MR, each comment, the reviewer list, the status. Confirm first, and never publish
-findings the user did not select. Deleting a review or a comment is irreversible and takes the
-whole thread with it: if one was created by mistake, say so and offer
-`--mergerequeststatus=Closed`, never a delete as a casual next step.
+Steps 1–4 are read-only end to end: analysis must never mutate anything — the reviewer agent
+included — and a review that stops after step 4 has cost nobody anything. From step 5 on, every
+command is visible to the team — creating the MR, each comment, the reviewer list, the status.
+Confirm first, and never publish findings the user did not select. Deleting a review or a comment
+is irreversible and takes the whole thread with it: if one was created by mistake, say so and
+offer `--mergerequeststatus=Closed`, never a delete as a casual next step.
 
 ## Not this skill's job
 
