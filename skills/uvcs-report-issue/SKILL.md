@@ -88,8 +88,9 @@ something is sensitive, ask.
 
 ## 5. Show it, then file it
 
-Filing publishes. Fill `assets/issue-template.md`, show the user the **complete** text — title,
-label and body, not a summary — and wait for a yes. Then, in order:
+Filing publishes. Fill `assets/issue-template.md` (the bug body, or the enhancement body after
+the rule), show the user the **complete** text — title, label and body, not a summary — and wait
+for a yes. Then, in order:
 
 ```
 gh auth status

@@ -490,10 +490,17 @@ the two.
   command fails on one), title `[<skill>] <symptom>`, a duplicate search first, and a body-file
   plus form link as the fallback when `gh` is missing or signed out — never sign the user in.
   The body is `assets/issue-template.md` (handed to GitHub verbatim, same reason the reviewer
-  prompt is an asset), and `.github/ISSUE_TEMPLATE/bug_report.yml` asks for the same fields so
-  human and agent reports triage alike. Rejected: a bug-report field in `plugin.json` or the
-  marketplace entry (not a permitted field, and the URL is stable), and having every workflow
-  skill carry the offer (the hub is always loaded; duplicating it rots).
+  prompt is an asset). It looks like a third copy of the two issue forms in
+  `.github/ISSUE_TEMPLATE/`, and the question was raised — checked and kept, because the forms
+  cannot do its job: an installed plugin never carries `.github/` (it is `export-ignore`d from
+  the release zip and `npx skills` copies `skills/` only), `gh issue create` discovers `.md`
+  templates only and posts a free markdown body, so a YAML form is web-only, and URL prefill of
+  form fields answers 414 on a body this size. The duplication is managed instead: the asset's
+  headings **are** the forms' field labels in their order, because GitHub renders a form
+  submission as `### <label>` sections, so a form-filed and an agent-filed issue look identical
+  in the tracker; each file says so at the top, and they change together. Rejected: a bug-report
+  field in `plugin.json` or the marketplace entry (not a permitted field, and the URL is stable),
+  and having every workflow skill carry the offer (the hub is always loaded; duplicating it rots).
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.

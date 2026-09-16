@@ -1,3 +1,8 @@
+# The field labels below double as the headings of
+# skills/uvcs-report-issue/assets/issue-template.md, which is what an agent files with gh
+# (an installed plugin never carries .github/, and gh cannot submit a YAML form). GitHub
+# renders a submission of this form as "### <label>" sections, so the two stay identical in
+# the tracker only while they change together.
 name: Bug report
 description: A skill gave wrong commands, didn't trigger, or behaved differently in one agent
 labels: ["bug"]
