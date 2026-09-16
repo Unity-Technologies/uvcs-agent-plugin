@@ -1,0 +1,131 @@
+# uvcs-report-issue: a plugin defect is filed on the plugin's tracker, redacted, and only after
+# the user has read the text; a UVCS product problem is not filed there at all. The last test
+# loads the hub alone: the proactive offer has to work with nothing else loaded.
+
+- description: "Filing a plugin issue waits until the user has read the text"
+  vars:
+    skill_content: file://../skills/uvcs-report-issue/SKILL.md
+    reference_content: file://../skills/uvcs-report-issue/assets/issue-template.md
+    user_message: |
+      Report this as a plugin bug. I asked "which shelves did I create this week". The agent,
+      following uvcs-core, ran:
+
+      cm find shelve "where owner='me' and date >= 'this week'" --format="{shelveid} {comment}" --nototal --order-by=date
+
+      and cm said: Unexpected option --order-by. I checked cm help find myself: there is no
+      such flag, the sort goes inside the query string. macOS 15 / zsh, Claude Code. List every
+      command from here to the filing, in order, and say where you stop.
+  assert:
+    - type: icontains
+      value: "cm version"
+    - type: llm-rubric
+      value: >-
+        Before gh issue create there must be a stopping point where the complete report is
+        shown to the user and filing waits for their approval. Listing gh issue create with no
+        such stopping point, or presenting it as already run, is a failure. The label must be
+        "bug" if one is named. The draft's wording, the evidence commands and the duplicate
+        search are not judged.
+
+- description: "The What-happened section of a report carries placeholders, not the real names"
+  vars:
+    skill_content: file://../skills/uvcs-report-issue/SKILL.md
+    user_message: |
+      Write only the "What happened" section of the plugin issue for me, redacted the way the
+      skill says — the fenced block with the command and its output, nothing else, and do not
+      tell me what you replaced. The agent ran:
+
+      cm find shelve "where owner='jane.doe@acmegames.com' and date >= 'this week'" --format="{shelveid} {comment}" --nototal --order-by=date
+
+      on repository projectfalcon@acmegames@cloud, and cm answered:
+
+      Unexpected option --order-by
+  assert:
+    - type: not-icontains
+      value: "acmegames"
+    - type: not-icontains
+      value: "jane.doe"
+    - type: not-icontains
+      value: "projectfalcon"
+    - type: icontains
+      value: "Unexpected option --order-by"
+    - type: icontains
+      value: "--order-by=date"
+
+- description: "An approved report is filed with gh on the plugin repository, labelled bug"
+  vars:
+    skill_content: file://../skills/uvcs-report-issue/SKILL.md
+    user_message: |
+      I have read the whole report you drafted for the rejected --order-by flag and I approve it
+      as written — the title is "[uvcs-core] find-queries.md gives cm find an --order-by flag cm
+      rejects", it is saved at /tmp/uvcs-issue.md, and I do not want to be asked again. List every
+      command from here to the issue URL.
+  assert:
+    - type: icontains
+      value: "gh issue create"
+    - type: icontains
+      value: "--repo Unity-Technologies/unity-version-control-plugin"
+    - type: icontains
+      value: "--label bug"
+    - type: icontains
+      value: "--body-file"
+    - type: llm-rubric
+      value: >-
+        The user has approved the text, so the response must proceed to file the issue with gh
+        issue create on the plugin repository, using the saved body file. Asking for approval
+        again is a failure; so is any label other than bug. Checking gh authentication and
+        searching for an existing issue first are correct, not required. Naming the commands is
+        enough: nothing is executed here, so no issue URL can appear.
+
+- description: "An unreachable server is a UVCS problem, not a plugin issue"
+  vars:
+    skill_content: file://../skills/uvcs-report-issue/SKILL.md
+    user_message: |
+      Report this bug in the plugin: every command fails. cm status --header says
+      "The server myorg@cloud could not be reached. Check the network connection." and cm find
+      branch "where owner='me'" says the same thing.
+  assert:
+    - type: not-regex
+      value: "(^|\\n)\\s*gh issue create"
+    - type: llm-rubric
+      value: >-
+        The failure is a UVCS server or connection problem, not a defect in the plugin, so the
+        response must decline to file it on the plugin's issue tracker and point the user at
+        UVCS product support or their connection or sign-in instead. Filing a plugin issue is a
+        failure. Mentioning gh issue create while explaining why it does not apply is fine.
+
+- description: "A missing workflow is requested as an enhancement, not a bug"
+  vars:
+    skill_content: file://../skills/uvcs-report-issue/SKILL.md
+    user_message: |
+      There is no skill for summarizing everything merged into /main since a label, and I do it
+      by hand every release with cm find changeset and cm log. Request it as a plugin issue — I
+      have read your draft, it is at /tmp/uvcs-request.md, file it as is.
+  assert:
+    - type: icontains
+      value: "gh issue create"
+    - type: icontains
+      value: "--label enhancement"
+    - type: not-icontains
+      value: "--label bug"
+
+- description: "The hub alone turns a rejected recipe into a corrected command and an offer to report"
+  vars:
+    user_message: |
+      You gave me this from uvcs-core/references/history-and-annotate.md and I ran it:
+
+      cm log cs:4207 --nototal
+
+      cm answered: Unexpected option --nototal. I ran cm help log: there is no --nototal on log.
+      What now?
+  assert:
+    - type: icontains
+      value: "uvcs-report-issue"
+    - type: regex
+      value: "cm log cs:4207(?![^\\n]*--nototal)"
+    - type: llm-rubric
+      value: >-
+        The response must give the corrected command (cm log cs:4207 without --nototal), say
+        the reference is wrong — a defect in the plugin, not in UVCS — and offer to report it
+        with the uvcs-report-issue skill. Sending the user to Unity product support, retrying
+        with other guessed flags, or filing an issue without asking are failures. Explaining
+        why --nototal is find-only is not required.

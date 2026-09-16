@@ -1,3 +1,6 @@
+# The field labels below double as the enhancement headings of
+# skills/uvcs-report-issue/assets/issue-template.md — change the two together (see the note
+# at the top of bug_report.yml).
 name: Skill or workflow request
 description: Suggest a UVCS workflow that agents should learn
 labels: ["enhancement"]

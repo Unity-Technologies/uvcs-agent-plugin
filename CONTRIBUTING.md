@@ -41,7 +41,7 @@ Nothing deeper is discovered.
 
 ## Adding a skill
 
-1. **Check it belongs.** UVCS command syntax lives in exactly one place: the `uvcs-cm` hub
+1. **Check it belongs.** UVCS command syntax lives in exactly one place: the `uvcs-core` hub
    skill. A new skill should add *workflow and judgement*, and defer to the hub for syntax. If
    you are copying a table of flags, stop — extend the hub instead.
 2. **Scaffold it.** Use a skill-creator skill if you have one (in Claude Code:
@@ -98,7 +98,10 @@ Nothing deeper is discovered.
 ## Reporting problems
 
 - **Bugs, wrong commands, bad triggering:** open an issue. Include the agent and client version,
-  the `cm` version, what you asked, and what the agent did.
+  the `cm` version, what you asked, and what the agent did. The quickest way is to ask the agent
+  itself — *"report this as a plugin bug"* — the `uvcs-report-issue` skill collects exactly that,
+  writes the reproduction in the shape of an eval, redacts names, and files it once you have read
+  the text.
 - **A skill that works in one agent but not another:** please report it. Portability is a
   feature, so this is a real bug.
 - **Security issues:** do not open a public issue. See [SECURITY.md](SECURITY.md).

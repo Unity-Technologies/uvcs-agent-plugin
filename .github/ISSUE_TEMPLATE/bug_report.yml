@@ -1,3 +1,8 @@
+# The field labels below double as the headings of
+# skills/uvcs-report-issue/assets/issue-template.md, which is what an agent files with gh
+# (an installed plugin never carries .github/, and gh cannot submit a YAML form). GitHub
+# renders a submission of this form as "### <label>" sections, so the two stay identical in
+# the tracker only while they change together.
 name: Bug report
 description: A skill gave wrong commands, didn't trigger, or behaved differently in one agent
 labels: ["bug"]
@@ -7,11 +12,16 @@ body:
       value: |
         Please don't report security issues here — see
         [SECURITY.md](https://github.com/Unity-Technologies/unity-version-control-plugin/blob/main/SECURITY.md).
+
+        Using the plugin from an agent? Ask it to *report this as a plugin bug*: the
+        `uvcs-report-issue` skill collects everything below, redacts it, shows you the text and
+        files it (or hands you the text to paste here).
   - type: input
     id: skill
     attributes:
       label: Which skill
-      placeholder: uvcs-cm
+      description: The skill, and the file inside it if you know which.
+      placeholder: uvcs-core — references/find-queries.md
     validations:
       required: true
   - type: input
@@ -23,6 +33,14 @@ body:
     validations:
       required: true
   - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: "`version` in `plugin.json`, or how you installed it (`npx skills add`, clone)."
+      placeholder: "0.1.6"
+    validations:
+      required: false
+  - type: input
     id: cm-version
     attributes:
       label: cm version
@@ -33,8 +51,9 @@ body:
   - type: input
     id: os
     attributes:
-      label: OS
-      placeholder: macOS 15.2 / Windows 11 / Ubuntu 24.04
+      label: OS and shell
+      description: The shell `cm` ran in matters — quoting differs between them.
+      placeholder: macOS 15.2 / zsh — Windows 11 / PowerShell — Ubuntu 24.04 / bash
     validations:
       required: true
   - type: textarea
@@ -45,20 +64,43 @@ body:
     validations:
       required: true
   - type: textarea
+    id: what-skill-says
+    attributes:
+      label: What the skill says
+      description: |
+        The lines the agent followed, quoted from the skill or reference file. This pins the
+        content regardless of the version installed.
+    validations:
+      required: false
+  - type: textarea
     id: what-happened
     attributes:
       label: What the agent did
       description: |
         Commands it ran and output it produced. Trim and anonymize — replace real server names,
-        repo names, and user names with placeholders.
+        repo names, and user names with placeholders (`<server>`, `<repo>`, `<user>`).
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
       label: What should have happened
+      description: The correct command or behaviour, and how you know (`cm help` output, the GUI, another reference).
     validations:
       required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction, as a test
+      description: |
+        Every fix lands with an eval, and an eval is one user message with the `cm` output pasted
+        into it, plus what the answer must and must not contain. Write it that way if you can.
+      placeholder: |
+        User message: "Switch me to /main/task002. cm status --header says /main/task001@<repo>@<org>@cloud (cs:4207 - head); cm status shows CH|/wk/src/Player.cs|..."
+        Must contain: cm shelveset create --all
+        Must not contain: cm undo before the shelve
+    validations:
+      required: false
   - type: dropdown
     id: other-agents
     attributes:

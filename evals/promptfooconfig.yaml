@@ -74,3 +74,4 @@ tests:
   - file://tests/code-review.yaml
   - file://tests/address-review.yaml
   - file://tests/batching.yaml
+  - file://tests/report-issue.yaml
