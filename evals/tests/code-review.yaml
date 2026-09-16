@@ -136,6 +136,83 @@
         is no review object to publish to, so creating a merge request or a code review is a
         failure; offering to fix the files (they are on disk in the current workspace) is correct.
 
+- description: "The review itself runs in a fresh agent from the shipped reviewer prompt"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review branch /main/task009 — merge request 311 is already open on it, and this project has
+      no review rules of its own. Before you start, tell me exactly how the review step works:
+      who reads the diff, what instructions they get, and what you do with what comes back.
+  assert:
+    - type: icontains
+      value: "review-prompt.md"
+    - type: icontains-any
+      value:
+        - "cm patch br:/main/task009"
+        - "cm patch \"br:/main/task009\""
+    - type: llm-rubric
+      value: >-
+        Two things are judged. First, the review must be performed by a fresh agent (a subagent,
+        a new agent, an agent of its own, a separate session, or equivalent wording) that receives
+        the reviewer prompt from assets/review-prompt.md; saying that the current agent reviews
+        the diff itself with no delegation is a failure, unless stated as the fallback for a
+        client that cannot start another agent. Second, the report that comes back must be shown
+        to the user before anything is published. How completely the prompt's inputs are
+        enumerated is not judged. Nothing has to be executed here.
+
+- description: "A project code-review-rules skill is merged into the reviewer prompt"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review changeset 4207. Among the loaded skills there is one named code-review-rules, whose
+      description says it holds this project's code review rules; its body says "Blocking I/O on
+      the main thread is always a BLOCKER" and "Do not comment on files under Gen/". Tell me how
+      those rules enter the review, and list the cm commands you run before anything is shown.
+  assert:
+    - type: icontains
+      value: "code-review-rules"
+    - type: icontains
+      value: "cm patch cs:4207"
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the code-review-rules skill's content must become part of the
+        instructions the reviewer receives, merged into or added to the general reviewer prompt
+        (assets/review-prompt.md), so both apply to the review. Saying that this happens when the
+        prompt is assembled or when the fresh agent runs is sufficient; the response does not
+        have to quote the rules or describe precedence. Failures: ignoring the project skill;
+        replacing the general reviewer prompt with the project rules alone; searching the
+        repository for a rules file instead of using the loaded skill. Nothing has to be executed
+        here.
+
+- description: "Findings publish as Change requests; only a [Q] item publishes as a Question"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Publish these two items from your report on merge request 311, exactly as written:
+
+      [N1] /src/Net/ProfileClient.cs line 61 — `retryCount` is spelled `retyCount` in the log
+      message. Fix: correct the spelling.
+
+      [Q1] /src/Net/ProfileClient.cs line 58 — Is the 30-second timeout on `FetchProfile`
+      intentional? The previous value was 5 seconds.
+  assert:
+    - type: icontains
+      value: "--line=61"
+    - type: icontains
+      value: "--line=58"
+    - type: icontains
+      value: "--type=Question"
+    - type: llm-rubric
+      value: >-
+        The [N1] nit is a finding and must be published as a Change request (--type=Change, or
+        with no --type since Change is the default); publishing it as a Question is a failure. The
+        [Q1] item must be published with --type=Question; publishing it as a Change is a failure.
+        Both are inline comments on /src/Net/ProfileClient.cs at the lines given. Nothing has to
+        be executed here.
+
 - description: "Existing project review rules govern the judgement, the skill only carries it into UVCS"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
