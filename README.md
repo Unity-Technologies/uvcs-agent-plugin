@@ -112,6 +112,36 @@ suite before merge.
 | `uvcs-merge` | Merge a branch, changeset, label or shelve and resolve conflicts without opening a merge tool. |
 | `uvcs-switch` | Switch the workspace to another branch, creating it if needed, and keep or shelve pending changes. |
 
+## Project-specific review rules
+
+`uvcs-code-review` reviews with a general-purpose rule set (the reviewer prompt in
+`skills/uvcs-code-review/assets/review-prompt.md`): confidence-gated findings, four severities,
+a concrete fix on every blocker. Your project probably has rules of its own: what is always a
+blocker here, what to check that the diff will not show, conventions no linter enforces, what
+not to comment on. Give the reviewer those by adding **one skill to your project**, named
+`code-review-rules`. The review skill finds it by name, merges it with its general rules, and
+lets your rules win wherever the two conflict. No configuration, no registration.
+
+1. Copy the template to your project's skills directory, as `code-review-rules/SKILL.md`:
+
+   | Agent | Directory |
+   | ----- | --------- |
+   | Codex, Cursor, Copilot | `.agents/skills/code-review-rules/SKILL.md` |
+   | Claude Code | `.claude/skills/code-review-rules/SKILL.md` |
+
+   Template: [`skills/uvcs-code-review/assets/code-review-rules-template.md`](skills/uvcs-code-review/assets/code-review-rules-template.md).
+   Or ask the agent: *"Set up code review rules for this project"* — it creates the file from
+   the same template for you to fill in.
+
+2. Fill in the sections you need and delete the rest. Keep the frontmatter: the `description` is
+   how the skill is recognised, and the file is only ever read by the review skill, never run as
+   a workflow on its own.
+
+3. Check it in. Everyone on the project, on every agent, now reviews with the same rules.
+
+A checklist the user pastes into the request works the same way, and a project can also replace
+the default severity names with its own in the template's last section.
+
 ## Contributing
 
 Contributions are welcome, especially real `cm` recipes and workflows. Read
