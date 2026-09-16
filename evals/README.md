@@ -42,10 +42,11 @@ Confirm which path was taken in the debug log:
 [anthropic] Authenticating with Claude Code OAuth credential from local session.
 ```
 
-The same ordering is what keeps CI on WIF: the workflow exports a placeholder
-`ANTHROPIC_API_KEY` alongside the bearer header, so it stops at step two and never reaches
-the OAuth fallback. To use a real API key locally instead, `export ANTHROPIC_API_KEY=<key>`
-— it takes precedence with no config change.
+The same ordering is what lets CI pick its credential without a config change: the API-key
+path exports `ANTHROPIC_API_KEY` and stops at step two, and the WIF path exports a
+*placeholder* `ANTHROPIC_API_KEY` alongside the bearer header so it also stops at step two
+and never reaches the OAuth fallback. To use a real API key locally, `export
+ANTHROPIC_API_KEY=<key>` — it takes precedence with no config change.
 
 Promptfoo is version-pinned in `package.json` so local runs and CI evaluate with the same
 tool version, and the config pins `claude-haiku-4-5` at `temperature: 0`, so a local result
@@ -68,9 +69,38 @@ the job fails when two or more tests fail (one failure is tolerated to absorb ra
 flakiness). The pinned promptfoo install is cached on `package-lock.json`, so warm runs skip
 the install entirely.
 
-Authentication uses **Anthropic Workload Identity Federation** — no API key secret in the repo.
-The job exchanges its GitHub OIDC token for a short-lived Anthropic access token and passes it
-to promptfoo as a bearer header (`ANTHROPIC_CUSTOM_HEADERS`). One-time setup
+### Authentication
+
+The workflow has two auth paths and runs exactly one of them, chosen by the `ANTHROPIC_AUTH`
+repository variable. Both leave the credential in the environment promptfoo already reads, so
+nothing else in the workflow or in this directory changes when the mode does.
+
+| `ANTHROPIC_AUTH` | Needs | State |
+|---|---|---|
+| `api-key` | the `ANTHROPIC_API_KEY` **secret** | **in use** |
+| `wif` (default when the variable is unset) | the four federation variables below | intended end state, currently blocked |
+
+**Why not WIF today.** The token exchange itself succeeds, but the federated service account
+resolves to an organization with no API credits, so every eval call returns `Your credit
+balance is too low to access the Anthropic API` (400, `invalid_request_error`). That is an
+account/billing problem, not a workflow one, so the WIF step is kept intact and the job runs
+on a key in the meantime.
+
+**Switching back to WIF** once the account is funded: set `ANTHROPIC_AUTH` to `wif` (or delete
+the variable) and delete the `ANTHROPIC_API_KEY` secret. No file in this repo needs to change.
+
+#### `api-key` mode
+
+One secret, `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → Secrets),
+exported into the job as-is. The key is workspace-scoped and used by CI only — rotate it in
+the Console and update the secret; nothing else refers to it. The job fails with an explicit
+error if the mode is `api-key` and the secret is empty.
+
+#### `wif` mode
+
+**Anthropic Workload Identity Federation** — no API key secret in the repo. The job exchanges
+its GitHub OIDC token for a short-lived Anthropic access token and passes it to promptfoo as a
+bearer header (`ANTHROPIC_CUSTOM_HEADERS`). One-time setup
 ([docs](https://platform.claude.com/docs/en/manage-claude/wif-providers/github-actions)):
 
 1. In the Claude Console: **Settings → Workload identity → Connect workload → GitHub Actions**.
@@ -83,9 +113,9 @@ to promptfoo as a bearer header (`ANTHROPIC_CUSTOM_HEADERS`). One-time setup
    `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, and (if the rule spans
    multiple workspaces) `ANTHROPIC_WORKSPACE_ID`.
 
-Until the variables are set, the eval job skips itself. OIDC tokens are not issued to PRs from
-forks, so the job also skips those; a maintainer pushes the branch to this repo to run the
-suite.
+In `wif` mode the job skips itself until those variables are set. Neither OIDC tokens nor
+secrets are issued to PRs from forks, so **both** modes skip fork PRs; a maintainer pushes the
+branch to this repo to run the suite.
 
 ## Adding tests
 
