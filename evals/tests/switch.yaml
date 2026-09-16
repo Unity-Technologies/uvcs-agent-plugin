@@ -30,9 +30,20 @@
   vars:
     skill_content: file://../skills/uvcs-switch/SKILL.md
     reference_content: file://../skills/uvcs-core/references/branches-and-merge.md
-    user_message: >-
-      I'm on /main/task001 with a few edited files and I want to go to /main. Leave my changes
-      behind on a shelve, the way the Plastic GUI does.
+    user_message: |
+      I'm on /main/task001 and I want to go to /main. Leave my changes behind on a shelve, the
+      way the Plastic GUI does — I have already decided, do not ask me again. I already ran both
+      status commands for you:
+
+      cm status --header
+      /main/task001@mygame@myorg@cloud (cs:4207 - head)
+
+      cm status --machinereadable --all --fieldseparator="|"
+      STATUS|4207|mygame|myorg@cloud
+      CH|/wk/src/Player.cs|False|1072|NO_MERGES
+      CH|/wk/src/Enemy.cs|False|1073|NO_MERGES
+
+      Give me every command to run, in order, through to the end.
   assert:
     - type: icontains
       value: "cm shelveset create"
