@@ -1,9 +1,21 @@
 name: Skill evals
 
 # Runs the promptfoo eval suite when skill content (or the suite itself) changes.
-# Auth: Anthropic Workload Identity Federation — the job exchanges its GitHub OIDC
-# token for a short-lived Anthropic access token; no API key secret is stored.
-# See evals/README.md for the one-time Console setup and the repo variables required.
+#
+# Auth has two interchangeable paths, selected by the ANTHROPIC_AUTH repository
+# variable — both end at the same place (credentials in the environment promptfoo
+# reads), so nothing else in the job or in evals/ knows which one ran:
+#
+#   api-key  the ANTHROPIC_API_KEY secret, exported as-is. Current setting.
+#   wif      Anthropic Workload Identity Federation: the job exchanges its GitHub
+#            OIDC token for a short-lived access token; no secret is stored.
+#
+# WIF is the intended end state and its step below is untouched. It is not in use
+# because the federated service account resolves to an organization with no API
+# credits ("Your credit balance is too low to access the Anthropic API", 400) —
+# an account/billing problem outside this repo. Switching back once that is fixed
+# is two clicks: set ANTHROPIC_AUTH to `wif` and delete the ANTHROPIC_API_KEY
+# secret. See evals/README.md.
 
 on:
   pull_request:
@@ -11,26 +23,46 @@ on:
       - "skills/**"
       - "evals/**"
       - ".github/workflows/skill-evals.yml"
-  # Manual runs — handy to verify the WIF setup without opening a PR.
+  # Manual runs — handy to verify the auth setup without opening a PR.
   workflow_dispatch:
 
 permissions:
-  id-token: write # required to request the GitHub OIDC token
+  id-token: write # required to request the GitHub OIDC token (wif mode only)
   contents: read
 
 jobs:
   evals:
     runs-on: ubuntu-latest
-    # OIDC tokens are not issued to fork PRs, and the WIF variables must be configured.
-    # Fork contributions: a maintainer pushes the branch to this repo to run the evals.
+    # Neither OIDC tokens nor secrets are issued to fork PRs, so both modes skip
+    # them; a maintainer pushes the branch to this repo to run the evals. In wif
+    # mode the job also skips itself until the federation variables are set.
+    # `secrets` is not available in a job-level `if`, which is why the mode is a
+    # variable rather than "is the key secret present".
     if: >-
-      vars.ANTHROPIC_FEDERATION_RULE_ID != '' &&
+      (vars.ANTHROPIC_AUTH == 'api-key' || vars.ANTHROPIC_FEDERATION_RULE_ID != '') &&
       (github.event_name == 'workflow_dispatch' ||
        github.event.pull_request.head.repo.full_name == github.repository)
+    env:
+      ANTHROPIC_AUTH: ${{ vars.ANTHROPIC_AUTH || 'wif' }}
     steps:
       - uses: actions/checkout@v7
 
+      - name: Use the ANTHROPIC_API_KEY secret
+        if: env.ANTHROPIC_AUTH == 'api-key'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_AUTH is 'api-key' but the ANTHROPIC_API_KEY secret is empty (set it, or set ANTHROPIC_AUTH to 'wif')"
+            exit 1
+          fi
+          # promptfoo picks this up on its own; no custom headers, so it must not
+          # inherit the x-api-key-shadowing header the wif path sets.
+          echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$GITHUB_ENV"
+
       - name: Exchange GitHub OIDC token for an Anthropic access token
+        if: env.ANTHROPIC_AUTH == 'wif'
         env:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}

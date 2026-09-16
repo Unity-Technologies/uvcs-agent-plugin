@@ -242,8 +242,10 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    / `mcp.json` schemas. CI re-checks both on every PR
    (`.github/workflows/validate-skills.yml`, via `Flash-Brew-Digital/validate-skill`).
    Behavioral regressions are guarded by the promptfoo eval suite in `evals/`
-   (`.github/workflows/skill-evals.yml`, Anthropic auth via Workload Identity Federation —
-   see `evals/README.md`). If a change alters what a skill teaches, update or add an eval.
+   (`.github/workflows/skill-evals.yml`; Anthropic auth is whichever path the `ANTHROPIC_AUTH`
+   repo variable selects — an API key secret today, Workload Identity Federation once the
+   federated account is funded — see `evals/README.md`). If a change alters what a skill
+   teaches, update or add an eval.
 3. **Run only the evals the change can reach.** Every test is one independent API call whose
    prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
    ~1.5 minutes of API calls and re-rolls the suite's noise floor on 72 unrelated tests, which
