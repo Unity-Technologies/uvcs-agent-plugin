@@ -399,7 +399,7 @@ the two.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
   Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-switch` (shipped),
   `uvcs-root-cause` (shipped), `uvcs-code-review` (shipped), `uvcs-address-review` (shipped),
-  `uvcs-links` (see Open decisions). Review has **two** skills on purpose, split by *side* and not by object:
+  `uvcs-report-issue` (shipped), `uvcs-links` (see Open decisions). Review has **two** skills on purpose, split by *side* and not by object:
   `uvcs-code-review` produces findings and publishes them, `uvcs-address-review` consumes an
   existing thread as the author. Their triggers do not overlap ("review this branch" vs "fix the
   review"), and the shared vocabulary lives in the hub's `reviews-and-merge-requests.md`, so this
@@ -470,6 +470,30 @@ the two.
   its default: the win is real but small next to inference time, and the failure modes are silent.
   Naming: the file is `batching-commands.md`, not `shell-mode.md`, because `shell-gotchas.md`
   already owns "shell" = the OS shell in this repo's vocabulary.
+- **Defects in the plugin are reported through `uvcs-report-issue`, and the hub makes the
+  offer.** The skill's description fires on what the user types ("report this bug", "file an
+  issue", "the skill got it wrong", "request a skill"), but the moment worth catching is the
+  agent seeing `cm` reject a flag it copied from a reference, or finding no recipe — and only the
+  hub is loaded then. So the hub carries one gotcha bullet (check `cm help`, finish the task with
+  the corrected syntax, then offer **once**; never file unread) plus the workflow-table row, and
+  the skill owns everything else. Settled shape of the skill, in order: a scope table first
+  (`cm` crashes and unreachable servers go to UVCS product support, code bugs to
+  `uvcs-root-cause`, anything security-related never to a public issue); the **quoted skill
+  lines** as the version identifier, because `npx skills` installs carry no manifest; the
+  reproduction written in **eval shape** — user message with the `cm` output pasted in, must
+  contain / must not contain — because every fix here lands with an eval and the report should
+  be liftable into one; a redaction table that replaces **every** occurrence of a name (the org
+  recurs in `repo@org@cloud`, email domains and `cm whoami` — the first eval run caught the model
+  leaving it in both); and filing only after the user has read the **complete** text, since an
+  issue on a public tracker is a publication. Filing is `gh issue create` on the plugin repo with
+  `--label bug` or `--label enhancement` and nothing else (other labels may not exist and the
+  command fails on one), title `[<skill>] <symptom>`, a duplicate search first, and a body-file
+  plus form link as the fallback when `gh` is missing or signed out — never sign the user in.
+  The body is `assets/issue-template.md` (handed to GitHub verbatim, same reason the reviewer
+  prompt is an asset), and `.github/ISSUE_TEMPLATE/bug_report.yml` asks for the same fields so
+  human and agent reports triage alike. Rejected: a bug-report field in `plugin.json` or the
+  marketplace entry (not a permitted field, and the URL is stable), and having every workflow
+  skill carry the offer (the hub is always loaded; duplicating it rots).
 - Every shipped workflow skill gets a one-line row in the hub's **UVCS workflow skills** table.
   Adding a skill without that row is an incomplete change.
 - Our reverse-domain namespace for non-portable extras is `com.unity`.
