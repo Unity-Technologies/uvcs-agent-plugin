@@ -157,7 +157,7 @@ not enough to get the order and the stopping points right, which is where the da
 | `uvcs-root-cause` | "Why did this break / which changeset introduced it / who broke this line": tracing a bug or regression back through history. Read-only. |
 | `uvcs-code-review` | Reviewing a branch or merge request, a changeset, a shelve or pending changes, and publishing the findings as review comments. |
 | `uvcs-address-review` | The author side of a review: applying the change requests a reviewer left, answering questions, discarding a request, re-requesting the review. |
-| `uvcs-report-issue` | Something in **this plugin** was wrong or missing: a recipe `cm` rejected, a fact `cm help` contradicts, a task no skill covers, a result the user says is not what they asked for. Files it as a GitHub issue once the user has read the report. Not for UVCS product problems. |
+| `uvcs-report-issue` | Something in **this plugin** was wrong or missing — a recipe `cm` rejected, a fact `cm help` contradicts, a task no skill covers, a result the user says is not what they asked for — reported as a GitHub issue. Not for UVCS product problems. |
 
 For any task these do not cover, this skill plus judgement is the whole toolkit.
 
@@ -183,11 +183,9 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
 - **Many read-only commands, all known up front** (5 or more): one `cm shell` batch is ~3× faster
   than one process each, but it changes the exit-code and error-stream contract. Follow
   `references/batching-commands.md` exactly or run them plainly. Never batch a mutating command.
-- **A recipe from this skill that `cm` rejects is a plugin defect, not a UVCS one.** Check
-  `cm help <command>`, finish the task with the corrected syntax, then offer once to report it
-  with `uvcs-report-issue`. The same when a reference contradicts `cm help` or another reference,
-  when no recipe or skill covers the task, or when the user says the result was not what they
-  asked for. Never file an issue the user has not read.
+- **A recipe from this skill that `cm` rejects is a defect in this plugin, not in UVCS.** Take
+  the syntax from `cm help <command>`, finish the task, then offer once to report it with
+  `uvcs-report-issue` — likewise for a task no recipe or skill covers.
 
 ## References — read when the task needs them
 
