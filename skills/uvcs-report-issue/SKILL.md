@@ -73,14 +73,18 @@ in exactly that shape so a maintainer can lift it:
 |---|---|
 | organization and server (`myorg@cloud`, `plastic.example.com:8087`) | `<org>@cloud`, `<server>` |
 | repository | `<repo>` |
-| user names, emails, `cm whoami` | `<user>`, `<user2>` |
+| user names, `cm whoami` | `<user>`, `<user2>` |
+| emails (`jane@myorg.com`) — the domain is the organization | `<user>@<org>.com` |
 | paths or file names that name the product; any code beyond the lines the repro needs | `<path>/File.cs`; drop it |
 | changeset, branch, shelve and review comments naming people, tickets or products | `<comment>` |
 | keep | changeset and shelve ids, branch *structure* (`/main/task001`), error messages verbatim, flag names, counts |
 
 Redact consistently so the report still parses (`<repo>@<org>@cloud`, not three unrelated
-placeholders for one server). The user's own request is redacted the same way. When it is not
-obvious whether something is sensitive, ask.
+placeholders for one server). A name recurs: the organization sits in the `repo@org@cloud` spec,
+in every email domain and in `cm whoami`, so replace **every** occurrence and then search the
+finished draft for each real name before showing it — one left in is a leak, not a partial
+redaction. The user's own request is redacted the same way. When it is not obvious whether
+something is sensitive, ask.
 
 ## 5. Show it, then file it
 
