@@ -167,6 +167,9 @@ cm codereview sh:12 "<title>" --users=me
 cm mr <id> reviewer add --users=me      # on one that already exists, put yourself on it
 ```
 
+Two different numbers: create takes the **object spec** from step 1 (`cs:4207`, `sh:12`, never a
+bare `4207`), and every later subcommand takes the **review id** the create printed.
+
 One comment per finding, anchored. Findings are multi-line, so write each to a file:
 
 ```
