@@ -61,13 +61,35 @@ npx --no-install promptfoo eval --filter-pattern "shelve"   # only matching test
 npx --no-install promptfoo eval --no-cache                  # ignore cached results
 ```
 
+### `run-evals.sh` — what CI runs
+
+`./run-evals.sh` is the exact entry point CI uses, and it is worth using locally for the same
+two reasons. It **names every failing test** (promptfoo's own table truncates at 25 rows, so a
+plain run tells you *how many* failed and not *which*), and it **re-runs only the failures**
+with `--no-cache`, so a boundary flip separates itself from a regression in one command instead
+of two. It takes any `promptfoo eval` flag:
+
+```bash
+./run-evals.sh                                        # whole suite
+./run-evals.sh --filter-pattern "An approved report"  # one test, same reporting
+```
+
+Exit status is 0 when every test passes, first time or on the retry, and 1 when a test fails
+twice. A test that only passes on the retry is reported as **flaky** — treat that as a defect in
+the scenario, not as a pass: see *Writing evals that do not flake* in `CLAUDE.md`.
+
 ## CI
 
 `.github/workflows/skill-evals.yml` runs the suite on pull requests that touch `skills/**` or
-`evals/**` (plus manual `workflow_dispatch` runs). Results land in the job's step summary;
-the job fails when two or more tests fail (one failure is tolerated to absorb rare judge
-flakiness). The pinned promptfoo install is cached on `package-lock.json`, so warm runs skip
-the install entirely.
+`evals/**` (plus manual `workflow_dispatch` runs), through `run-evals.sh`. The step summary
+lists the tests that failed and why, flaky recoveries are raised as PR warning annotations, and
+the full `results.json` / `retry.json` are attached to the run as the `eval-results` artifact for
+when you need the model output behind a failure. The pinned promptfoo install is cached on
+`package-lock.json`, so warm runs skip the install entirely.
+
+The gate used to be "two or more failures fail the job", which tolerated one flaky miss at the
+cost of hiding a genuine single-test regression. The retry replaces it: nothing is tolerated, and
+what used to be absorbed silently is now surfaced by name.
 
 ### Authentication
 

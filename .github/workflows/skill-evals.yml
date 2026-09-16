@@ -140,26 +140,17 @@ jobs:
         env:
           PROMPTFOO_DISABLE_TELEMETRY: "1"
           PROMPTFOO_DISABLE_UPDATE: "1"
-        run: |
-          set -euo pipefail
-          mkdir -p output
-          npx --no-install promptfoo eval -c promptfooconfig.yaml \
-            -o output/results.json --no-share --max-concurrency 4 || true
-          PASSES=$(jq -r '.results.stats.successes // 0' output/results.json)
-          FAILS=$(jq -r '.results.stats.failures // 0' output/results.json)
-          ERRORS=$(jq -r '.results.stats.errors // 0' output/results.json)
-          TOTAL=$((PASSES + FAILS + ERRORS))
-          {
-            echo "## Skill evals"
-            echo ""
-            echo "| Passed | Failed | Errors |"
-            echo "|---|---|---|"
-            echo "| $PASSES | $FAILS | $ERRORS |"
-          } >> "$GITHUB_STEP_SUMMARY"
-          # 13 mostly-deterministic tests at temperature 0: tolerate a single flaky
-          # llm-rubric miss; two or more failures/errors mean something actually broke.
-          if [ "$TOTAL" -eq 0 ] || [ $((FAILS + ERRORS)) -ge 2 ]; then
-            echo "::error::Evals failed: $PASSES passed, $FAILS failed, $ERRORS errors"
-            exit 1
-          fi
-          echo "Evals passed: $PASSES/$TOTAL"
+        # Names every failing test and re-runs only those; the job goes red only
+        # on a test that fails twice. Same script locally: evals/run-evals.sh.
+        run: ./run-evals.sh
+
+      # The full results, for anyone who needs the actual model output behind a
+      # failure rather than the assertion reason the summary prints.
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-results
+          path: evals/output/*.json
+          if-no-files-found: ignore
+          retention-days: 14
