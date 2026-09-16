@@ -63,7 +63,7 @@
     - type: icontains
       value: "gh issue create"
     - type: icontains
-      value: "--repo Unity-Technologies/unity-version-control-plugin"
+      value: "--repo Unity-Technologies/uvcs-agent-plugin"
     - type: icontains
       value: "--label bug"
     - type: icontains

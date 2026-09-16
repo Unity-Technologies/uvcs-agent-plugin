@@ -257,8 +257,15 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    | a `SKILL.md` or a `references/*.md` | the tests that name that file in `skill_content` / `reference_content` (`grep -l <filename> evals/tests/*.yaml`) — but *all* of them, since an edit anywhere in a file perturbs every prompt carrying it |
    | `promptfooconfig.yaml` (the prompt, provider or `defaultTest`), or the workflow | the whole suite — it is in every prompt |
 
+   Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
+   flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
+   a count) and re-runs just the failures with `--no-cache`, so a boundary flip separates itself
+   from a regression without a second command. A test that passes only on the retry is reported
+   as flaky and is a defect in the scenario, not a pass.
+
    Select with `--filter-pattern "<test description>"`: a **case-sensitive regex**, so confirm the
-   matched count is what you expected — a pattern that matches nothing reports a clean pass. Add
+   matched count is what you expected — bare `promptfoo eval` reports a clean pass for a pattern
+   that matches nothing, which is the one case `run-evals.sh` turns into an error instead. Add
    `--repeat N --no-cache` when the question is flakiness rather than correctness, and compare
    against a baseline measured the same way on `HEAD` before concluding anything.
 4. Test triggering with realistic user phrasings, including ones that should *not* fire it.

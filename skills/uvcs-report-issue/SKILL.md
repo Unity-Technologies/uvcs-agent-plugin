@@ -14,7 +14,7 @@ description: >-
 # Reporting a plugin issue
 
 Issues go to the plugin's **public** tracker,
-`https://github.com/Unity-Technologies/unity-version-control-plugin/issues`. Whoever picks one up,
+`https://github.com/Unity-Technologies/uvcs-agent-plugin/issues`. Whoever picks one up,
 a person or an agent, fixes it from the report alone: it must let them reproduce the scenario
 without asking a question, and it must carry nothing from the user's project that they did not
 mean to publish. Everything here is read-only except the filing itself.
@@ -94,8 +94,8 @@ for a yes. Then, in order:
 
 ```
 gh auth status
-gh issue list --repo Unity-Technologies/unity-version-control-plugin --state all --search "<two or three words from the title>"
-gh issue create --repo Unity-Technologies/unity-version-control-plugin --title "[<skill>] <symptom>" --label bug --body-file <tmp>.md
+gh issue list --repo Unity-Technologies/uvcs-agent-plugin --state all --search "<two or three words from the title>"
+gh issue create --repo Unity-Technologies/uvcs-agent-plugin --title "[<skill>] <symptom>" --label bug --body-file <tmp>.md
 ```
 
 - **Title:** `[<skill>] <one-line symptom>` — `[uvcs-core] commands.md gives cm log a --nototal
@@ -103,10 +103,10 @@ gh issue create --repo Unity-Technologies/unity-version-control-plugin --title "
 - **Label:** `bug` or `enhancement`, nothing else — other labels may not exist and the command
   fails on one that does not.
 - **A match in the search:** show it, and offer to add the scenario there instead:
-  `gh issue comment <n> --repo Unity-Technologies/unity-version-control-plugin --body-file <tmp>.md`.
+  `gh issue comment <n> --repo Unity-Technologies/uvcs-agent-plugin --body-file <tmp>.md`.
 - **`gh` missing or not signed in:** save the body to a file, give its path, and give the form
   link for the user to paste it into —
-  `https://github.com/Unity-Technologies/unity-version-control-plugin/issues/new?template=bug_report.yml`
+  `https://github.com/Unity-Technologies/uvcs-agent-plugin/issues/new?template=bug_report.yml`
   (`skill_request.yml` for an enhancement). Do not sign the user in.
 - Report the issue URL back, as a link.
 

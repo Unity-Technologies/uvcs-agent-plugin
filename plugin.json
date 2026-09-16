@@ -7,8 +7,8 @@
     "name": "Unity Technologies",
     "url": "https://unity.com"
   },
-  "homepage": "https://github.com/Unity-Technologies/unity-version-control-plugin",
-  "repository": "https://github.com/Unity-Technologies/unity-version-control-plugin",
+  "homepage": "https://github.com/Unity-Technologies/uvcs-agent-plugin",
+  "repository": "https://github.com/Unity-Technologies/uvcs-agent-plugin",
   "license": "Apache-2.0",
   "keywords": [
     "uvcs",

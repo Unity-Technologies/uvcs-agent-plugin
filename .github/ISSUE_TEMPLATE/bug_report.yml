@@ -11,7 +11,7 @@ body:
     attributes:
       value: |
         Please don't report security issues here — see
-        [SECURITY.md](https://github.com/Unity-Technologies/unity-version-control-plugin/blob/main/SECURITY.md).
+        [SECURITY.md](https://github.com/Unity-Technologies/uvcs-agent-plugin/blob/main/SECURITY.md).
 
         Using the plugin from an agent? Ask it to *report this as a plugin bug*: the
         `uvcs-report-issue` skill collects everything below, redacts it, shows you the text and
