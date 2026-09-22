@@ -92,3 +92,18 @@
       value: >-
         Bringing a shelve into the workspace must end with the changes pending so the user
         can carry on editing. Proposing, offering, or running a check-in is a failure.
+
+- description: "Abandoning a merge undoes it recursively, never a bare cm undo ."
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
+    user_message: >-
+      I'm at the root of my workspace on /main/task055, halfway through a merge from /main.
+      cm status shows only the merge's own changes, under src/Combat/ and src/UI/. Forget it,
+      back the whole merge out. I have already decided: nothing pending is worth keeping, so
+      no shelve — just give me the command that undoes it.
+  assert:
+    - type: regex
+      value: "(^|\\n)\\s*cm undo[^\\n]*(\\s-r\\b|--recursive)"
+    - type: not-regex
+      value: "(^|\\n)\\s*cm undo \\.\\s*(\\n|$)"

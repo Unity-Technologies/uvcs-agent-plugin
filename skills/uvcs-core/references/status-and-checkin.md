@@ -103,6 +103,13 @@ before undoing is the only preservation mechanism).
 All accept `.` and `-r`/`--recursive`. The commands are state-specific (`CH` vs `CO`), so run
 `cm status` first to know which one applies to each file.
 
+- **Without `-r` nothing recurses**: `cm undo .` covers the current directory's own entries
+  only, and so does a directory path.
+- **A pending merge is undone all at once.** A subset of its changes — including the one a
+  non-recursive `cm undo .` selects when the merge reached a subdirectory — is refused and
+  nothing is undone: `Cannot perform the undo operation. All merge changes must be undone
+  together.` Back it out with `cm undo . -r` from the workspace root.
+
 ## Ignore / hidden / cloaked conf files
 
 Three workspace-root conf files control visibility. There is no `cm ignore`-style command —

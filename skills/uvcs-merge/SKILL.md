@@ -147,10 +147,16 @@ and the user carries on editing. Do not check in, and do not offer to.
 
 ## If you have to abandon
 
-Say so explicitly and leave the workspace in a state the user can see. `cm undo <paths>` /
-`cm undo .` discards the merge along with anything else pending, irreversibly — so offer a shelve
-first, and never present the undo as a casual next step. Leaving markers in place is also a
-legitimate outcome: the check-in guard means nothing bad can land by accident.
+Say so explicitly and leave the workspace in a state the user can see. A merge is backed out all
+at once, from the workspace root, and the undo discards anything else pending with it,
+irreversibly — so offer a shelve first, and never present the undo as a casual next step:
+
+```
+cm undo . -r
+```
+
+Leaving markers in place is also a legitimate outcome: the check-in guard means nothing bad can
+land by accident.
 
 ## Stay in UVCS
 
