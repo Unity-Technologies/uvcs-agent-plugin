@@ -114,6 +114,20 @@ redoing the work. Then fetch metadata in one query rather than one per id:
 cm find changeset "where changesetid=<a> or changesetid=<b>" --format="{changesetid}|{branch}|{owner}|{date}|{comment}" --nototal
 ```
 
+The revision query returns the file's changesets on **every** branch, unmerged task branches
+included, and a change that never reached the user's branch cannot have broken it. For each
+candidate on a branch that is neither the user's branch nor one of its parents (`/main` for
+`/main/task055`), ask where that branch was merged:
+
+```
+cm find merge "where srcbranch='br:<its branch>'" --format="{dstbranch}|{srcchangeset}|{dstchangeset}" --nototal
+```
+
+No rows: it never left its branch — drop it, and count it among the dropped. A row into the
+user's branch or a parent with `srcchangeset` at or above the candidate: it arrived through
+that merge. Merged only somewhere else: keep it, and say the path to the user's branch is
+unconfirmed.
+
 ## 4. Rank on evidence, never on recency
 
 Every candidate carries a stated connection to the symptom, in one line, or it does not appear

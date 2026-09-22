@@ -140,3 +140,24 @@
       value: "{parent}"
     - type: not-regex
       value: "changeset\\s*<\\s*1205"
+
+- description: "A suspect on another branch is checked for a merge into the user's branch"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    user_message: |
+      I'm on /main/task055. Saving crashes in Assets/Scripts/SaveSystem.cs; the suspect set is
+      that file alone, and it was fine at cs:1180. The revision query printed:
+
+      cm find revision "where item='Assets/Scripts/SaveSystem.cs' and changeset > 1180" --format="{changeset} {date}" --nototal
+      1191 4/14/2026 10:02:11AM
+      1203 4/15/2026 4:40:57PM
+
+      and the metadata query printed:
+
+      1191|/main/task055|<user>|4/14/2026 10:02:11AM|Save slots UI
+      1203|/main/task080|<user2>|4/15/2026 4:40:57PM|Rewrite save serializer
+
+      What do you run next, before ranking these two?
+  assert:
+    - type: regex
+      value: "cm find merge[^\\n]*srcbranch\\s*=\\s*'br:/main/task080'"
