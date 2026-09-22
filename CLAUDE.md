@@ -246,6 +246,48 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    repo variable selects — an API key secret today, Workload Identity Federation once the
    federated account is funded — see `evals/README.md`). If a change alters what a skill
    teaches, update or add an eval.
+
+   **Where the evals actually gate: the merge queue.** Settled — do not re-litigate. GitHub
+   withholds Actions secrets and OIDC tokens from any run triggered by a fork *or by Dependabot*
+   (re-running it as a maintainer does not lift that, and the fork "Approve and run" button is an
+   abuse control that grants no secrets), so the eval job **skips** those PRs instead of going red
+   on an empty credential. Every PR is verified in the queue instead: `merge_group` is in the
+   workflow's `on:`, the queue branch lives in this repository so the credentials are issued, the
+   check is required, and a failure drops the PR from the queue. Consequences, all deliberate:
+   **no Dependabot secret is ever needed**; a maintainer's PR runs the suite **twice** (the queue
+   run is the only one testing the rebase, and skipping it would need a merge-group→PR API lookup
+   that fails by merging unverified); a required check must appear under `on: merge_group` or the
+   queue waits forever for a status. Rejected on the way: `pull_request_target` (secrets plus a
+   checkout of contributor code is the pwn-request pattern, and GitHub blocks it by default in
+   public repos from 2026-11-02); a two-stage `workflow_run` (cannot run the suite on a fork's
+   `evals/` changes, which is most real contributions); environment secrets with required
+   reviewers (the fork exclusion is wholesale — approval does not grant secrets); and persisting
+   promptfoo's response cache to make the duplicate run free (it works, but a seeded cache entry
+   could make a failing eval pass — revisit only if API spend becomes a real line item).
+
+   **Measured, not assumed** (2026-09-22, throwaway probe workflow on a scratch branch with its
+   own merge-queue ruleset, since GitHub documents `merge_group` in exactly one table and says
+   nothing about its secrets or its trust model): a `merge_group` run **does** receive the
+   repository's Actions secrets — that is the load-bearing fact and it is nowhere in the docs. A
+   job skipped by a job-level `if` **does** satisfy a required status check, so the fork and
+   Dependabot skips leave the PR `CLEAN` and queueable rather than blocked. And the workflow file
+   a merge-group run executes comes from **the merge group ref, i.e. the pull request's copy** —
+   the probe's base branch printed `BASE_VERSION` and the queued run printed `PR_VERSION`.
+
+   There is **no sandbox** here: from the queue, a contributor's `evals/` code runs with the
+   repo's credential, and for a suite whose executable surface is the thing under review there
+   cannot be one. The `PR_VERSION` result extends that to the workflow file itself, so the
+   control — a human read the diff — has to cover `.github/` as well, which is what
+   `.github/CODEOWNERS` is for. **CODEOWNERS enforces nothing on its own: "Require review from
+   Code Owners" must be enabled on the protected branch, or this mitigation is decorative.** The
+   structural fix, if it is ever worth the org-admin rights, is a ruleset workflow pinning the
+   file to a repository contributors cannot touch. For the same reason the two auth steps run
+   **after** `npm ci` — before it, the credential sits in the environment of every install script
+   in promptfoo's tree, on exactly the lockfile PRs that miss the cache. Do not move them back.
+
+   Neither workflow filters by `paths`, on either event. A filtered-out required check never
+   reports, so a PR touching neither `skills/` nor `evals/` could never be queued — paying ~90s
+   of eval on a README fix is the cheaper half of that trade.
 3. **Run only the evals the change can reach.** Every test is one independent API call whose
    prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
    ~1.5 minutes of API calls and re-rolls the suite's noise floor on 72 unrelated tests, which

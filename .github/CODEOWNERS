@@ -1,0 +1,21 @@
+# Who must review what.
+#
+# This matters more here than in most repos. The eval suite runs with this repo's
+# Anthropic credentials, and from the merge queue it runs a contributor's code —
+# there is no sandbox for that and there cannot be one. The control is that a
+# maintainer read the diff before queueing it, and CODEOWNERS is what makes that
+# review happen rather than depend on who noticed the PR.
+#
+# Only effective once the protected branch requires review from code owners
+# (Settings -> Rules / Branch protection).
+
+# Everything, by default.
+*                           @Unity-Technologies/plastic-tech-team
+
+# CI and repository automation: a change here changes what runs with our credentials,
+# or what is published.
+/.github/                   @Unity-Technologies/plastic-tech-team
+
+# The eval suite is executable: promptfooconfig.yaml, run-evals.sh and package.json
+# all run in the job that holds the credential.
+/evals/                     @Unity-Technologies/plastic-tech-team

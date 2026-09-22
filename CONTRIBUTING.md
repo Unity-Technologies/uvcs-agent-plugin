@@ -95,6 +95,22 @@ Nothing deeper is discovered.
 - Paste a short transcript showing the skill doing the thing. That is the real review artifact.
 - Run through the review checklist at the bottom of [CLAUDE.md](CLAUDE.md).
 
+### Why `Skill evals` shows as skipped on your PR
+
+It is not broken and you do not need an Anthropic key. GitHub does not give Actions secrets to a
+workflow run from a fork (or from Dependabot), so the eval job skips rather than fail on a
+credential it was never handed. The suite runs on your change when a maintainer adds the PR to
+the **merge queue**: GitHub rebuilds it on a branch in this repository, the workflow runs there
+with the project's own credentials, and a failing eval takes the PR back out of the queue instead
+of merging it. Expect review first, then that run.
+
+Two ways to see the result earlier, both optional:
+
+- Run the suite locally — no key needed if you are logged into Claude Code (step 7 above).
+- Run it in your fork: add an `ANTHROPIC_API_KEY` secret to **your** fork and start
+  *Actions ▸ Skill evals ▸ Run workflow* there. It costs your own credit, so only bother if the
+  local run is not an option.
+
 ## Reporting problems
 
 - **Bugs, wrong commands, bad triggering:** open an issue. Include the agent and client version,

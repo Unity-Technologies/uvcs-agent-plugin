@@ -80,8 +80,7 @@ the scenario, not as a pass: see *Writing evals that do not flake* in `CLAUDE.md
 
 ## CI
 
-`.github/workflows/skill-evals.yml` runs the suite on pull requests that touch `skills/**` or
-`evals/**` (plus manual `workflow_dispatch` runs), through `run-evals.sh`. The step summary
+`.github/workflows/skill-evals.yml` runs the suite through `run-evals.sh`. The step summary
 lists the tests that failed and why, flaky recoveries are raised as PR warning annotations, and
 the full `results.json` / `retry.json` are attached to the run as the `eval-results` artifact for
 when you need the model output behind a failure. The pinned promptfoo install is cached on
@@ -90,6 +89,45 @@ when you need the model output behind a failure. The pinned promptfoo install is
 The gate used to be "two or more failures fail the job", which tolerated one flaky miss at the
 cost of hiding a genuine single-test regression. The retry replaces it: nothing is tolerated, and
 what used to be absorbed silently is now surfaced by name.
+
+### When it runs — and where a fork's PR gets verified
+
+| Trigger | Runs? | Why |
+|---|---|---|
+| `pull_request`, branch in this repo, touching `skills/**` or `evals/**` | yes | Fast feedback before review. Unchanged. |
+| `pull_request` from a **fork**, or from **Dependabot** | **skipped** | GitHub issues neither Actions secrets nor OIDC tokens to either, so the job could only fail on an empty credential. Skipping is neutral, not red, and costs no API credit. |
+| `merge_group` | **always** | The real gate. |
+| `workflow_dispatch` | yes | Manual, including in your own fork with your own key. |
+
+The merge queue is what closes the gap. A maintainer with write access queues the PR; GitHub
+creates a `gh-readonly-queue/<base>/…` branch **in this repository** with the change rebased on
+the current base, and the workflow runs there under the `merge_group` event — in-repo, so the
+credentials are issued normally. A failing eval takes the PR back out of the queue instead of
+merging it. So a contributor with no Anthropic account still gets the full suite run against
+their change, paid for by this repo, and nothing merges unverified.
+
+Two consequences worth knowing:
+
+- **No Dependabot secret is needed**, and none should be added. The case that motivated all of
+  this (a Dependabot PR failing in 6s on an empty `ANTHROPIC_API_KEY`) is handled by skipping the
+  PR run and verifying in the queue.
+- **A maintainer's own PR runs the suite twice**, once on the PR and once in the queue, ~90s
+  each. Kept on purpose: only the queue run sees the change rebased on the current base, which is
+  the entire point of a queue, and skipping it would mean mapping a merge group back to a PR
+  through the API — a lookup whose failure mode is merging something unverified.
+
+This only gates anything if the `evals` job's check is **required** on the protected branch, and
+a required check must be listed under `on:` for `merge_group` (it is) or the queue waits for a
+status that never arrives.
+
+The design has no sandbox: from the queue, a contributor's `evals/` code runs with this repo's
+credential. That is unavoidable for a suite whose executable surface *is* the thing under review,
+so the control is human — `.github/CODEOWNERS` puts `.github/` and `evals/` in front of a
+maintainer before anything can be queued. `pull_request_target` was rejected for the same
+question: it hands secrets to a job that must then check out contributor code, which is the
+documented pwn-request pattern and is being blocked by default in public repos. A two-stage
+`workflow_run` was rejected because it cannot run the eval suite itself on a fork's changes,
+which is most of what a contribution here touches.
 
 ### Authentication
 
@@ -135,9 +173,14 @@ bearer header (`ANTHROPIC_CUSTOM_HEADERS`). One-time setup
    `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, and (if the rule spans
    multiple workspaces) `ANTHROPIC_WORKSPACE_ID`.
 
-In `wif` mode the job skips itself until those variables are set. Neither OIDC tokens nor
-secrets are issued to PRs from forks, so **both** modes skip fork PRs; a maintainer pushes the
-branch to this repo to run the suite.
+In `wif` mode the job skips itself until those variables are set — on the `merge_group` run too,
+so a variable deleted by mistake turns the gate green without running it. Check the variables
+after touching them.
+
+Whichever mode is active, fork and Dependabot PRs are skipped and verified in the merge queue
+instead (see *When it runs* above). Both auth steps deliberately run **after** `npm ci`: written
+into the environment before the install, the credential would be visible to every install script
+in promptfoo's dependency tree, on exactly the lockfile-changing PRs that miss the cache.
 
 ## Adding tests
 

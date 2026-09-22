@@ -1,12 +1,14 @@
 name: Validate skills
 
 on:
+  # Unfiltered on both events, like Skill evals and for the same reason: a required
+  # check that a path filter excludes never reports, and the PR can then never be
+  # queued. These jobs cost runner minutes and no API credit, so the trade is easy.
+  # A required check must also be wired to merge_group or the queue waits for a
+  # status that never arrives. Needs no credentials, so unlike Skill evals there is
+  # nothing here to withhold from a fork.
   pull_request:
-    paths:
-      - "skills/**"
-      - "plugin.json"
-      - ".claude-plugin/**"
-      - ".github/workflows/validate-skills.yml"
+  merge_group:
 
 permissions:
   contents: read
@@ -73,3 +75,27 @@ jobs:
             echo "::error::.claude-plugin/marketplace.json must contain exactly one entry named '$name', and that entry must not carry a 'version' (the manifest is the authority)."
             exit 1
           }
+
+  # The one check name the branch rules require from this workflow. `validate-skill`
+  # is a matrix generated from the skills/ directory, so its check names carry the
+  # skill in them and change whenever a skill is added or renamed — requiring those
+  # by name would block every pull request the moment the set moved, because a
+  # required check that stops reporting is indistinguishable from one still running.
+  # This job's name does not move. `if: always()` so it reports a real result even
+  # when something upstream failed or was skipped.
+  validate-complete:
+    needs: [validate-skill, validate-manifest]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every validation job to have succeeded
+        env:
+          SKILLS: ${{ needs.validate-skill.result }}
+          MANIFEST: ${{ needs.validate-manifest.result }}
+        run: |
+          set -euo pipefail
+          echo "validate-skill=$SKILLS validate-manifest=$MANIFEST"
+          if [ "$SKILLS" != "success" ] || [ "$MANIFEST" != "success" ]; then
+            echo "::error::A validation job did not succeed (see the jobs above)."
+            exit 1
+          fi
