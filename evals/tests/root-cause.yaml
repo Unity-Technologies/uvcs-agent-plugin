@@ -126,3 +126,17 @@
         cm undo or a revert on the user's workspace. Explaining that restoring the workspace is
         a separate, mutating decision that needs the user's explicit go-ahead is the expected
         behavior; silently switching the workspace to an older changeset is a failure.
+
+- description: "Follow-up blame before a suspect annotates at the suspect's parent changeset"
+  vars:
+    skill_content: file://../skills/uvcs-root-cause/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
+    user_message: >-
+      Your top suspect was cs:1205, which dropped the null guard in Assets/Scripts/Cache.cs.
+      Before I go and talk to its author, show me Cache.cs blamed as it was right before
+      cs:1205, so I can see who wrote the guard in the first place.
+  assert:
+    - type: icontains
+      value: "{parent}"
+    - type: not-regex
+      value: "changeset\\s*<\\s*1205"

@@ -18,7 +18,7 @@ compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 This skill owns the *decisions*: how far back to look, which files can plausibly be at fault, and
 what counts as evidence. Every `cm` flag and output token it names belongs to the **`uvcs-core`**
 skill — load it first, and read `uvcs-core/references/history-and-annotate.md` (annotate tokens,
-previous revision, state before a changeset) and `uvcs-core/references/find-queries.md` (date
+state before a changeset) and `uvcs-core/references/find-queries.md` (date
 constants, which objects accept `order by`) rather than guessing.
 
 The failure mode this workflow exists to prevent is a confident wrong answer. History always
@@ -179,9 +179,9 @@ diff of a suspect, blame on another file or line (step 5), or the file as it was
 suspect touched it:
 
 ```
-cm patch cs:<id> > /tmp/cs<id>.patch 2>&1                                                  # what a suspect changed
-cm find revision "where item='<path>' and changeset < <id>" --format="{changeset} {id}" --nototal
-cm annotate "<path>#cs:<highest changeset in that result>"                                 # the state before it
+cm patch cs:<id> > /tmp/cs<id>.patch 2>&1                        # what a suspect changed
+cm find changeset "where changesetid=<id>" --format="{parent}" --nototal
+cm annotate "<path>#cs:<parent>"                                 # the state before it
 ```
 
 ## Stay read-only

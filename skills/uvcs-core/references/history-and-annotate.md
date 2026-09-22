@@ -13,6 +13,9 @@ cm history <path> --long --limit=10
 The path must exist in the workspace at its current location; for files that moved or were
 deleted, query revisions instead: `cm find revision "where item='<repo path>'"`.
 
+Both list the item's revisions on **every branch**, in changeset-id order — including branches
+that were never merged into the one the workspace is on. A row's neighbour is not its parent.
+
 ## Changeset details — `cm log`
 
 ```
@@ -51,22 +54,23 @@ cm annotate "<path>#cs:<N>"               # the file as it was at changeset N
   actually needed, not for "when did this file last change" (use `cm history` or
   `cm find revision`).
 
-## Previous revision, and the state before a changeset
+## Previous version: the state before a changeset
 
 ```
-cm history <path> --format="{changesetid} {id}" --limit=2
-cm find revision "where item='<path>' and changeset < <N>" --format="{changeset} {id}" --nototal
+cm find changeset "where changesetid=<N>" --format="{parent}" --nototal
+cm annotate "<path>#cs:<parent>"                           # the file just before cs:<N>
+cm cat "serverpath:/<path in repo>#cs:<parent>"            # its content
 ```
 
-- **Never annotate the current version just to discover its parent revision** — query the
-  history. `cm history --limit=N` returns the N most recent revisions **oldest first**, so with
-  `--limit=2` the parent is the *first* row and the current revision the second.
-- "State before changeset `<N>`" = the file's last revision with `changeset < <N>`, then annotate
-  at that changeset: `cm annotate "<path>#cs:<that changeset>"`. `cm find revision` accepts no
-  `order by` (see `find-queries.md`), so take the highest `{changeset}` in the result yourself.
-- `item` is resolved **through the workspace**: pass the path as it exists locally (absolute or
-  relative to the current directory). A server path matches nothing, and `like` is rejected on
-  `item` (it is an integer field that accepts a path as a convenience).
+- **"State before changeset `<N>`" is the file at `<N>`'s parent changeset**, whether or not the
+  parent touched the file. Never derive it from the file's history — the row before `<N>` in
+  `cm history`, or the highest `changeset < <N>` in `cm find revision`, can be a revision on
+  another branch (see above).
+- A merge changeset's `{parent}` is the previous changeset on the **destination** branch, so this
+  gives the state before the merge landed.
+- `cm find revision`'s `item` is resolved **through the workspace**: pass the path as it exists
+  locally (absolute or relative to the current directory). A server path matches nothing, and
+  `like` is rejected on `item` (it is an integer field that accepts a path as a convenience).
 
 ## Walking a branch's history efficiently
 

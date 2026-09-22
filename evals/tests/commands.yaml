@@ -73,6 +73,20 @@
         failure ({changesetid} is only valid in cm find, which may legitimately appear
         as a follow-up command).
 
+- description: "The state before a changeset is read at its parent, not from the file's history"
+  vars:
+    user_message: >-
+      Blame Assets/Scripts/Cache.cs as it was just before cs:1205 landed, so I can see who
+      wrote the lines that changeset replaced.
+    reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
+  assert:
+    - type: icontains
+      value: "{parent}"
+    - type: not-regex
+      value: "changeset\\s*<\\s*1205"
+    - type: not-icontains
+      value: "--limit=2"
+
 - description: "File content at a branch uses serverpath: with a #br: qualifier"
   vars:
     user_message: "Get me the content of /src/Enemy.cs as it currently is on branch /main/ai-fixes."
