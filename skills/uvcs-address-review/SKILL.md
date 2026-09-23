@@ -2,31 +2,24 @@
 name: uvcs-address-review
 description: >-
   Address the comments a reviewer left on a UVCS / Plastic SCM code review or merge request, as
-  the code author: find the review on the workspace's branch, list the change requests and
-  questions still pending, then fix, answer, discard or re-request under the user's direction,
-  one check-in per comment. Use when the user says fix the review, address the review comments,
-  apply the review changes, my review came back as rework required, answer the reviewer's
-  question, discard a review comment, or re-request review. This is the author side — producing
-  findings and publishing them is uvcs-code-review. All cm syntax comes from the uvcs-core skill
-  — load it first.
+  the code author: find the review on the workspace's branch, list the change requests,
+  questions and comments still pending, plan their order, then fix, answer, discard or
+  re-request under the user's direction, one check-in per change request. Use when the user says
+  fix the review, address the review comments, apply the review changes, my review came back as
+  rework required, answer the reviewer's question, discard a review comment, or re-request review.
+  This is the author side — producing findings and publishing them is uvcs-code-review. All cm
+  syntax comes from the uvcs-core skill — load it first.
 compatibility: Requires the cm CLI (Unity Version Control client) on PATH
 ---
 
 # Addressing review comments with `cm`
 
-This skill owns the *order and the stopping points*. Every `cm` flag, field sentinel and
-availability note it names belongs to the **`uvcs-core`** skill — load it first, and read
-`uvcs-core/references/reviews-and-merge-requests.md` (comment types, replies, the
-`[apply-change:]` tag) and `uvcs-core/references/find-queries.md` (comment fields, `location` vs
-`line`, the revision lookup) rather than guessing.
+This skill owns the *order and the stopping points*; every `cm` flag it names belongs to the
+**`uvcs-core`** skill — load it first, and read `uvcs-core/references/reviews-and-merge-requests.md`
+(comment types, replies, `[apply-change:]`) and `uvcs-core/references/find-queries.md` (comment
+fields, `location` vs `line`, the revision lookup) rather than guessing.
 
-The reviewer's comments are the spec, anchored to code that may have moved since. The shape is
-*anchor to one review on one branch, work out what is still pending, then change exactly one
-thing per changeset* — a batch leaves nobody able to tell which fix answered which comment.
-
-**Check availability once, before promising anything** — `cm mergerequest --usage` lists the
-`comment` and `reviewer` groups where the client has them. Without them, fixing and checking in
-still works (`[apply-change:]` is a check-in tag); answering, discarding and re-requesting do not.
+**Check availability first**: no `comment`/`reviewer` in `cm mergerequest --usage`, only fixing works.
 
 ## 1. Anchor to the workspace's branch
 
@@ -36,18 +29,16 @@ cm status                   # pending changes
 ```
 
 - **Pending changes: stop.** Ask the user to check them in or shelve them
-  (`cm shelveset create --all -c "..."`) first. Everything below checks in or undoes per file, so
-  unrelated edits would be swept into a fix's changeset or thrown away by its undo. No workaround.
-- **On a branch** — that branch is the target. Continue silently, without announcing it looks fine.
+  (`cm shelveset create --all -c "..."`) first: every fix below checks in or undoes per file, and
+  would sweep in or throw away unrelated edits. No workaround.
+- **On a branch** — that branch is the target. Continue silently.
 - **Pinned to a changeset** — unusual, and check-in is not the natural flow. Say so and ask first.
 - **On a label or shelve** — stop. Name what it is on and let the user switch.
-- **On a branch other than the one the user named** — stop and ask; `cm switch` replaces their
-  working tree. The switch is not your next action: name both branches, ask, and wait. Only once
-  they agree, switch and then stop again, so nothing carries stale paths across it.
+- **On a branch other than the one the user named** — stop, name both branches, ask, and wait;
+  `cm switch` replaces their working tree. Once they agree, switch and stop again.
 
-**Do not go looking on other branches.** The workspace's branch is the whole search space. No
-review there, or nothing pending on it, means there is nothing to do — say so and stop. Other
-branches, statuses or repositories are how this workflow ends up editing the wrong code.
+**Do not go looking on other branches.** The workspace's branch is the whole search space; no
+review there, or nothing pending on it, means there is nothing to do — say so and stop.
 
 ## 2. Find the review
 
@@ -55,13 +46,10 @@ branches, statuses or repositories are how this workflow ends up editing the wro
 cm find review "where target='br:/main/task001'" --format="{id}|{title}|{status}|{owner}" --nototal
 ```
 
-`review` and not `mergerequest`: a branch may carry a plain code review instead of an MR, and the
-author has to address either. On whichever exists, `cm mr <id>` and `cm codereview <id>` are the
-same commands on the same id.
-
-*Rework required* is the usual reason you are here, but do **not** filter on it: whether a comment
-is pending is a property of the comment — nothing applied it, nothing discarded it — not of the
-review's status field. Two reviews on the branch: list them, let the user pick, never merge queues.
+`review` and not `mergerequest`: a branch may carry a plain code review instead of an MR; on
+either, `cm mr <id>` and `cm codereview <id>` are the same commands. Do **not** filter on *Rework
+required*: pending is a property of the comment, not of the review's status. Two reviews on the
+branch: list them, let the user pick, never merge queues.
 
 ## 3. Work out what is actually pending
 
@@ -69,96 +57,112 @@ review's status field. Two reviews on the branch: list them, let the user pick, 
 cm find changereviewcomment "where reviewid=<id>" --xml --nototal
 ```
 
-Take the thread **once** and keep it — every step below reads from it. Whether a parent is still
-pending is decided by its **children** — the comments whose `parent` field carries its id — never
-by its own fields: a discarded change keeps `type=change` and `appliedinchangeset=-1`, an answered
-question keeps `type=question`.
+Take the thread **once** and keep it. Whether a parent is pending is decided by its **children**
+(rows whose `parent` carries its id), never by its own fields: a discarded change keeps
+`type=change` and `appliedinchangeset=-1`, an answered question keeps `type=question`.
 
 | Bucket | The comment is |
 |---|---|
-| **change to make** | `type=change`, `parent=-1`, `appliedinchangeset=-1`, and no row in the thread with `parent=<its id>` and `type=discarded` (from anyone) |
-| **question to answer** | `type=question`, `parent=-1`, and **no row in the thread with `parent=<its id>`** — its own fields never show whether it was answered; only a scan of the other rows does |
-| **not yours** | everything else — a parent already applied, or settled by a child (`type=discarded` discards it whoever left it, `comment` answers it), and every child itself, plus `conversation` and `timeline` |
+| **change** — make it or discard it | `type=change`, `parent=-1`, `appliedinchangeset=-1`, and no row in the thread with `parent=<its id>` and `type=discarded` (from anyone) |
+| **question** — answer it | `type=question`, `parent=-1`, and **no row in the thread with `parent=<its id>`** — its own fields never show whether it was answered; only a scan of the other rows does |
+| **comment** — address, clarify or answer it | `type=comment` or `conversation`, `parent=-1`, no row with `parent=<its id>`, and posted by someone other than the user |
+| **not yours** | everything else — a parent already applied or settled by a child, every child itself, and `timeline` |
 
 `-1` is "unset" on every numeric field, never a real id. A `discarded` child settles its parent
-whoever posted it — reviewer, author, or you earlier. Both buckets empty: say so and stop.
+whoever posted it — reviewer, author, or you earlier. All buckets empty: say so and stop.
 
 **Line numbers: `{location}` + 1.** It is 0-based and works on every client; `-1` means the
 comment is not anchored to a line (`uvcs-core/references/find-queries.md`).
 
-**The file to edit** comes from the comment's revision id — resolve it, never search for it or
-guess from names in the comment text:
+**The file** comes from the comment's revision id — never search or guess it from the comment:
 
 ```
 cm find revision "where id=<revisionid>" --format="{item}|{changeset}|{branch}" --nototal
 ```
 
-`{item}` is the path; `{changeset}` dates the anchor — what the reviewer read, not necessarily
-what is on disk. **Read the file around the line before editing**, and the branch diff too when a
-comment only makes sense against the whole change (`cm patch br:/main/task001 --integration`): if
-the code the reviewer described is gone, the fix may already be in or the line has shifted.
+**The anchor is what the reviewer read, not what is on disk.** `{changeset}` dates it; a later
+changeset that touched the file may have moved the line or removed the code. Understand *what* the
+reviewer asks about *which code* — reading the revision they saw if the workspace copy no longer
+matches — then find that code in the workspace copy and fix it there. If the code already does
+what is asked, nothing is left to check in: say so and propose a discard.
 
-**Give every item a short id.** When the comment text starts with a bracketed id (`uvcs-code-review`
-writes `[B1]`, `[I2]`…), reuse it: the user will refer to it, so never renumber. For a comment
-with none, assign `CH1`, `CH2`… to changes and `Q1`, `Q2`… to questions.
+```
+cm cat "revid:<revisionid>@rep:<repo>@repserver:<server>" --file=/tmp/reviewed.cs
+```
 
-## 4. Show the queue, then ask how to work it
+**Give every item a short id**: reuse the bracketed id a comment starts with (`[B1]`, `[I2]`… from
+`uvcs-code-review`), never renumber; otherwise `CH1`… for changes, `C1`… comments, `Q1`… questions.
 
-Sort by file and line so the queue reads top-down through the code, and show it — id, file, line,
-first line of the request — before touching anything, changes and questions separated; they end
-differently. Then ask which way to work, and **wait**: this is the last cheap moment to reorder,
-skip or drop something, and the modes differ in what reaches the server:
+## 4. Plan the order, show it, then ask how to work it
 
-- **Assisted** — the user drives. They say "fix B1", "answer Q1", "discard S1", "show B1",
-  "status"; each fix is shown before it is checked in. Nothing happens they did not ask for.
-- **Unattended** — every item is worked without stopping, each fix in its own shelve and nothing
-  checked in; the user reviews the shelves at the end. Default to Assisted if they do not choose.
+**Order matters: one fix can change or invalidate another.** Changes and comments first, questions
+last — a fix can change the answer. Within them, **narrow before broad**: a rename or a one-line
+null check first, a refactor or a pattern across files last — a broad change moves the code under
+every other comment, so done first it breaks their anchors. Put a dependency before what depends
+on it.
 
-## 5. Assisted — one item, on request
+For each item, form a verdict before touching anything: exactly what the reviewer wants, where,
+and how you would change it. Mark it **unclear** when you cannot state that with confidence, and
+**disagree** only when you are sure the reviewer is wrong (the code already handles it, the change
+breaks something) — with the reason; when in doubt it is *unclear*, not *disagree*.
 
-Act only on what the user asked for: never pick the next item, suggest one, or start a fix they
-did not name.
+Show the plan — id, file, line, request, any verdict — then ask which way to work, and **wait**:
 
-**A change.** Show the request in full, keeping its line breaks — a finding flattened into one
-line loses its fix. Read the file, apply the fix, show the result as a diff, and wait; tweak and
-re-show as long as they keep asking. On "ok", confirm the check-in with the comment and file list
-visible, then:
+- **Interactive** — you walk the plan one item at a time, and every fix, check-in, reply and
+  discard waits for the user's "ok". Nothing reaches the server that they have not approved.
+- **Unattended** — every clear item is worked without stopping, each fix in its own shelve and
+  nothing checked in; the user reviews the shelves at the end. Default to Interactive.
+
+## 5. Interactive — one item at a time, every step approved
+
+Take the items in plan order. For each, show the request in full, keeping its line breaks (a
+finding flattened into one line loses its fix), and your proposal; then **stop and wait**:
+
+| Item | You propose, and revise until the user approves | On "ok" |
+|---|---|---|
+| change | the fix, applied in the workspace and shown as a diff | check in with the tag |
+| question or comment | a reply | post it |
+| question or comment pointing at a sensible change | the fix as a diff, then the reply | check in *without* the tag, then post "fixed in `cs:<id>`" |
+| disagree | a discard, with the reason | post it |
+| unclear | your question to the user | carry on with their answer |
+
+The user can also name an item ("fix B1", "show Q2"), "skip" one (it stays pending, nothing is
+posted), ask for "status", or say "do the rest" to switch to unattended. After each item, one
+line — what happened, how many are left — and offer the next; never start it unasked.
+
+A change, once the diff is approved — show the comment and file list, then:
 
 ```
 cm checkin src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
 ```
 
-**One comment, one changeset**, always. The 8-hex is the first block of the comment GUID and it is
-what links the changeset to the comment — batch two fixes and one silently stays pending. Name the
-paths, as **workspace** paths (`{item}` gave them; the comment's `/src/...` anchor is a server
-path): a bare `cm checkin` is scoped to the current directory. On the *"change requests … cannot
-be found or are already applied"* error the changeset still landed and only the link is missing:
-never re-run the check-in, report it and move on.
+**One comment, one changeset**, always: `[apply-change:<first 8 hex of the comment GUID>]` and a
+one-line summary of the fix — batch two and one silently stays pending. Name **workspace** paths
+(`{item}`; the `/src/...` anchor is a server path). On *"change requests … cannot be found or are
+already applied"* the changeset still landed: never re-run the check-in; report it, move on.
 
-**A question.** Read the code at the line and around it, propose a reply, let the user edit it.
-Only once they agree:
+A fix for a question or comment — **no** tag: on anything but a change it matches nothing and errors:
+
+```
+cm checkin src/InventoryManager.cs -c "Dispose the stream"
+```
+
+A reply, once its text is approved — by the comment's **GUID**, not the numeric `parent` id:
 
 ```
 cm mr 311 comment reply <comment_guid> -commentsfile=<file>
 ```
 
-`reply` takes the comment's **GUID**, not the numeric id that `parent` fields carry.
-
-**A discard, only when the user says so.** It tells the reviewer their request was rejected; that
-is a social act and never yours to propose. Ask for the reason, confirm, then:
+A discard — the only way to settle a change you will not make; a plain reply leaves it pending:
 
 ```
 cm mr 311 comment reply <comment_guid> --discard -commentsfile=<file>
 ```
 
-After each item, one line: what happened and how many are left. On "status", show applied,
-discarded, skipped and pending; "skip" leaves an item pending and posts nothing; on "do the rest"
-or "go", switch to unattended for what remains and say you are doing it.
-
 ## 6. Unattended — one shelve per item
 
-The user chose not to be interrupted, so do not ask per item. Every fix still lands in its **own**
-shelve, and nothing is checked in — the review only changes when the user checks the shelves in.
+Do not ask per item. Every fix lands in its **own** shelve, and nothing is checked in — the review
+only changes when the user checks the shelves in.
 
 ```
 cm shelveset create src/InventoryManager.cs --all \
@@ -166,14 +170,12 @@ cm shelveset create src/InventoryManager.cs --all \
 cm undo src/InventoryManager.cs
 ```
 
-The `undo` is what keeps the next shelve to its own fix; without it every shelve piles up all the
-previous ones. It is safe *here and only here*: step 1 guaranteed a clean workspace, so the only
-thing it discards is the fix just shelved. Undo **exactly the paths you edited, named** — never
-`-r` over the workspace, and never after a step that did not shelve first.
+The `undo` keeps the next shelve to its own fix, and is safe only because step 1 left the workspace
+clean: undo **exactly the paths you edited, named**, never `-r`, never without a shelve first.
 
-Answer questions as in Assisted mode without the approval round trip, changes first — a fix can
-change the answer. If a fix or shelve fails: undo the paths you touched for it, report it in one
-line, mark it skipped and **carry on** — one bad item must not strand the rest.
+Answer questions and comments as in Interactive mode without the approval round trip, after the
+changes. Leave **unclear** and **disagree** items, and any answer that needs a fix, for the user.
+If a fix or shelve fails, undo its paths, mark it skipped and **carry on**.
 
 ## 7. Wrap up
 
@@ -181,16 +183,9 @@ Show what happened to every item — applied, discarded, answered, skipped — w
 shelve it produced and the review, each a markdown link on its own `cs:<id>` / `sh:<id>` name
 (`uvcs-core/references/deep-links.md`). What comes next depends on the mode:
 
-- **Assisted** — the fixes are in. Re-request once at least one item was applied or discarded;
-  with everything skipped nothing changed, so there is nothing to re-request:
-
-  ```
-  cm mr 311 reviewer rerequest
-  ```
-
 - **Unattended** — nothing is in yet, so **do not re-request.** Hand the user the commands that
   land each shelve — its comment is the check-in comment, so the `[apply-change:]` tag fires —
-  and tell them to ask you to re-request afterwards:
+  and tell them to ask you to re-request once those land; leave the re-request command out:
 
   ```
   cm shelveset apply sh:101 --preview
@@ -198,13 +193,18 @@ shelve it produced and the review, each a markdown link on its own `cs:<id>` / `
   cm checkin --all -c "[apply-change:8123d65a] Null-check the slot before use"
   ```
 
+- **Interactive** — the fixes are in. Re-request once at least one item was applied or discarded;
+  with everything skipped nothing changed, so there is nothing to re-request:
+
+  ```
+  cm mr 311 reviewer rerequest
+  ```
+
 ## Mutating, irreversible, visible to other people
 
-Steps 1–4 are read-only end to end; a session that stops after the queue has cost nobody anything.
-From step 5 on: a check-in reaches the server, other people build on it and no `cm` command deletes
-a changeset, so confirm each one in Assisted mode; every reply and discard notifies a human, so
-never post text the user has not seen; `cm undo` is irreversible and takes anything else pending
-with it, so only ever on named paths, right after their shelve.
+Steps 1–4 are read-only. From step 5 on: no `cm` command deletes a changeset, so confirm each
+check-in in Interactive mode; every reply and discard notifies a human, so never post text the user
+has not seen; `cm undo` is irreversible, so only on named paths, right after their shelve.
 
 ## Not this skill's job
 
