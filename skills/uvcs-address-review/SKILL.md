@@ -96,10 +96,10 @@ cm cat "revid:<revisionid>@rep:<repo>@repserver:<server>" --file=/tmp/reviewed.c
 ## 4. Plan the order, show it, then ask how to work it
 
 **Order matters: one fix can change or invalidate another.** Changes and comments first, questions
-last — a fix can change the answer. Within them, from the most specific and least risky (a rename,
-a one-line null check) to the most general (a refactor, a pattern across files): narrow fixes land
-while the reviewer's anchors still hold, and the broad change then builds on top of them. Put a
-dependency before what depends on it.
+last — a fix can change the answer. Within them, **narrow before broad**: a rename or a one-line
+null check first, a refactor or a pattern across files last — a broad change moves the code under
+every other comment, so done first it breaks their anchors. Put a dependency before what depends
+on it.
 
 For each item, form a verdict before touching anything: exactly what the reviewer wants, where,
 and how you would change it. Mark it **unclear** when you cannot state that with confidence, and

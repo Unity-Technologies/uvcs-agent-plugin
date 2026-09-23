@@ -252,15 +252,15 @@
       - CH1 (change) /src/Player.cs line 12, /src/Enemy.cs line 40, /src/Npc.cs line 8:
         "Move the three copies of the health clamp into one shared HealthUtils.Clamp."
       - CH2 (change) /src/Inventory.cs line 57: "Rename tmp to remainingSlots."
-      Show me the plan: the order you will work these in, and why, one line per item.
-      Do not run anything yet.
+      For each item, say how narrow or broad the change is and whether another item depends on
+      it; then, on the last line, give the order you will work them in. Do not run anything yet.
   assert:
     - type: llm-rubric
       value: >-
-        The plan must put CH2 (a one-line rename) first, CH1 (a refactor across three files)
-        second and Q1 (a question) last. Any other order is a failure — in particular listing
-        the items in thread or file/line order, or answering Q1 before the changes. The wording
-        of the reasons is not judged.
+        The order on the last line must be CH2 (a one-line rename) first, CH1 (a refactor across
+        three files) second and Q1 (a question) last. Any other order is a failure — in
+        particular thread or file/line order, or Q1 before the changes. Judge the final order
+        line, not the per-item reasoning before it.
 
 - description: "A question that points at a real fix is fixed without the apply-change tag, then answered"
   vars:
