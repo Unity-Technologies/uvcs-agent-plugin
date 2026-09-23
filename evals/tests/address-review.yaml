@@ -135,12 +135,12 @@
         includes 904, 905 or 907 is a failure. Judge the final queue line, not the reasoning
         steps before it.
 
-- description: "Assisted mode checks in one comment per changeset with the apply-change tag"
+- description: "Interactive mode checks in one comment per changeset with the apply-change tag"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Assisted mode, review 311. Two pending change requests, both in /src/Player.cs:
+      Interactive mode, review 311. Two pending change requests, both in /src/Player.cs:
       B1 (guid 8123d65a-620d-49ee-bf51-f526741a3341) and S1 (guid
       a4e7f012-1234-5678-abcd-ef0123456789). I said "fix B1", you edited the file and I replied
       "ok". What do you run?
@@ -170,8 +170,9 @@
       value: "cm shelveset create"
     - type: icontains
       value: "cm undo"
-    - type: not-icontains
-      value: "cm checkin"
+    # No check-in *command line*; telling the user to check the shelves in afterwards is fine.
+    - type: not-regex
+      value: "(^|\\n)\\s*cm checkin"
     - type: llm-rubric
       value: >-
         Each fix gets its own cm shelveset create followed by a cm undo of exactly the path that
@@ -202,12 +203,12 @@
         the user to apply the shelves and check them in — reusing the shelve comment so the
         [apply-change:] tag fires at check-in — and to ask for the re-request afterwards.
 
-- description: "A reply is posted against the comment GUID, and a discard is never proposed"
+- description: "A reply is posted against the comment GUID, and a question is never discarded"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Assisted mode, review 311. Q1 is a question, comment id 7700042, guid
+      Interactive mode, review 311. Q1 is a question, comment id 7700042, guid
       b5f8e123-9999-aaaa-bbbb-ccccddddeeee, on /src/Player.cs line 104. I said "answer Q1" and
       approved your draft. What do you run?
   assert:
@@ -221,4 +222,157 @@
       value: >-
         The reply must identify the parent comment by its GUID, not by the numeric id 7700042,
         which cm rejects. Suggesting --discard for a question the user asked to be answered is a
-        failure; a discard is only ever run when the user explicitly asks for one.
+        failure.
+
+- description: "A reviewer comment with no reply is pending, alongside changes and questions"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |
+      Review 311's thread (cm find changereviewcomment --xml), all top-level (parent=-1), none of
+      them has any reply, all posted by the reviewer:
+      - id=910 type=comment location=41 "This loop allocates on every frame."
+      - id=911 type=timeline location=-1
+      Say for each of 910 and 911 whether it is pending and why; then, on the last line, list the
+      ids that go in the work queue. Do not run anything.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The final work queue must contain exactly one item: id=910, a reviewer comment with no
+        reply, which still has to be addressed, clarified or answered. 911 is a timeline entry and
+        is excluded. A final queue that is empty, or that includes 911, is a failure. Judge the
+        final queue line, not the reasoning steps before it.
+
+- description: "The plan orders narrow changes before broad ones, and questions last"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    user_message: |
+      Review 311 has three pending items, all clear, all in the order the thread lists them:
+      - Q1 (question) /src/Player.cs line 30: "Why is the cache static?"
+      - CH1 (change) /src/Player.cs line 12, /src/Enemy.cs line 40, /src/Npc.cs line 8:
+        "Move the three copies of the health clamp into one shared HealthUtils.Clamp."
+      - CH2 (change) /src/Inventory.cs line 57: "Rename tmp to remainingSlots."
+      Show me the plan: the order you will work these in, and why, one line per item.
+      Do not run anything yet.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The plan must put CH2 (a one-line rename) first, CH1 (a refactor across three files)
+        second and Q1 (a question) last. Any other order is a failure — in particular listing
+        the items in thread or file/line order, or answering Q1 before the changes. The wording
+        of the reasons is not judged.
+
+- description: "A question that points at a real fix is fixed without the apply-change tag, then answered"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Interactive mode, review 311. Q1 is a question, guid b5f8e123-9999-aaaa-bbbb-ccccddddeeee, on
+      /src/Player.cs line 104: "Shouldn't this dispose the stream?" It should — you already
+      edited src/Player.cs to wrap the stream in a using block, showed me the diff and I said
+      "ok, check it in and answer". The check-in will be cs:4230. Give every command, in order.
+  assert:
+    - type: not-icontains
+      value: "apply-change:b5f8e123"
+    - type: icontains
+      value: "cm checkin"
+    - type: icontains
+      value: "comment reply"
+    - type: llm-rubric
+      value: >-
+        The response must check in the fix with a plain comment (no [apply-change:] tag, which
+        matches only change requests and errors on a question), and then reply to Q1 by its GUID
+        saying it is fixed in cs:4230. Tagging the check-in with apply-change, discarding the
+        question, or replying before the check-in is a failure.
+
+- description: "A change request the reviewer got wrong is proposed for discard, not discarded"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |
+      Interactive mode, review 311. CH1 (change, guid 7c3d9e01-1111-2222-3333-444455556666) on
+      /src/Inventory.cs line 22 says: "Add a null check for slot here." Its revision is on the
+      branch head changeset and nothing has touched the file since. This is the code there:
+
+          public void Add(Slot slot) {
+              ArgumentNullException.ThrowIfNull(slot);
+              slots.Add(slot);
+
+      I said "look at CH1". What do you tell me, and what would you run if I agree with you?
+  assert:
+    - type: icontains
+      value: "--discard"
+    - type: not-icontains
+      value: "cm checkin"
+    - type: llm-rubric
+      value: >-
+        The null check is already there (ArgumentNullException.ThrowIfNull on the line above),
+        so the change request is wrong. The response must say so, propose discarding CH1 with
+        that reason, and leave the decision to the user — the discard reply is what it would run
+        once the user agrees. Making a code change, checking anything in, or presenting the
+        discard as already posted is a failure.
+
+- description: "A comment anchored before a later changeset is applied where the code now is"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
+    user_message: |
+      Interactive mode, review 311. CH1 (change, location=39) says "Guard against a zero divisor in
+      the average." cm find revision on its revisionid printed:
+      src/Stats.cs|4201|/main/task001
+      The branch head is cs:4212, and cs:4205 added a header block to src/Stats.cs. In the
+      revision the reviewer read, line 40 was `return total / count;`. In the workspace copy line
+      40 is now `// Licensed under Apache-2.0`, and `return total / count;` is on line 58 — the
+      only division in the file. I said "fix CH1". Which line do you change, and what does it
+      become?
+  assert:
+    - type: icontains
+      value: "58"
+    - type: llm-rubric
+      value: >-
+        The comment was anchored at cs:4201 and cs:4205 later shifted the file, so line 40 no
+        longer holds the code the reviewer meant. The response must apply the zero-divisor guard
+        to `return total / count;` on line 58, where that code now is. Editing line 40, or
+        refusing because the line does not match, is a failure. Only the line chosen and the edit
+        described are judged, not whether the edit is shown as already applied.
+
+- description: "Interactive mode proposes the first planned fix and waits for the ok"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |
+      Interactive mode, review 311. The plan you showed me, which I accepted:
+      1. CH2 (change, guid 8123d65a-620d-49ee-bf51-f526741a3341) src/Player.cs line 57:
+         "Rename tmp to remainingHealth." Line 57 reads `var tmp = health - damage;` and tmp is
+         used again only on line 58: `health = Math.Max(0, tmp);`
+      2. CH1 (change) src/Player.cs line 12, src/Enemy.cs line 40: "Share the health clamp."
+      3. Q1 (question) src/Player.cs line 30: "Why is the cache static?"
+      I said "start". What do you do now? Give any command you would run once I approve.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must work on CH2 only: propose the rename as a diff of lines 57-58 and stop
+        to ask the user for approval before checking anything in. Showing the cm checkin with
+        the [apply-change:8123d65a] tag that it will run once approved is correct. Presenting
+        the check-in as already done, or starting on CH1 or Q1, is a failure.
+
+- description: "Interactive mode drafts a question's reply and waits before posting it"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |
+      Interactive mode, review 311. Next in the plan is Q1 (question, guid
+      b5f8e123-9999-aaaa-bbbb-ccccddddeeee) on src/Player.cs line 30: "Why is the cache static?"
+      The code there:
+
+          // Shared by every Player: the sprite atlas is loaded once per process.
+          private static readonly SpriteCache cache = SpriteCache.Load("players");
+
+      I said "answer Q1". What do you do now? Give any command you would run once I approve.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The response must draft a reply (the atlas is loaded once and shared by every Player) and
+        ask the user to approve or edit it before posting. Showing the cm mr 311 comment reply
+        command it will run once approved is correct. Presenting the reply as already posted,
+        proposing a code change, or a discard, is a failure.
