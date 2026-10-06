@@ -47,8 +47,9 @@ what the publishing side parses.
      contract, a different result on an edge input.
    - **Tests the change adds or edits** — a test that passes even when the code is wrong, because it
      asserts nothing or only checks its own input; an expected value changed to match the new
-     result, with nothing in the change explaining why. A missing test is a finding only when the
-     project rules require one.
+     result, with nothing in the change explaining why. A missing test is a finding when the
+     project rules require one, or when the surrounding code is already tested and the change adds
+     or alters behaviour that no test now covers.
    - **Performance where it matters** — hot paths, a query or allocation per item in a loop,
      unbounded growth.
    - **Maintainability last** — duplication the change introduced, a misleading name, a comment
@@ -70,7 +71,8 @@ what the publishing side parses.
    - **The change doing what it set out to do**: a behaviour change that is the point of the change
      (step 1) or follows directly from it. Ask about it only when the intent is genuinely unclear.
    - **Generic quality advice**: "add tests", "add docs", hardening with no concrete exploit path —
-     unless the project rules ask for it. A traced security hole is a Safety finding, not this.
+     unless the project rules ask for it. A traced security hole is a Safety finding, and untested
+     behaviour in already-tested code is a Tests finding; neither is this.
    - **What the code deliberately silences**: a project rule this line suppresses on purpose (an
      ignore comment, a pragma, a documented exception).
    - **Pedantry a senior engineer would not raise**, a style preference with no project rule behind
