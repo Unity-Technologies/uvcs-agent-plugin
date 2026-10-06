@@ -45,8 +45,10 @@ what the publishing side parses.
      an authorization check removed or bypassed; data that can be lost or corrupted.
    - **Behaviour the author may not have intended** — a changed default, a removed check, a changed
      contract, a different result on an edge input.
-   - **Tests** — a test that cannot fail; a test edited so that it passes. Missing coverage is a
-     finding only when the project rules require it.
+   - **Tests the change adds or edits** — a test that passes even when the code is wrong, because it
+     asserts nothing or only checks its own input; an expected value changed to match the new
+     result, with nothing in the change explaining why. A missing test is a finding only when the
+     project rules require one.
    - **Performance where it matters** — hot paths, a query or allocation per item in a loop,
      unbounded growth.
    - **Maintainability last** — duplication the change introduced, a misleading name, a comment
