@@ -28,7 +28,7 @@ venv/
 .ruff_cache/
 
 # Node (tooling only; this plugin ships no runtime deps)
-node_modules/
+node_modules
 
 # Evals — local credentials and promptfoo output
 .env
