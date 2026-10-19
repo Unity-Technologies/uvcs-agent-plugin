@@ -64,7 +64,7 @@ Take the thread **once** and keep it. Whether a parent is pending is decided by 
 | Bucket | The comment is |
 |---|---|
 | **change** — make it or discard it | `type=change`, `parent=-1`, `appliedinchangeset=-1`, and no row in the thread with `parent=<its id>` and `type=discarded` (from anyone) |
-| **question** — answer it | `type=question`, `parent=-1`, and **no row in the thread with `parent=<its id>`** — its own fields never show whether it was answered; only a scan of the other rows does |
+| **question** — answer it | `type=question`, `parent=-1`, and **no row in the thread with `parent=<its id>`** — a child of *any* type (`comment`, `discarded`…) answers it; its own fields never show that |
 | **comment** — address, clarify or answer it | `type=comment` or `conversation`, `parent=-1`, no row with `parent=<its id>`, and posted by someone other than the user |
 | **not yours** | everything else — a parent already applied or settled by a child, every child itself, and `timeline` |
 
@@ -96,10 +96,9 @@ cm cat "revid:<revisionid>@rep:<repo>@repserver:<server>" --file=/tmp/reviewed.c
 ## 4. Plan the order, show it, then ask how to work it
 
 **Order matters: one fix can change or invalidate another.** Changes and comments first, questions
-last — a fix can change the answer. Within them, **narrow before broad**: a rename or a one-line
-null check first, a refactor or a pattern across files last — a broad change moves the code under
-every other comment, so done first it breaks their anchors. Put a dependency before what depends
-on it.
+last — a fix can change the answer. Among the changes, **the smallest goes first and the broadest
+last**, never thread order: a one-line rename **before** a three-file refactor, then the question.
+Reorder only for a stated dependency: a request that names code another item creates goes after it.
 
 For each item, form a verdict before touching anything: exactly what the reviewer wants, where,
 and how you would change it. Mark it **unclear** when you cannot state that with confidence, and
@@ -159,6 +158,12 @@ A discard — the only way to settle a change you will not make; a plain reply l
 cm mr 311 comment reply <comment_guid> --discard -commentsfile=<file>
 ```
 
+Last item done: re-request, unless every item was skipped (then nothing changed):
+
+```
+cm mr 311 reviewer rerequest
+```
+
 ## 6. Unattended — one shelve per item
 
 Do not ask per item. Every fix lands in its **own** shelve, and nothing is checked in — the review
@@ -193,12 +198,7 @@ shelve it produced and the review, each a markdown link on its own `cs:<id>` / `
   cm checkin --all -c "[apply-change:8123d65a] Null-check the slot before use"
   ```
 
-- **Interactive** — the fixes are in. Re-request once at least one item was applied or discarded;
-  with everything skipped nothing changed, so there is nothing to re-request:
-
-  ```
-  cm mr 311 reviewer rerequest
-  ```
+- **Interactive** — the fixes are in, and the re-request closing step 5 is the last command.
 
 ## Mutating, irreversible, visible to other people
 
