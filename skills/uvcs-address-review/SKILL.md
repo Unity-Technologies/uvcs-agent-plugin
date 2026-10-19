@@ -125,8 +125,8 @@ finding flattened into one line loses its fix), and your proposal; then **stop a
 | disagree | a discard, with the reason | post it |
 | unclear | your question to the user | carry on with their answer |
 
-The user can also name an item ("fix B1", "show Q2"), "skip" one (it stays pending, nothing is
-posted), ask for "status", or say "do the rest" to switch to unattended. After each item, one
+Naming an item ("fix B1", "answer Q2") starts it — it is not the "ok", so draft and ask. "skip"
+leaves one pending, "status" reports, "do the rest" switches to unattended. After each item, one
 line — what happened, how many are left — and offer the next; never start it unasked.
 
 A change, once the diff is approved — show the comment and file list, then:
