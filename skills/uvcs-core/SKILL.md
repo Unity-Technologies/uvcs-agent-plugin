@@ -152,7 +152,7 @@ not enough to get the order and the stopping points right, which is where the da
 
 | Skill | Use it for |
 |---|---|
-| `uvcs-merge` | Any merge, cherry-pick or conflict resolution, including finishing a merge already in progress. Never run `cm merge --merge` without it. |
+| `uvcs-merge` | Any merge, cherry-pick or conflict resolution, including finishing a merge already in progress. Never run `cm merge --merge` without it; its first command is always the read-only preview, `cm merge <src>` with no `--merge`. |
 | `uvcs-switch` | Moving the workspace to another branch, changeset, label or shelve, creating the branch first if needed. Never `cm switch` a workspace with pending changes without it. |
 | `uvcs-root-cause` | "Why did this break / which changeset introduced it / who broke this line": tracing a bug or regression back through history. Read-only. |
 | `uvcs-code-review` | Reviewing a branch or merge request, a changeset, a shelve or pending changes, and publishing the findings as review comments. |
@@ -184,8 +184,9 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
   than one process each, but it changes the exit-code and error-stream contract. Follow
   `references/batching-commands.md` exactly or run them plainly. Never batch a mutating command.
 - **A recipe from this skill that `cm` rejects is a defect in this plugin, not in UVCS.** Take
-  the syntax from `cm help <command>`, finish the task, then offer once to report it with
-  `uvcs-report-issue` — likewise for a task no recipe or skill covers.
+  the syntax from `cm help <command>`, finish the task, then ask the user once, in these words:
+  "That recipe is a bug in this plugin — want me to report it with `uvcs-report-issue`?" Likewise
+  for a task no recipe or skill covers.
 
 ## References — read when the task needs them
 
