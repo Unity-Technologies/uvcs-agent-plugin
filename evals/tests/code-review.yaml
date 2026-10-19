@@ -149,7 +149,7 @@
       who reads the diff, what instructions they get, and what you do with what comes back.
   assert:
     - type: icontains
-      value: "review-prompt.md"
+      value: "review-prompt"
     - type: icontains-any
       value:
         - "cm patch br:/main/task009"

@@ -6,15 +6,22 @@ prescribes, and respects the safety rules.
 
 ## Design principles
 
-- **Fast and cheap.** One small evaluated model (Claude Haiku), `temperature: 0`,
-  `max_tokens: 1024`, one API call per test. Most assertions are deterministic string checks
-  (`icontains` / `not-icontains`); `llm-rubric` is used only where a string match cannot
+- **Fast and cheap.** One small evaluated model (Claude Haiku), one API call per test. Most
+  assertions are deterministic checks; `llm-rubric` is used only where a string match cannot
   express the requirement (a minority of assertions, judged by one Sonnet call each).
+- **Model-agnostic.** No test may depend on how one model phrases things:
+  - *"must not run X"* is `assertions/commands.cjs:notRun`, which reads only the command lines in
+    fenced code blocks — a model that explains "this does not use `--discard`" is not running
+    it. `not-icontains` is for text that must not appear anywhere (redacted names, a link form);
+  - the evaluated model's answers vary from run to run (Claude 5 models take no `temperature`),
+    so the gate in `run-evals.sh` measures a pass rate instead of assuming one answer per prompt.
+
+  Changing model family is the two `id:` lines in `promptfooconfig.yaml` plus whatever
+  parameters that family accepts — and a full-suite measurement before merging.
 - **Green means minimum quality; red means something broke.** Every test pins a behavior the
   skill exists to teach (query grammar rules, flag names, output formats, reporting notation)
   — not stylistic preferences. If you edit the skill and a test goes red, the edit removed or
-  weakened one of those behaviors. CI tolerates a single failure, so rare judge flakiness does
-  not block a PR; two or more fail the job.
+  weakened one of those behaviors.
 - Tests load the same files an agent would: `SKILL.md` always, plus the one reference the task
   calls for. Workflow-skill tests override `skill_content` with that skill and pass the hub
   reference it points at — which is also how the hub/workflow split gets exercised.
@@ -49,8 +56,8 @@ and never reaches the OAuth fallback. To use a real API key locally, `export
 ANTHROPIC_API_KEY=<key>` — it takes precedence with no config change.
 
 Promptfoo is version-pinned in `package.json` so local runs and CI evaluate with the same
-tool version, and the config pins `claude-haiku-4-5` at `temperature: 0`, so a local result
-is a faithful preview of the CI result rather than an approximation of it.
+tool version, and the config names the evaluated model, so local runs and CI evaluate the same
+model.
 
 While iterating on one skill, narrow the run to the tests that load the file you changed (the
 selection rule is in `CLAUDE.md`) — the full suite is about 70 tests, **90 seconds** and roughly
@@ -65,30 +72,33 @@ npx --no-install promptfoo eval --no-cache                  # ignore cached resu
 
 `./run-evals.sh` is the exact entry point CI uses, and it is worth using locally for the same
 two reasons. It **names every failing test** (promptfoo's own table truncates at 25 rows, so a
-plain run tells you *how many* failed and not *which*), and it **re-runs only the failures**
-with `--no-cache`, so a boundary flip separates itself from a regression in one command instead
-of two. It takes any `promptfoo eval` flag:
+plain run tells you *how many* failed and not *which*), and it **re-runs each failure 4 times**
+with `--no-cache` to measure its pass rate, so a one-off miss separates itself from a regression
+in one command. It takes any `promptfoo eval` flag:
 
 ```bash
 ./run-evals.sh                                        # whole suite
 ./run-evals.sh --filter-pattern "An approved report"  # one test, same reporting
 ```
 
-Exit status is 0 when every test passes, first time or on the retry, and 1 when a test fails
-twice. A test that only passes on the retry is reported as **flaky** — treat that as a defect in
-the scenario, not as a pass: see *Writing evals that do not flake* in `CLAUDE.md`.
+Exit status is 1 when a test that failed passes fewer than 3 of its 4 retries, 0 otherwise
+(`EVAL_RETRIES` / `EVAL_RETRY_PASSES` change the numbers; the trade-off is tabulated at the top of
+the script). A test that failed and then passed its retries is reported as **unstable**, with its
+rate — treat that as a scenario with too little margin, not as a pass: see *Writing evals that do
+not flake* in `CLAUDE.md`.
 
 ## CI
 
 `.github/workflows/skill-evals.yml` runs the suite through `run-evals.sh`. The step summary
-lists the tests that failed and why, flaky recoveries are raised as PR warning annotations, and
+lists the tests that failed and why, unstable tests are raised as PR warning annotations, and
 the full `results.json` / `retry.json` are attached to the run as the `eval-results` artifact for
 when you need the model output behind a failure. The pinned promptfoo install is cached on
 `package-lock.json`, so warm runs skip the install entirely.
 
-The gate used to be "two or more failures fail the job", which tolerated one flaky miss at the
-cost of hiding a genuine single-test regression. The retry replaces it: nothing is tolerated, and
-what used to be absorbed silently is now surfaced by name.
+The gate used to be "two or more failures fail the job", which hid a genuine single-test
+regression, and then "a test that fails twice fails the job", which assumed a temperature-0 model
+that answers one prompt the same way every time. Claude 5 models cannot be pinned, so the gate now
+samples: a failure is retried 4 times and must pass 3.
 
 ### When it runs — and where a fork's PR gets verified
 

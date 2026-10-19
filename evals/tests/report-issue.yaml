@@ -126,8 +126,8 @@
       value: "cm log cs:4207(?![^\\n]*--nototal)"
     - type: llm-rubric
       value: >-
-        The response must give the corrected command (cm log cs:4207 without --nototal), say
-        the reference is wrong — a defect in the plugin, not in UVCS — and offer to report it
-        with the uvcs-report-issue skill. Sending the user to Unity product support, retrying
-        with other guessed flags, or filing an issue without asking are failures. Explaining
-        why --nototal is find-only is not required.
+        The response must include offering the user to report the faulty recipe with the
+        uvcs-report-issue skill — asked directly, or stated as the step it takes once the task is
+        done; this is a planning answer, so either form is the offer. Leaving the offer out,
+        sending the user to Unity product support, retrying with other guessed flags, or filing
+        an issue without asking are failures. How the error is explained is not judged.

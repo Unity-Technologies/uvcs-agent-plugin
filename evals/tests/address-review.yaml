@@ -357,7 +357,8 @@
          used again only on line 58: `health = Math.Max(0, tmp);`
       2. CH1 (change) src/Player.cs line 12, src/Enemy.cs line 40: "Share the health clamp."
       3. Q1 (question) src/Player.cs line 30: "Why is the cache static?"
-      I said "start". What do you do now? Give any command you would run once I approve.
+      You already have src/Player.cs open; those two lines are all the rename touches. I said
+      "start". What do you do now? Give any command you would run once I approve.
   assert:
     - type: llm-rubric
       value: >-

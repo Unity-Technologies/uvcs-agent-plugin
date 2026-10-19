@@ -72,12 +72,11 @@
       value: "CommandResult"
     - type: llm-rubric
       value: >-
-        The response says NO: the cm shell process always exits 0 regardless of what
-        failed inside, so the exit code proves nothing. It must say the per-command
-        result is the CommandResult line, and that all twenty results have to be
-        checked rather than one standing in for the batch. With one --shelloutputfile
-        per command, reading the final line of each of the twenty files satisfies that
-        and is correct. Treating exit 0 as success is a failure.
+        The response says NO: the cm shell process exit code proves nothing about the
+        queries inside it, and each query's own result (its CommandResult line, e.g. the
+        final line of its --shelloutputfile) is what has to be checked. Treating exit 0
+        as success, or checking only one result for the whole batch, is a failure. How
+        the files are named or read is not judged.
 
 - description: "Errors inside a batch go to stdout, not stderr"
   vars:

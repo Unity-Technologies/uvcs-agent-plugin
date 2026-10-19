@@ -301,9 +301,10 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
 
    Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
    flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
-   a count) and re-runs just the failures with `--no-cache`, so a boundary flip separates itself
-   from a regression without a second command. A test that passes only on the retry is reported
-   as flaky and is a defect in the scenario, not a pass.
+   a count) and retries each failure 4 times with `--no-cache`, failing the job only below 3/4, so
+   a one-off miss separates itself from a regression without a second command. A test that fails
+   and then passes its retries is reported as unstable, with its rate — a scenario short of
+   margin, not a pass.
 
    Select with `--filter-pattern "<test description>"`: a **case-sensitive regex**, so confirm the
    matched count is what you expected — bare `promptfoo eval` reports a clean pass for a pattern
@@ -323,14 +324,15 @@ so keep skills independent and self-contained.
 
 ### Writing evals that do not flake
 
-The evaluated model runs at `temperature: 0`, so one prompt gives **nearly the same output every
-time** — not byte-identical: a prompt that sits on a decision boundary still flips about one run
-in eight (measured 2026-09-16 on the not-invented-id test: 7/8 on `main`, then 8/8 after the fix
-below), and a run of the suite can therefore go red on a test nobody touched. That is not
-noise to re-roll either: it means the prompt has no margin, and the next skill edit will tip it
-for good. Re-running does not fix that, and neither does word-golfing the skill until the test
-flips back — the next edit flips it again. Move the scenario away from the boundary instead.
-The rules below each come from a test that flaked for exactly that reason:
+Every test has a **pass rate**, not a result. The evaluated model takes no `temperature` (Claude
+5 models reject sampling parameters), so one prompt gets a different answer each run; even
+Haiku 4.5 at `temperature: 0` flipped about one run in eight on a prompt near a decision
+boundary. The gate in `run-evals.sh` absorbs a rare miss, but a test that passes 75% of the time
+turns a full run red about half the time. That is not noise to re-roll: the scenario has no
+margin, and the next edit will tip it for good. Word-golfing the skill until the test flips back
+does not help either — that tunes the suite to one model, and the 2026-10 move from Haiku 4.5 to
+5.5 broke a dozen tests tuned that way. Move the scenario away from the boundary instead. The
+rules below each come from a test that flaked for exactly that reason:
 
 - **One behavior per test.** An 8-entry review thread asking which items are pending was a
   reasoning exercise the small model failed half the time; two tests of 3–4 entries each pass.
@@ -358,11 +360,17 @@ The rules below each come from a test that flaked for exactly that reason:
 - **The prompt template demands `cm` commands in code blocks.** A test whose right answer contains
   no command forces the model to invent one — usually the only command in the nearest skill
   section, whether it fits or not. Give the scenario a legitimate command to emit.
-- **Never `not-icontains` a token a correct answer may mention while rejecting it** (`cm shell`,
-  `reviewer rerequest`). A rubric that permits the mention plus a string assert that forbids it
-  fails correct answers by construction. Assert on the invocation *line* instead:
-  `not-regex: "(^|\\n)\\s*cm shell"` — `regex` compiles with no flags, so `^` alone is start of
-  string, not start of line.
+- **Assert what the model runs, not what it says.** "Must not run X" is
+  `type: javascript`, `value: file://assertions/commands.cjs:notRun`, `config: { pattern: '…' }`:
+  it reads only the command lines in fenced blocks. A `not-icontains` on `--discard` failed
+  "it does not use `--discard`", and the better the model, the more it explains — so string
+  checks over the whole answer get *less* reliable as models improve. Keep `not-icontains` for
+  text that must not appear anywhere (a redacted name, a link form).
+- **Leave the shared prompt template alone unless the whole suite says otherwise.** It is in all
+  ~100 prompts, so any rewording re-rolls every test at once: a "plan it through to the end"
+  rewrite cost 15 tests on Haiku 4.5, and asking the model to label each code block "now / after
+  approval / the user runs" scored 50/64 against 56/64 without it on the tests it was meant to
+  help. The one sentence that earned its place tells the model the user's reported state is true.
 - **A rubric judges behavior, not explanation.** "Must explain why", "must give a reason of
   substance", "must explain the behavior without the flag" grade prose the skill does not teach.
   Name the command or fact that must appear and the one that must not; say the rest is not judged.
@@ -370,13 +378,15 @@ The rules below each come from a test that flaked for exactly that reason:
   followed the skill's own instruction to tell the user to check the shelves in afterwards.
 - **Skill side: a command the model must emit goes in its own fenced block**, on the step where it
   runs. Inline in prose next to another step's block, the model copies the block and drops the
-  prose command — seen twice (the switch preview, the unattended wrap-up).
+  prose command — seen twice (the switch preview, the unattended wrap-up). The converse holds
+  too: a command quoted in a "stop and ask the user" step reads as one to run — "ask the user to
+  shelve them (`cm shelveset create --all …`)" got shelved by the model itself.
 - **Measure, both sides, before committing.** Run every test that loads the edited file with
-  `--repeat 4 --no-cache`, require 4/4 on each, and compare with the same run on `HEAD`. A test that
-  got worse means the edit moved it — revert that edit rather than adjusting the test to fit.
-  When a test fails once in a full run, `--repeat 8` on both sides is the minimum that separates
-  "the edit moved it" from "it had no margin to begin with" (4/4 misses a one-in-eight flip half
-  the time); either way the fix is the scenario or the skill wording, never a re-run.
+  `--repeat 4 --no-cache`, and compare with the same run on `HEAD`. Anything below 4/4 gets
+  `--repeat 8` on both sides: 7/8 or better is margin, and a test that got worse than `HEAD` means
+  the edit moved it — revert that edit rather than adjusting the test to fit. Four samples cannot
+  tell 90% from 100%, so never conclude from one 3/4; either way the fix is the scenario or the
+  skill wording, never a re-run.
 
 ## Cutting a release
 
