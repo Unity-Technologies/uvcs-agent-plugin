@@ -181,8 +181,8 @@ jobs:
         env:
           PROMPTFOO_DISABLE_TELEMETRY: "1"
           PROMPTFOO_DISABLE_UPDATE: "1"
-        # Names every failing test and re-runs only those; the job goes red only
-        # on a test that fails twice. Same script locally: evals/run-evals.sh.
+        # Names every failing test and retries each 4 times; the job goes red only
+        # on a test that passes fewer than 3. Same script locally: evals/run-evals.sh.
         run: ./run-evals.sh
 
       # The full results, for anyone who needs the actual model output behind a
