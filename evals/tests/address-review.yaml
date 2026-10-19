@@ -252,8 +252,9 @@
       - CH1 (change) /src/Player.cs line 12, /src/Enemy.cs line 40, /src/Npc.cs line 8:
         "Move the three copies of the health clamp into one shared HealthUtils.Clamp."
       - CH2 (change) /src/Inventory.cs line 57: "Rename tmp to remainingSlots."
-      For each item, say how narrow or broad the change is and whether another item depends on
-      it; then, on the last line, give the order you will work them in. Do not run anything yet.
+      None of them depends on another: no request touches code another item creates or moves.
+      For each item, say how narrow or broad the change is; then, on the last line, give the
+      order you will work them in. Do not run anything yet.
   assert:
     - type: llm-rubric
       value: >-
