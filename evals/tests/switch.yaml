@@ -97,8 +97,9 @@
   assert:
     - type: icontains
       value: "cm switch"
-    - type: not-icontains
-      value: "cm undo"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm undo' }
     - type: llm-rubric
       value: >-
         The workspace is clean, so the response must simply switch. Creating a shelve, undoing,

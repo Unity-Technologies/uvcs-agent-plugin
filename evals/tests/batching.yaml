@@ -26,8 +26,9 @@
   assert:
     - type: icontains
       value: "cm status"
-    - type: not-icontains
-      value: "cm shell"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm shell' }
 
 - description: "Below the 5-command threshold, stay with plain cm commands"
   vars:
@@ -37,8 +38,9 @@
     reference_content: file://../skills/uvcs-core/references/batching-commands.md
   assert:
     # No cm shell *invocation* line; mentioning cm shell in prose to reject it is fine.
-    - type: not-regex
-      value: "(^|\\n)\\s*cm shell"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm shell' }
     - type: llm-rubric
       value: >-
         The response runs the two changesets as ordinary separate cm commands. If it

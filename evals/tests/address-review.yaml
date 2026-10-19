@@ -25,8 +25,9 @@
       Address the review comments. cm status --header shows the workspace is on label
       lb:v2.1-release, and cm status is clean.
   assert:
-    - type: not-icontains
-      value: "cm find changereviewcomment"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm find changereviewcomment' }
     - type: icontains
       value: "v2.1-release"
     - type: llm-rubric
@@ -60,8 +61,9 @@
       value: "cm find review"
     - type: icontains
       value: "target='br:/main/task001'"
-    - type: not-icontains
-      value: "cm find mergerequest"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm find mergerequest' }
     - type: llm-rubric
       value: >-
         The lookup must be cm find review filtered on target, because a branch can carry a plain
@@ -147,10 +149,12 @@
   assert:
     - type: icontains
       value: "apply-change:8123d65a"
-    - type: not-icontains
-      value: "apply-change:a4e7f012"
-    - type: not-icontains
-      value: "cm shelveset create"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'apply-change:a4e7f012' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm shelveset create' }
     - type: llm-rubric
       value: >-
         The response must run a cm checkin carrying the [apply-change:8123d65a] tag for B1 alone,
@@ -171,8 +175,9 @@
     - type: icontains
       value: "cm undo"
     # No check-in *command line*; telling the user to check the shelves in afterwards is fine.
-    - type: not-regex
-      value: "(^|\\n)\\s*cm checkin"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm checkin' }
     - type: llm-rubric
       value: >-
         Each fix gets its own cm shelveset create followed by a cm undo of exactly the path that
@@ -194,8 +199,9 @@
     - type: icontains
       value: "cm shelveset apply sh:101"
     # No re-request *command line*; saying "ask me to re-request afterwards" in prose is fine.
-    - type: not-regex
-      value: "(^|\\n)\\s*cm mr 311 reviewer rerequest"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm mr 311 reviewer rerequest' }
     - type: llm-rubric
       value: >-
         Nothing has been checked in yet, so the response must not re-request the review now:
@@ -216,8 +222,9 @@
       value: "comment reply"
     - type: icontains
       value: "b5f8e123-9999-aaaa-bbbb-ccccddddeeee"
-    - type: not-icontains
-      value: "--discard"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--discard' }
     - type: llm-rubric
       value: >-
         The reply must identify the parent comment by its GUID, not by the numeric id 7700042,
@@ -273,8 +280,9 @@
       edited src/Player.cs to wrap the stream in a using block, showed me the diff and I said
       "ok, check it in and answer". The check-in will be cs:4230. Give every command, in order.
   assert:
-    - type: not-icontains
-      value: "apply-change:b5f8e123"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'apply-change:b5f8e123' }
     - type: icontains
       value: "cm checkin"
     - type: icontains
@@ -303,8 +311,9 @@
   assert:
     - type: icontains
       value: "--discard"
-    - type: not-icontains
-      value: "cm checkin"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm checkin' }
     - type: llm-rubric
       value: >-
         The null check is already there (ArgumentNullException.ThrowIfNull on the line above),

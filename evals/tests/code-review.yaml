@@ -38,8 +38,9 @@
   assert:
     - type: icontains
       value: "cm codereview cs:4207"
-    - type: not-icontains
-      value: "cm mergerequest create"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm mergerequest create' }
     - type: llm-rubric
       value: >-
         An isolated changeset is reviewed with cm codereview. Creating a merge request for it is
@@ -81,8 +82,9 @@
       value: "--path=/src/Player.cs"
     - type: icontains
       value: "--line=34"
-    - type: not-icontains
-      value: "--line=33"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--line=33' }
     - type: llm-rubric
       value: >-
         The --line value must be 34, exactly the line the user named. Subtracting one to make it
@@ -128,8 +130,9 @@
   assert:
     - type: icontains
       value: "cm status"
-    - type: not-icontains
-      value: "cm mergerequest create"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm mergerequest create' }
     - type: llm-rubric
       value: >-
         With no target named, the review must default to the workspace's pending changes. There

@@ -84,8 +84,9 @@
       "The server myorg@cloud could not be reached. Check the network connection." and cm find
       branch "where owner='me'" says the same thing.
   assert:
-    - type: not-regex
-      value: "(^|\\n)\\s*gh issue create"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^gh issue create' }
     - type: llm-rubric
       value: >-
         The failure is a UVCS server or connection problem, not a defect in the plugin, so the
@@ -105,8 +106,9 @@
       value: "gh issue create"
     - type: icontains
       value: "--label enhancement"
-    - type: not-icontains
-      value: "--label bug"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--label bug' }
 
 - description: "The hub alone turns a rejected recipe into a corrected command and an offer to report"
   vars:

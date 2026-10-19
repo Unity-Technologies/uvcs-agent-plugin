@@ -24,8 +24,9 @@
       Merge /main/task001 into my branch. If anything conflicts I want to sort it out myself
       in Beyond Compare, which is what I have configured as my merge tool.
   assert:
-    - type: not-icontains
-      value: "--merge --conflict-markers"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--merge --conflict-markers' }
     - type: llm-rubric
       value: >-
         The response must hand the merge command to the user to run themselves rather than
@@ -86,8 +87,9 @@
       A teammate shelved their fix as sh:41. Pull it into my workspace so I can keep working
       on top of it.
   assert:
-    - type: not-icontains
-      value: "cm checkin"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm checkin' }
     - type: llm-rubric
       value: >-
         Bringing a shelve into the workspace must end with the changes pending so the user
@@ -105,5 +107,6 @@
   assert:
     - type: regex
       value: "(^|\\n)\\s*cm undo[^\\n]*(\\s-r\\b|--recursive)"
-    - type: not-regex
-      value: "(^|\\n)\\s*cm undo \\.\\s*(\\n|$)"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm undo \.\s*$' }
