@@ -45,22 +45,39 @@ what the publishing side parses.
      an authorization check removed or bypassed; data that can be lost or corrupted.
    - **Behaviour the author may not have intended** — a changed default, a removed check, a changed
      contract, a different result on an edge input.
-   - **Tests** — behaviour that changed with no test covering it; a test that cannot fail; a test
-     edited so that it passes.
+   - **Tests the change adds or edits** — a test that passes even when the code is wrong, because it
+     asserts nothing or only checks its own input; an expected value changed to match the new
+     result, with nothing in the change explaining why. A missing test is a finding when the
+     project rules require one, or when the surrounding code is already tested and the change adds
+     or alters behaviour that no test now covers.
    - **Performance where it matters** — hot paths, a query or allocation per item in a loop,
      unbounded growth.
    - **Maintainability last** — duplication the change introduced, a misleading name, a comment
      that no longer matches the code.
-4. **Confidence gate.** Before reporting anything, ask: can I point to the exact line and explain
-   precisely why it is wrong? If not, do not report it. Two real bugs are worth more than ten
-   probable ones; a false positive costs the author's trust in every other finding.
-5. **Review the diff, not the file.** Read unchanged code to understand the change; do not flag it.
-   The one exception is a bug in unchanged code that the change clearly interacts with or depends
-   on: report it with `[PRE-EXISTING]` at the start of its title so the author knows this change did
-   not introduce it.
-6. **Not findings:** a style preference with no project rule behind it; anything a formatter or
-   linter catches; rewriting the author's approach when theirs works; a hypothetical future
-   requirement; praise; restating what the change does.
+4. **Try to refute every candidate.** The author must be able to act on each finding without
+   re-checking it, so a false positive costs their trust in every other finding. Before keeping
+   one, look for the reason it is fine — the guard upstream, the caller that never passes null, the
+   invariant the type enforces, the lock taken one frame up — and read the file to find it. Keep the
+   finding only if you can point to the exact line and explain precisely why it is wrong. Two real
+   bugs are worth more than ten probable ones.
+5. **Review the diff, not the file.** Read unchanged code to understand the change; do not flag it,
+   however real the problem. The one exception is a bug in unchanged code that the change itself
+   now reaches or makes worse: report it with `[PRE-EXISTING]` at the start of its title so the
+   author knows this change did not introduce it.
+6. **False positives — never report:**
+   - **What the toolchain catches**: compile and type errors, missing or wrong imports, failing
+     tests, formatting, whitespace, lint rules. CI runs those; do not run them, and do not
+     predict them.
+   - **The change doing what it set out to do**: a behaviour change that is the point of the change
+     (step 1) or follows directly from it. Ask about it only when the intent is genuinely unclear.
+   - **Generic quality advice**: "add tests", "add docs", hardening with no concrete exploit path —
+     unless the project rules ask for it. A traced security hole is a Safety finding, and untested
+     behaviour in already-tested code is a Tests finding; neither is this.
+   - **What the code deliberately silences**: a project rule this line suppresses on purpose (an
+     ignore comment, a pragma, a documented exception).
+   - **Pedantry a senior engineer would not raise**, a style preference with no project rule behind
+     it, rewriting the author's approach when theirs works, a hypothetical future requirement,
+     praise, restating what the change does.
 
 ### Severity
 
@@ -69,7 +86,7 @@ what the publishing side parses.
 | BLOCKER | `B1`, `B2`… | You can trace an actual failure: crash, wrong result, data loss, security hole, resource leak. |
 | IMPORTANT | `I1`… | Real and likely under realistic conditions — edge inputs, load, partial failure — but not fatal, or fatal only on a path the code does not take today. |
 | SUGGESTION | `S1`… | Objectively better with a concrete, stated benefit — simpler, safer, faster, tested. Never a preference. |
-| NIT | `N1`… | Cosmetic: naming, a stale comment, formatting a tool does not enforce. |
+| NIT | `N1`… | Cosmetic, but a senior engineer would still mention it: a misleading name, a stale comment. |
 
 - **A BLOCKER is traced, never pattern-matched.** State the precondition, what happens at that
   line, and the failure that results. If you cannot write those three sentences, it is not a
