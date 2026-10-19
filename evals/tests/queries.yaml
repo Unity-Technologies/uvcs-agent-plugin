@@ -8,8 +8,9 @@
     - type: icontains
       value: "find shelve"
     # The shelve query itself must not sort (prose may legitimately mention "order by").
-    - type: not-regex
-      value: "find shelve[^\\n]*order by"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'find shelve[^\n]*order by' }
 
 - description: "Branch sort field is 'branchname', not 'name'"
   vars:
@@ -44,8 +45,9 @@
       value: "cm find attribute"
     - type: icontains
       value: "srcobj"
-    - type: not-icontains
-      value: "attribute get"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'attribute get' }
 
 - description: "Cross-repo query puts 'on repository' inside the quoted query string"
   vars:

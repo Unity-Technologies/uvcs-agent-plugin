@@ -82,10 +82,12 @@
   assert:
     - type: icontains
       value: "{parent}"
-    - type: not-regex
-      value: "changeset\\s*<\\s*1205"
-    - type: not-icontains
-      value: "--limit=2"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'changeset\s*<\s*1205' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--limit=2' }
 
 - description: "File content at a branch uses serverpath: with a #br: qualifier"
   vars:

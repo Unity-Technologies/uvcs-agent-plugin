@@ -26,8 +26,8 @@ Where markdown is rendered — chat answers, reports, tickets, PR and MR bodies 
 - **Link every object that has a shape below, every time it is named** — changesets, branches,
   labels, shelves, ranges, code reviews, merge requests — not just the first mention and not just
   the headline object. A table cell, a list item and a sentence all take a link.
-- **Never emit the name and its URL as two separate pieces** — not `cs:4207` followed by a bare
-  `plastic://...`, not a trailing list of links. One of the two is redundant and neither reads.
+- **In markdown, never emit the name and its URL as two separate pieces** — not `cs:4207` followed
+  by a bare `plastic://...`, not a trailing list of links. One of the two is redundant.
 - **Link text is the object's name, never prose**: `[br:/main/task001](...)`, not `[the branch](...)`.
 - **Bare URL where markdown is not rendered**: text published into UVCS itself (review and
   check-in comments) or any plain-text destination. Unrendered, `[cs:4207](plastic://...)` shows

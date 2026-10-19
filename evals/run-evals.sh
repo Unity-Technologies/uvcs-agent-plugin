@@ -10,17 +10,26 @@
 #      re-running the whole suite locally. Every non-passing test is now printed
 #      by description, with the assertion reason that rejected it.
 #
-#   2. At temperature 0 a prompt sitting on a decision boundary still flips about
-#      one run in eight, so an untouched test can go red on an unrelated PR. The
-#      old gate absorbed that by tolerating a single failure, which also hid a
-#      real one-test regression. Instead, failures are re-run on their own
-#      (`--filter-failing`, `--no-cache` so the response is genuinely re-rolled)
-#      and only a test that fails *twice* fails the job.
+#   2. The evaluated model's answers vary from run to run, so a test with a 95%
+#      pass rate still goes red now and then on a PR that never touched it. One
+#      sample cannot tell that apart from a regression; a few can. So a test that
+#      fails is re-run on its own RETRIES times (`--filter-failing`, `--no-cache`
+#      so every answer is genuinely re-rolled), and it fails the job only when
+#      fewer than REQUIRED of those pass:
 #
-# A test that passes only on the retry is reported as FLAKY, in the summary and
-# as a PR annotation. That is not a pass to shrug at: per CLAUDE.md ("Writing
-# evals that do not flake") a flip means the scenario has no margin, and the next
-# skill edit will tip it for good. Fix the scenario, not the run.
+#        true pass rate   chance the job goes red on it (RETRIES=4, REQUIRED=3)
+#        95%              0.07%
+#        90%              0.5%
+#        50%              34% — and reported as unstable every time it is retried
+#        0% (broken)      100%
+#
+#      Only failing tests are re-run, so a clean suite costs one run.
+#
+# A test that fails and then passes the retries is reported as UNSTABLE, with
+# its measured rate, in the summary and as a PR annotation. That is not a pass
+# to shrug at: per CLAUDE.md ("Writing evals that do not flake") it means the
+# scenario has little margin, and the next skill edit can tip it for good. Fix
+# the scenario, not the run.
 #
 # Usage:  evals/run-evals.sh [extra promptfoo eval flags]
 # e.g.    evals/run-evals.sh --filter-pattern "An approved report is filed"
@@ -35,6 +44,8 @@ if [ ! -d node_modules ]; then
 fi
 
 SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
+RETRIES="${EVAL_RETRIES:-4}"
+REQUIRED="${EVAL_RETRY_PASSES:-3}"
 CONFIG=promptfooconfig.yaml
 mkdir -p output
 
@@ -120,31 +131,58 @@ echo "Failed on the first run:"
 report "Failed on the first run" output/results.json
 
 echo ""
-echo "Re-running those $((FAILS + ERRORS)) test(s) to separate a regression from a boundary flip..."
-run_suite output/retry.json "$@" --filter-failing output/results.json --no-cache
+echo "Re-running each of those $((FAILS + ERRORS)) test(s) $RETRIES times to measure its pass rate..."
+run_suite output/retry.json "$@" --filter-failing output/results.json --no-cache --repeat "$RETRIES"
 
-R_PASSES=$(stat_of successes output/retry.json)
-R_FAILS=$(stat_of failures output/retry.json)
-R_ERRORS=$(stat_of errors output/retry.json)
+# "<passes><TAB><runs><TAB><description><TAB><last failure reason>" per retried test.
+retry_rates() {
+  jq -r '
+    [.results.results[]
+     | { d: (.testCase.description // "(no description)"), ok: .success,
+         why: ( [ (.gradingResult.componentResults // [])[] | select(.pass == false) | .reason ]
+                | if length > 0 then join(" / ") else "" end ) }]
+    | group_by(.d)[]
+    | [ (map(select(.ok)) | length), length, .[0].d,
+        ((map(select(.ok | not)) | last | .why) // "" | gsub("[\r\n\t]+"; " ")) ]
+    | @tsv' output/retry.json
+}
 
-if [ $((R_FAILS + R_ERRORS)) -eq 0 ]; then
+UNSTABLE=()
+BROKEN=()
+while IFS=$'\t' read -r passes runs desc why; do
+  [ -n "$desc" ] || continue
+  if [ "$passes" -ge "$REQUIRED" ]; then
+    UNSTABLE+=("$desc ($passes/$runs on retry)")
+  else
+    BROKEN+=("$desc ($passes/$runs on retry) — ${why:0:400}")
+  fi
+done < <(retry_rates)
+
+if [ "${#UNSTABLE[@]}" -gt 0 ]; then
   {
     echo ""
-    echo "⚠️ **$R_PASSES test(s) passed only on the retry.** At temperature 0 that means the"
-    echo "scenario sits on a decision boundary and the next skill edit will tip it for good —"
-    echo "move the scenario, do not re-roll it. See CLAUDE.md, *Writing evals that do not flake*."
+    echo "⚠️ **Unstable:** these failed once, then passed at least $REQUIRED of $RETRIES retries."
+    echo "The scenario has little margin — see CLAUDE.md, *Writing evals that do not flake*."
   } >> "$SUMMARY"
-  # The retry file holds only the retried tests, so every row in it is flaky.
-  while IFS=$'\t' read -r desc _; do
-    [ -n "$desc" ] || continue
-    echo "::warning::Flaky eval (failed, then passed on retry): $desc"
-    echo "- $desc" >> "$SUMMARY"
-  done < <(jq -r '.results.results[] | [(.testCase.description // "(no description)"), ""] | @tsv' output/retry.json)
-  echo "Evals passed on retry: $PASSES/$TOTAL first time, $R_PASSES recovered."
+  for t in "${UNSTABLE[@]}"; do
+    echo "::warning::Unstable eval: $t"
+    echo "- $t" >> "$SUMMARY"
+  done
+fi
+
+if [ "${#BROKEN[@]}" -eq 0 ]; then
+  echo "Evals passed: $PASSES/$TOTAL first time, ${#UNSTABLE[@]} unstable."
   exit 0
 fi
 
-echo "Still failing after the retry:"
-report "Still failing after the retry" output/retry.json error
-echo "::error::Evals failed: $((R_FAILS + R_ERRORS)) test(s) failed twice"
+{
+  echo ""
+  echo "### Failed: fewer than $REQUIRED of $RETRIES retries passed"
+  echo ""
+} >> "$SUMMARY"
+for t in "${BROKEN[@]}"; do
+  echo "::error::$t"
+  echo "- **$t**" >> "$SUMMARY"
+done
+echo "::error::Evals failed: ${#BROKEN[@]} test(s) passed fewer than $REQUIRED of $RETRIES retries"
 exit 1

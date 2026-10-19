@@ -16,12 +16,13 @@
     - type: llm-rubric
       value: >-
         The user gave no known-good changeset or date, so the history window must fall back to a
-        default of roughly the last 4 weeks. Every cm find in the response must be bounded — by
-        that date constant or by a changeset lower bound. A cm find revision or cm find changeset
-        over the file's whole history with no date or changeset bound is a failure, and so is
+        default of roughly the last 4 weeks. Every cm find revision and cm find changeset must be
+        bounded — by that date constant or by a changeset lower bound; one over the file's whole
+        history is a failure, and so is
         asking the user for a known-good point instead of applying the default. cm annotate
         is out of scope here: it takes no date or changeset window at all, so an unbounded
-        annotate is correct and must not count against this.
+        annotate is correct and must not count against this. The same holds for the skill's
+        cm find merge on one candidate's branch, which looks up that branch's merges only.
 
 - description: "A known-good date is resolved to a changeset lower bound, not used as the window"
   vars:
@@ -47,8 +48,8 @@
     skill_content: file://../skills/uvcs-root-cause/SKILL.md
     user_message: >-
       NullReferenceException at EnemyAI.Update() (Assets/Scripts/EnemyAI.cs:34). Find what
-      caused it. I can't paste the file right now, so don't stop to ask for it: plan every step
-      from start to the history queries.
+      caused it. You can read EnemyAI.cs yourself, so don't ask me for it: plan every step from
+      the start through to the history queries.
   assert:
     - type: llm-rubric
       value: >-
@@ -56,7 +57,8 @@
         file and must not be required to. It passes when both of these hold: (a) a step that
         inspects EnemyAI.cs for what it depends on — its imports, base classes, or the symbols
         the failing code calls — by reading the file, by a project index, or by text search, and
-        that step comes before the first cm find revision or cm find changeset; and (b) the
+        that step comes before the first cm find revision (resolving the window's lower bound
+        with cm find changeset beforehand is the skill's step 1 and is fine); and (b) the
         history queries are described as covering that suspect set, not EnemyAI.cs alone.
         Omitting the expansion, or raising it only after the history queries as a later "next
         step", is a failure. Naming a Unity-specific dependency API or console API is not
@@ -119,8 +121,9 @@
       Find what broke the login flow in src/auth/Login.cs, then get my workspace back to a state
       where it works.
   assert:
-    - type: not-regex
-      value: "(^|\\n)\\s*cm (undo|switch|revert)\\b"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm (undo|switch|revert)\b' }
     - type: llm-rubric
       value: >-
         The response must keep the investigation itself read-only and must not run cm switch,
@@ -139,15 +142,17 @@
   assert:
     - type: icontains
       value: "{parent}"
-    - type: not-regex
-      value: "changeset\\s*<\\s*1205"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'changeset\s*<\s*1205' }
 
 - description: "A suspect on another branch is checked for a merge into the user's branch"
   vars:
     skill_content: file://../skills/uvcs-root-cause/SKILL.md
     user_message: |
-      I'm on /main/task055. Saving crashes in Assets/Scripts/SaveSystem.cs; the suspect set is
-      that file alone, and it was fine at cs:1180. The revision query printed:
+      I'm on /main/task055. Saving crashes in Assets/Scripts/SaveSystem.cs. I have already
+      expanded the suspect set — that file is the whole of it — and it was fine at cs:1180.
+      The revision query printed:
 
       cm find revision "where item='Assets/Scripts/SaveSystem.cs' and changeset > 1180" --format="{changeset} {date}" --nototal
       1191 4/14/2026 10:02:11AM

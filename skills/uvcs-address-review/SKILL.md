@@ -28,8 +28,8 @@ cm status --header          # branch@repo@server, or the changeset/label/shelve 
 cm status                   # pending changes
 ```
 
-- **Pending changes: stop.** Ask the user to check them in or shelve them
-  (`cm shelveset create --all -c "..."`) first: every fix below checks in or undoes per file, and
+- **Pending changes: stop and ask.** The user checks them in or shelves them — their call, never
+  yours, and nothing else runs until they have: every fix below checks in or undoes per file, and
   would sweep in or throw away unrelated edits. No workaround.
 - **On a branch** — that branch is the target. Continue silently.
 - **Pinned to a changeset** — unusual, and check-in is not the natural flow. Say so and ask first.

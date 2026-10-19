@@ -97,12 +97,15 @@
   assert:
     - type: icontains
       value: "cm switch"
-    - type: not-icontains
-      value: "cm undo"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm undo' }
     - type: llm-rubric
       value: >-
-        The workspace is clean, so the response must simply switch. Creating a shelve, undoing,
-        or asking the user how to handle pending changes that do not exist is a failure.
+        The workspace is clean, so the response must switch without any pending-changes handling:
+        creating a shelve, undoing, or asking the user how to handle pending changes that do not
+        exist is a failure. Read-only checks around the switch (that the branch exists, the
+        status afterwards) are fine and not judged.
 
 - description: "The workspace is never switched blind on unknown status"
   vars:

@@ -14,7 +14,8 @@
 
       and cm said: Unexpected option --order-by. I checked cm help find myself: there is no
       such flag, the sort goes inside the query string. macOS 15 / zsh, Claude Code. List every
-      command from here to the filing, in order, and say where you stop.
+      command from here up to and including the filing, in order, and mark the point where you
+      stop for my approval.
   assert:
     - type: icontains
       value: "cm version"
@@ -84,8 +85,9 @@
       "The server myorg@cloud could not be reached. Check the network connection." and cm find
       branch "where owner='me'" says the same thing.
   assert:
-    - type: not-regex
-      value: "(^|\\n)\\s*gh issue create"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^gh issue create' }
     - type: llm-rubric
       value: >-
         The failure is a UVCS server or connection problem, not a defect in the plugin, so the
@@ -98,15 +100,18 @@
     skill_content: file://../skills/uvcs-report-issue/SKILL.md
     user_message: |
       There is no skill for summarizing everything merged into /main since a label, and I do it
-      by hand every release with cm find changeset and cm log. Request it as a plugin issue — I
-      have read your draft, it is at /tmp/uvcs-request.md, file it as is.
+      by hand every release with cm find changeset and cm log. Request it as a plugin issue. You
+      already wrote the draft to /tmp/uvcs-request.md earlier in this session, titled
+      "[uvcs-core] No workflow for summarizing merges since a label"; I have read all of it and
+      approve it as is. Give me the command that files it.
   assert:
     - type: icontains
       value: "gh issue create"
     - type: icontains
       value: "--label enhancement"
-    - type: not-icontains
-      value: "--label bug"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--label bug' }
 
 - description: "The hub alone turns a rejected recipe into a corrected command and an offer to report"
   vars:
@@ -124,8 +129,8 @@
       value: "cm log cs:4207(?![^\\n]*--nototal)"
     - type: llm-rubric
       value: >-
-        The response must give the corrected command (cm log cs:4207 without --nototal), say
-        the reference is wrong — a defect in the plugin, not in UVCS — and offer to report it
-        with the uvcs-report-issue skill. Sending the user to Unity product support, retrying
-        with other guessed flags, or filing an issue without asking are failures. Explaining
-        why --nototal is find-only is not required.
+        The response must include offering the user to report the faulty recipe with the
+        uvcs-report-issue skill — asked directly, or stated as the step it takes once the task is
+        done; this is a planning answer, so either form is the offer. Leaving the offer out,
+        sending the user to Unity product support, retrying with other guessed flags, or filing
+        an issue without asking are failures. How the error is explained is not judged.
