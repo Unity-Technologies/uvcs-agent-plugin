@@ -14,7 +14,8 @@
 
       and cm said: Unexpected option --order-by. I checked cm help find myself: there is no
       such flag, the sort goes inside the query string. macOS 15 / zsh, Claude Code. List every
-      command from here to the filing, in order, and say where you stop.
+      command from here up to and including the filing, in order, and mark the point where you
+      stop for my approval.
   assert:
     - type: icontains
       value: "cm version"
@@ -99,8 +100,10 @@
     skill_content: file://../skills/uvcs-report-issue/SKILL.md
     user_message: |
       There is no skill for summarizing everything merged into /main since a label, and I do it
-      by hand every release with cm find changeset and cm log. Request it as a plugin issue — I
-      have read your draft, it is at /tmp/uvcs-request.md, file it as is.
+      by hand every release with cm find changeset and cm log. Request it as a plugin issue. You
+      already wrote the draft to /tmp/uvcs-request.md earlier in this session, titled
+      "[uvcs-core] No workflow for summarizing merges since a label"; I have read all of it and
+      approve it as is. Give me the command that files it.
   assert:
     - type: icontains
       value: "gh issue create"
