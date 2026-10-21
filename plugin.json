@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "unity-version-control",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Teaches AI agents to work with Unity Version Control (UVCS, formerly Plastic SCM) through the cm command line: querying history, reviewing branches, root cause analysis, and building clickable deep links (unityhub:// in a Unity project, plastic:// elsewhere).",
   "author": {
     "name": "Unity Technologies",
