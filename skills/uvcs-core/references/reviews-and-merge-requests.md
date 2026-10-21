@@ -9,14 +9,18 @@ and it targets a **changeset or a shelve**.
 > review created with `cm codereview br:...` still works, but the MR is the intended workflow for
 > a branch and the only one the GUI surfaces merge actions for.
 
-An MR **is** a review: same id, same object in `cm find review`, same `comment` and `reviewer`
-subcommands. `cm mergerequest <id> ...` and `cm codereview <id> ...` are interchangeable on an
-MR's id — the two spellings exist so each workflow reads naturally.
+An MR **is** a review: same id, same object in `cm find review`, same `comment`, `reviewer` and
+`review` subcommands. `cm mergerequest <sub> ... <id>` and `cm codereview <sub> ... <id>` are
+interchangeable on any review id — the two spellings exist so each workflow reads naturally.
 
-**Availability.** The `comment` and `reviewer` subcommand groups, and `--users` / `--groups` in
-place of `--assignee`, are **newer than `cm` 11.0.16.10371** and are not in a public release yet.
-Detect before use: `cm mergerequest --usage` lists `comment` and `reviewer` on a client that has
-them. The server must also be 11.0.16.8321 or newer, otherwise commands fail with *"You need to
+**The subcommand comes first, the id after it**: `cm mr comment add <id>`, `cm mr reviewer list
+<id>`, `cm mr review <id>`. The id-first form (`cm mr <id> comment add`) is rejected — `cm mr`
+prints its usage, `cm cr` says *"An incorrect spec has been specified."*
+
+**Availability.** The `comment`, `reviewer` and `review` subcommands, and `--users` / `--groups`
+in place of `--assignee`, are **newer than `cm` 11.0.16.10484** and are not in a public release
+yet. Detect before use: `cm mergerequest --usage` lists `comment`, `reviewer` and `review` on a
+client that has them. The server must also be 11.0.16.8321 or newer, otherwise commands fail with *"You need to
 upgrade the server to version 11.0.16.8321 or higher to use the new code review system."* —
 never silently. `cm mergerequest` additionally needs `MergeRequestEnabled` on the server.
 
@@ -28,11 +32,10 @@ Aliases: `cm mergerequest` = `cm mr`, `cm codereview` = `cm cr`.
 
 ```
 cm mergerequest create br:/main/task001 "<title>" --destination=br:/main \
-    [--mergerequeststatus=Draft] [--codereviewstatus="Under review"] \
-    [--users=<user>,<user>] [--groups=<group>] [--format="{id}"] [--repository=<repo>@<server>]
+    [--mergerequeststatus=Draft] [--users=<user>,<user>] [--groups=<group>] [--format="{id}"] [--repository=<repo>@<server>]
 
-cm mergerequest edit <id|guid> [--destination=<brspec>] [--mergerequeststatus=<status>] \
-    [--mergechangeset=cs:<id>] [--codereviewstatus=<status>] [--repository=<repo>@<server>]
+cm mergerequest edit <id|guid> [--title=<title>] [--destination=<brspec>] \
+    [--mergerequeststatus=<status>] [--mergechangeset=cs:<id>] [--repository=<repo>@<server>]
 
 cm mergerequest delete <id> [<id> ...]        # irreversible
 ```
@@ -40,10 +43,8 @@ cm mergerequest delete <id> [<id> ...]        # irreversible
 - `--destination` is required on create. Prints the new id (`--format` tokens: `{id}`, `{guid}`).
 - **MR status** (`--mergerequeststatus`): `Draft`, `Open` (default), `Closed`, `Merged`. `None` is
   rejected.
-- **Review status** (`--codereviewstatus`): `"Under review"` (default), `Reviewed`,
-  `"Rework required"`. On `edit` it sets **the calling user's own reviewer status**, not a
-  review-wide field — `cm mergerequest <id> reviewer status` is the clearer spelling and is the
-  only one that takes a status-change comment.
+- A new MR always starts `Under review`. `create` and `edit` take **no** review status
+  (`--codereviewstatus` is *"Unexpected option"*); set yours with `cm mr review` below.
 - `--mergechangeset=cs:<id>` is only valid together with `--mergerequeststatus=Merged`, and links
   the MR to its merge changeset in the timeline. The server sets `Merged` by itself when the
   source branch lands in the destination; do not set it by hand otherwise.
@@ -51,18 +52,18 @@ cm mergerequest delete <id> [<id> ...]        # irreversible
   comment thread.
 - `--repository` targets a server other than the workspace's (e.g. an xlinked sub-repo).
 
-## Reviewers
+## Reviewers and review status
 
-Same group under both commands; substitute `cm codereview <review_id>` for `cm mr <mr_id>`.
-`list` is **read-only**, the rest are **mutating**.
+Same groups under both commands; substitute `cm codereview` for `cm mr`.
+`reviewer list` is **read-only**, the rest are **mutating**.
 
 ```
-cm mr <id> reviewer list                                   # or: ls
-cm mr <id> reviewer list --format="{user}#{status}"
-cm mr <id> reviewer add --users=<user>,<user> --groups=<group>
-cm mr <id> reviewer remove --users=me
-cm mr <id> reviewer status --status=Reviewed -c="<comment>"
-cm mr <id> reviewer rerequest [--users=<user>] [--groups=<group>]
+cm mr reviewer list <id>                                   # or: ls
+cm mr reviewer list <id> --format="{user}#{status}"
+cm mr reviewer add <id> --users=<user>,<user> --groups=<group>
+cm mr reviewer remove <id> --users=me
+cm mr review <id> --reviewed -c="<comment>"                # or --rework-required, --under-review
+cm mr review <id> --re-request --all                       # or --users=<user> / --groups=<group>
 ```
 
 - Reviewers are a **list**, not a single assignee: `add` is additive and keeps the existing ones.
@@ -73,10 +74,12 @@ cm mr <id> reviewer rerequest [--users=<user>] [--groups=<group>]
   the positional forms `{0} {1} {2}` are the same fields. With no `--format` (or `--format=TABLE`)
   it prints those three in columns. **An MR with no reviewers prints nothing at all** — empty
   output is not an error.
-- `reviewer status` always sets **your own** status; there is no way to set someone else's. You
-  must be a reviewer, in a reviewer group, or a server admin.
-- `rerequest` puts reviewers back to `Under review` for a new round; with no `--users`/`--groups`
-  it re-requests from every reviewer.
+- `review <id>` takes exactly one of `--reviewed`, `--rework-required`, `--under-review`, plus an
+  optional `-c=` / `-commentsfile=` for the status-change comment. It always sets **your own**
+  status; there is no way to set someone else's. You must be a reviewer, in a reviewer group, or
+  a server admin.
+- `review <id> --re-request` puts reviewers back to `Under review` for a new round. It needs
+  `--all` or at least one of `--users`/`--groups`; bare `--re-request` prints the usage and fails.
 - Passing reviewers on `create` instead of adding them afterwards produces a single batched
   timeline comment rather than one per reviewer.
 
@@ -85,13 +88,13 @@ cm mr <id> reviewer rerequest [--users=<user>] [--groups=<group>]
 Same group under both commands. All **mutating**; reading is `cm find changereviewcomment`.
 
 ```
-cm mr <id> comment add -c="<text>"                                  # conversation comment
-cm mr <id> comment add -c="<text>" --path=/src/Player.cs --line=42  # inline comment
-cm mr <id> comment add -c="<text>" --path=/src/Player.cs --line=42 \
+cm mr comment add <id> -c="<text>"                                  # conversation comment
+cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42  # inline comment
+cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42 \
     --type=Question --changeset=cs:4207
-cm mr <id> comment reply <comment_guid> -c="<text>" [--discard]
-cm mr <id> comment edit <comment_guid> -c="<text>"
-cm mr <id> comment delete <comment_guid> [<guid> ...]
+cm mr comment reply <comment_guid> -c="<text>" [--discard]
+cm mr comment edit <comment_guid> -c="<text>"
+cm mr comment delete <comment_guid> [<guid> ...]
 ```
 
 - **Two kinds.** No `--path` → a *conversation* comment on the review as a whole. `--path` +
@@ -164,13 +167,14 @@ still useful — it becomes the ready-made check-in comment when the shelve is a
 cm codereview cs:4207 "<title>" [--status=<status>] [--users=<user>] [--groups=<group>] \
     [--format="{id} -> {guid}"] [--repository=<repo>@<server>]
 cm codereview sh:12 "<title>" --users=<user>
+cm codereview -e <id|guid> --title="<title>"
 cm codereview -e <id|guid> --status=Reviewed         # sets YOUR reviewer status
 cm codereview -d <id> [<id> ...]                     # irreversible
 ```
 
 `--status` (alias `--codereviewstatus`) means two different things: **on create** it is the
 review's own status, **on `-e`** it is the calling user's reviewer status, exactly like
-`cm codereview <id> reviewer status`. Prefer the explicit subcommand.
+`cm codereview review <id> --reviewed`. Prefer the explicit subcommand.
 
 `--users` / `--groups` are accepted **only on create**; after that use the `reviewer` group.
 

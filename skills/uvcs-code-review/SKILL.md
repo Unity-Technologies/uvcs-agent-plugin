@@ -164,7 +164,7 @@ If there is none, create it — that turns the review into something the team ca
 cm mergerequest create br:/main/task001 "<title>" --destination=br:/main --users=me,<user>
 cm codereview cs:4207 "<title>" --users=me,<user>
 cm codereview sh:12 "<title>" --users=me
-cm mr <id> reviewer add --users=me      # on one that already exists, put yourself on it
+cm mr reviewer add <id> --users=me      # on one that already exists, put yourself on it
 ```
 
 Two different numbers: create takes the **object spec** from step 1 (`cs:4207`, `sh:12`, never a
@@ -173,23 +173,23 @@ bare `4207`), and every later subcommand takes the **review id** the create prin
 One comment per finding, anchored. Findings are multi-line, so write each to a file:
 
 ```
-cm mr <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
-cm mr <id> comment add --path=/src/Player.cs --line=58 --type=Question -commentsfile=<file>   # a [Q] item
-cm mr <id> comment add -commentsfile=<file>                  # a remark on the review as a whole
-cm codereview <id> comment add --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
+cm mr comment add <id> --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
+cm mr comment add <id> --path=/src/Player.cs --line=58 --type=Question -commentsfile=<file>   # a [Q] item
+cm mr comment add <id> -commentsfile=<file>                  # a remark on the review as a whole
+cm codereview comment add <id> --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
 ```
 
 Every finding — blocker, important, suggestion, nit — is `--type=Change`: it names something
 wrong and tells the author what to fix. `--type=Question` is only for the report's `[Q]` items,
 which ask the author something instead. On a code review every subcommand is spelled
-`cm codereview <id> ...`, never `cm mr` — there is no merge request there.
+`cm codereview ...`, never `cm mr` — there is no merge request there.
 
 Finish with your own reviewer status, and say why in the same call:
 
 ```
-cm mr <id> reviewer status --status="Rework required" -c="<one line on what needs attention>"
-cm mr <id> reviewer status --status=Reviewed -c="<one line on why it is good to go>"
-cm codereview <id> reviewer status --status=Reviewed -c="<...>"        # on a code review
+cm mr review <id> --rework-required -c="<one line on what needs attention>"
+cm mr review <id> --reviewed -c="<one line on why it is good to go>"
+cm codereview review <id> --reviewed -c="<...>"                       # on a code review
 ```
 
 Then report what landed: update the header table's **Merge request** and **Published** rows with

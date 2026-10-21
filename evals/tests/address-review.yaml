@@ -201,11 +201,11 @@
     # No re-request *command line*; saying "ask me to re-request afterwards" in prose is fine.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm mr 311 reviewer rerequest' }
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--re-request' }
     - type: llm-rubric
       value: >-
         Nothing has been checked in yet, so the response must not re-request the review now:
-        running cm mr 311 reviewer rerequest as one of its commands is a failure. It must tell
+        running cm mr review 311 --re-request as one of its commands is a failure. It must tell
         the user to apply the shelves and check them in — reusing the shelve comment so the
         [apply-change:] tag fires at check-in — and to ask for the re-request afterwards.
 
@@ -384,6 +384,6 @@
     - type: llm-rubric
       value: >-
         The response must draft a reply (the atlas is loaded once and shared by every Player) and
-        ask the user to approve or edit it before posting. Showing the cm mr 311 comment reply
+        ask the user to approve or edit it before posting. Showing the cm mr comment reply
         command it will run once approved is correct. Presenting the reply as already posted,
         proposing a code change, or a discard, is a failure.

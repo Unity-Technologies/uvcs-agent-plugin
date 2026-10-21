@@ -30,8 +30,9 @@
       /src/Player.cs. I want it anchored to that line, not a general remark.
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
   assert:
-    - type: icontains
-      value: "comment add"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment (add|mk) 311 ' }
     - type: icontains
       value: "--path=/src/Player.cs"
     - type: icontains
@@ -58,17 +59,16 @@
         The response must not print {target} as the source branch name — {target} renders
         an internal id:<n>. Selecting {id}, {title} and/or {destination} is correct.
 
-- description: "Reviewer status is set on yourself, with the reviewer subcommand"
+- description: "Reviewer status is set on yourself, with the review subcommand"
   vars:
     user_message: >-
       I finished reviewing merge request 311 and it's good. Mark my review as done and
       leave "LGTM" with it.
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
   assert:
-    - type: icontains
-      value: "reviewer status"
-    - type: icontains
-      value: "--status=Reviewed"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--reviewed' }
     - type: llm-rubric
       value: >-
         The status-change comment must ride on the same command via -c (or -commentsfile).
