@@ -19,7 +19,7 @@ This skill owns the *order and the stopping points*; every `cm` flag it names be
 (comment types, replies, `[apply-change:]`) and `uvcs-core/references/find-queries.md` (comment
 fields, `location` vs `line`, the revision lookup) rather than guessing.
 
-**Check availability first**: no `comment`/`reviewer` in `cm mergerequest --usage`, only fixing works.
+**Check availability first**: no `comment`/`reviewer`/`review` in `cm mergerequest --usage`, only fixing works.
 
 ## 1. Anchor to the workspace's branch
 
@@ -47,7 +47,7 @@ cm find review "where target='br:/main/task001'" --format="{id}|{title}|{status}
 ```
 
 `review` and not `mergerequest`: a branch may carry a plain code review instead of an MR; on
-either, `cm mr <id>` and `cm codereview <id>` are the same commands. Do **not** filter on *Rework
+either, `cm mr` and `cm codereview` are the same commands on its id. Do **not** filter on *Rework
 required*: pending is a property of the comment, not of the review's status. Two reviews on the
 branch: list them, let the user pick, never merge queues.
 
@@ -149,19 +149,19 @@ cm checkin src/InventoryManager.cs -c "Dispose the stream"
 A reply, once its text is approved — by the comment's **GUID**, not the numeric `parent` id:
 
 ```
-cm mr 311 comment reply <comment_guid> -commentsfile=<file>
+cm mr comment reply <comment_guid> -commentsfile=<file>
 ```
 
 A discard — the only way to settle a change you will not make; a plain reply leaves it pending:
 
 ```
-cm mr 311 comment reply <comment_guid> --discard -commentsfile=<file>
+cm mr comment reply <comment_guid> --discard -commentsfile=<file>
 ```
 
 Last item done: re-request, unless every item was skipped (then nothing changed):
 
 ```
-cm mr 311 reviewer rerequest
+cm mr review 311 --re-request --all
 ```
 
 ## 6. Unattended — one shelve per item

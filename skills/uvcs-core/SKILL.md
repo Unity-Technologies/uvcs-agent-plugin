@@ -122,7 +122,7 @@ are visible to everyone on the review. Their one read-only verb is `reviewer lis
 Irreversible — no `cm` command can recover what these discard:
 `undo` / `undochange` / `undocheckout` (uncommitted work), `branch delete`, `label delete`,
 `shelveset delete`, `codereview -d` / `mergerequest delete` (the review and its whole comment
-thread), `mergerequest <id> comment delete`.
+thread), `mergerequest comment delete`.
 
 When and whether to confirm a mutating command with the user is workflow policy, owned by the
 higher-level skill (or agent) driving the task — not by this skill.

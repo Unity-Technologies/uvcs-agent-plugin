@@ -9,7 +9,7 @@
 // Usage in a test:
 //   - type: javascript
 //     value: file://assertions/commands.cjs:notRun
-//     config: { pattern: "cm mr \\d+ reviewer rerequest" }
+//     config: { pattern: "cm mr review \\d+ --re-request" }
 //
 // `pattern` is a case-insensitive regular expression matched against each command line.
 

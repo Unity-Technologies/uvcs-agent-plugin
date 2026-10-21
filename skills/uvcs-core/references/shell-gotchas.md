@@ -18,10 +18,11 @@ Safe patterns:
   (`@' ... '@`) — PowerShell passes it verbatim.
 - Or sidestep quoting entirely with `-commentsfile=<path>` — supported by `cm checkin`,
   `cm shelveset create`, and `cm branch create`.
-- Branch comments and code review titles have **no** edit command — for those, get the quoting
-  right at creation time (here-string, or run from a shell where backticks are literal).
-- `cm codereview` takes the title as a positional argument (no `-c`, no `-commentsfile`), and
-  its edit form cannot change the title.
+- Branch comments have **no** edit command — get the quoting right at creation time
+  (here-string, or run from a shell where backticks are literal).
+- `cm codereview` and `cm mergerequest create` take the title as a positional argument (no `-c`,
+  no `-commentsfile`); fix a mangled one with `cm codereview -e <id> --title="..."` or
+  `cm mr edit <id> --title="..."`.
 
 ## Git Bash on Windows: MSYS path conversion
 

@@ -268,8 +268,9 @@
     user_message: >-
       I reviewed merge request 311 and it looks good. Mark it approved and get it into /main.
   assert:
-    - type: icontains
-      value: "--status=Reviewed"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--reviewed' }
     - type: llm-rubric
       value: >-
         Setting the reviewer status to Reviewed is this skill's job; performing the merge is not.
