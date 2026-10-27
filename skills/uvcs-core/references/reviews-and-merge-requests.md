@@ -151,9 +151,9 @@ cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
 
 - `8123d65a` is the **first 8 hex characters of the comment GUID** — the part before the first
   `-`. Short enough to scan in `cm find changeset` output, unique enough within one review.
-- Right after the check-in, `cm` matches the tag against the pending change requests of the
-  **repository the check-in was made in** and sets each matched comment's `appliedinchangeset` to
-  the new changeset id, decrementing the review's pending count.
+- Right after the check-in, `cm` matches the tag against the pending change requests and sets
+  each matched comment's `appliedinchangeset` to the new changeset id, decrementing the review's
+  pending count.
 - **`cm changeset editcomment` runs the same match** on the changeset it edits, in the repository
   of its spec. A tag that was missing or mistyped is fixed afterwards, with no new changeset:
 
@@ -166,12 +166,6 @@ cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
   changeset"* — the same error a mistyped or already-applied GUID produces. **The changeset is
   still created**, so never re-run the check-in on this error: only the link is missing. Fix a
   mistyped tag with `editcomment`; a non-`Change` comment is answered by replying in the thread.
-- **Through a writable xlink it does not link**: a check-in from the parent workspace that lands
-  changes in an xlinked sub-repo is matched against the **parent** repository and the parent's
-  changeset, so a tag for a comment on a review in the sub-repo fails with the same error and
-  exit 1. Both changesets land and the comment stays pending. Link it afterwards by re-applying
-  the comment to the **sub-repo's** changeset:
-  `cm changeset editcomment cs:<sub-repo cset>@<sub-repo>@<server> "<the same comment>"`.
 - Several tags in one comment (`[apply-change:abc12345] [apply-change:def67890] ...`) are each
   matched independently, in any position.
 - Verify rather than assume — the tag is silent on success:
