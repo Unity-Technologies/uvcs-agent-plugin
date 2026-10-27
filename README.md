@@ -91,8 +91,12 @@ client's documentation. If you verify one, please [tell us](CONTRIBUTING.md).
 ### Turn on auto-update (Claude Code)
 
 Claude Code auto-updates only its official marketplaces by default, so turn it on for this one
-once: run `/plugin`, open the **Marketplaces** tab, select `unity`, and choose
-**Enable auto-update**.
+once:
+
+1. Run `/plugin` and open the **Marketplaces** tab.
+2. Select the `unity` marketplace. That is the name this repository's marketplace registers (the
+   `@unity` in `unity-version-control@unity`), not a separate product.
+3. Choose **Enable auto-update**.
 
 To turn it on for everyone working in a repository, add `autoUpdate` to the marketplace entry in
 the project's checked-in `.claude/settings.json`. Claude Code then offers the plugin to anyone who
