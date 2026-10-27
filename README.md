@@ -139,6 +139,10 @@ lets your rules win wherever the two conflict. No configuration, no registration
 
 3. Check it in. Everyone on the project, on every agent, now reviews with the same rules.
 
+A large repository can keep rules for one area in files of their own and list them in the
+template's **Area rules** section, each with the paths it applies to. A review pastes only the
+files its diff reaches, so a server change is not reviewed with the UI checklist.
+
 A checklist the user pastes into the request works the same way, and a project can also replace
 the default severity names with its own in the template's last section.
 

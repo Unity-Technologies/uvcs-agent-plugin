@@ -189,6 +189,32 @@
         repository for a rules file instead of using the loaded skill. Nothing has to be executed
         here.
 
+- description: "Only the area rule files the diff reaches join the project rules"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: ""
+    user_message: >-
+      Review changeset 4207. A loaded skill named code-review-rules holds this project's review
+      rules. Its body has one general rule, "Public API changes need a changelog entry", and an
+      Area rules section with two lines: "references/server.md — when the diff touches Server/"
+      and "references/editor-ui.md — when the diff touches Editor/UI/". The cm diff rows for
+      cs:4207 are:
+
+      C /Server/Sync/Throttle.cs 1201 1302 game@myorg@cloud
+
+      C /Server/Sync/Queue.cs 1188 1303 game@myorg@cloud
+
+      Go through each area file and say whether it joins the reviewer's project rules and why;
+      then, on the last line, list exactly what the Project rules input contains.
+  assert:
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the Project rules input for the reviewer must contain the
+        code-review-rules body plus references/server.md, and must NOT contain
+        references/editor-ui.md, because both changed files are under Server/ and none under
+        Editor/UI/. Including editor-ui.md, leaving server.md out, or asking the reviewer agent to
+        fetch the area files itself is a failure. Nothing has to be executed here.
+
 - description: "Findings publish as Change requests; only a [Q] item publishes as a Question"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md

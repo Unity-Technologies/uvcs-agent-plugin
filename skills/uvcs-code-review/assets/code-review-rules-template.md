@@ -31,6 +31,15 @@ section costs tokens and teaches nothing.
 
 - <what reviewers must not comment on — e.g. "Generated code under `Gen/`", "Unity `.meta` files">
 
+## Area rules
+
+<Rules that apply to one part of the repository only, kept in their own files so a review
+pastes just the ones its diff reaches. One line per file: a path relative to this skill's
+directory, then when it applies. Delete this section if every rule applies everywhere.>
+
+- `references/<area>.md` — when the diff touches `<path/prefix/>` or `<*.ext>` files
+- <e.g. `../style-guide/SKILL.md` — when the diff touches any `*.cs` file>
+
 ## Severity scheme
 
 <Delete this section to keep BLOCKER / IMPORTANT / SUGGESTION / NIT. Otherwise list your names,

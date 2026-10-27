@@ -522,7 +522,11 @@ the two.
   **Project rules** input, and *merged*: project rules win over the general rules on conflict,
   including a severity scheme of their own; the report layout and the id/anchor contract stay,
   because `uvcs-address-review` parses them. The parent does **not** search the repository for a
-  rules file — one predictable location, documented in the README. The template ships as
+  rules file — one predictable location, documented in the README. Rules that apply to one
+  area of a large repository live in files the rules skill lists under **Area rules**, each with
+  the paths it covers (relative to the rules skill's directory); the parent appends only the
+  ones the diff's paths reach. Rejected: letting the reviewer open rule files itself — its only
+  command is the read-only `cm cat`, and a rule it must fetch is a rule it can skip. The template ships as
   `assets/code-review-rules-template.md`, deliberately **not** as a nested `SKILL.md`: skill
   installers scan for that filename and would install the template as a real skill. The portable
   location for the copy is `.agents/skills/` (Codex, Cursor and Copilot all read it) and
