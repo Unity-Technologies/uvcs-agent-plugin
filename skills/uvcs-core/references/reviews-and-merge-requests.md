@@ -151,19 +151,21 @@ cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
 
 - `8123d65a` is the **first 8 hex characters of the comment GUID** — the part before the first
   `-`. Short enough to scan in `cm find changeset` output, unique enough within one review.
-- The server matches the tag at check-in and sets the comment's `appliedinchangeset` to the new
-  changeset id, decrementing the review's pending count. This is the whole mechanism; there is no
-  follow-up command.
+- Right after the check-in, `cm` matches the tag against the pending change requests and sets
+  each matched comment's `appliedinchangeset` to the new changeset id, decrementing the review's
+  pending count.
+- **`cm changeset editcomment` runs the same match** on the changeset it edits, in the repository
+  of its spec. A tag that was missing or mistyped is fixed afterwards, with no new changeset:
+
+  ```
+  cm changeset editcomment cs:4210@<repo>@<server> "[apply-change:8123d65a] <what the fix does>"
+  ```
 - **`Change` comments only.** On a `question`, `comment`, `conversation` or a reply, the tag
   matches nothing and `cm checkin` exits **1** with *"The following review change requests
   (specified in the checkin comment) cannot be found or are already applied in a previous
   changeset"* — the same error a mistyped or already-applied GUID produces. **The changeset is
-  still created**, so never re-run the check-in on this error: only the link is missing. Mark
-  those comments by replying in the thread instead.
-- **Through a writable xlink it does not link** (observed): a check-in from the parent
-  workspace that lands changes in an xlinked sub-repo, tagged for a comment on a review in that
-  sub-repo, fails the tag with the same error and exit 1 — both changesets land, the comment
-  stays pending. Reply in the thread instead.
+  still created**, so never re-run the check-in on this error: only the link is missing. Fix a
+  mistyped tag with `editcomment`; a non-`Change` comment is answered by replying in the thread.
 - Several tags in one comment (`[apply-change:abc12345] [apply-change:def67890] ...`) are each
   matched independently, in any position.
 - Verify rather than assume — the tag is silent on success:
@@ -176,7 +178,7 @@ cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
   `-1` means nothing matched.
 
 A **shelve comment links nothing**: `cm shelveset create -c "[apply-change:...]"` is just text,
-because only a check-in triggers the server-side match. Putting the tag in the shelve comment is
+because only a check-in or `cm changeset editcomment` triggers the match. Putting the tag in the shelve comment is
 still useful — it becomes the ready-made check-in comment when the shelve is applied.
 
 ## Code reviews (changesets and shelves)
