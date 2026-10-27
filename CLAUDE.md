@@ -33,6 +33,8 @@ real `cm`, and stay portable across agents.
 5. **Public repository.** Everything here is public, under the Unity Terms of Service (`LICENSE.md`). No credentials,
    internal hostnames or links, org/user names, or customer data — anywhere, including examples
    and commit messages. Use placeholders (`<server>`, `<repo>`, `<branch>`, `<user>`).
+   Public text (commits, branch names, PR bodies, docs) says what changed, never the internal
+   process behind it: no legal, privacy or security review reasoning, approvals or ticket IDs.
 
 ## Layout (fixed by the spec — do not relocate)
 
