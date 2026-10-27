@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "uvcs",
+  "name": "unity",
   "description": "Agent plugins from Unity Technologies.",
   "owner": {
     "name": "Unity Technologies",

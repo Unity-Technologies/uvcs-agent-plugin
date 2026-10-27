@@ -477,13 +477,8 @@ directory) are **submissions, not repository artifacts**: publishing to them is 
 once, not a file to maintain. Anthropic's in-app form routes to `claude-plugins-community`;
 listing in `claude-plugins-official` is Anthropic-initiated and not something to plan around.
 
-The marketplace is named `uvcs`, so an install reads
-`/plugin install unity-version-control@uvcs`. It was `unity` until just before the public
-announcement, chosen so the marketplace could hold other Unity plugins; renamed because marketplace
-names are local keys on each machine, so a later Unity-wide marketplace named `unity` would collide
-with this one, and because "select `unity`" in the setup steps did not say which product it was. A
-marketplace name has no `renames` mechanism: every user re-adds it and every checked-in
-`.claude/settings.json` is edited by hand, so after the announcement treat `uvcs` as permanent.
+The marketplace is named `unity`, so an install reads
+`/plugin install unity-version-control@unity`, and the marketplace can hold future Unity plugins.
 The `unity-version-control` slug is **immutable** once listed anywhere — renaming it requires a
 `renames` entry in every marketplace carrying it, so treat it as permanent.
 
