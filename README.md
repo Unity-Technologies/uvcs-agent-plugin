@@ -11,8 +11,6 @@ no service to run. The agent reads the skills and drives the `cm` CLI you alread
 It works with Claude Code, Codex, Cursor, Copilot, and any other agent that supports Agent
 Skills.
 
-> **Early development.** Skill names and scope may change before 1.0.
-
 ## What you can ask
 
 Once installed, just describe the task. The agent picks the right skill.

@@ -18,8 +18,8 @@ interchangeable on any review id — the two spellings exist so each workflow re
 prints its usage, `cm cr` says *"An incorrect spec has been specified."*
 
 **Availability.** The `comment`, `reviewer` and `review` subcommands, and `--users` / `--groups`
-in place of `--assignee`, are **newer than `cm` 11.0.16.10484** and are not in a public release
-yet. Detect before use: `cm mergerequest --usage` lists `comment`, `reviewer` and `review` on a
+in place of `--assignee`, first shipped in **`cm` 11.0.16.10512**; older clients lack them. Detect
+before use: `cm mergerequest --usage` lists `comment`, `reviewer` and `review` on a
 client that has them. The server must also be 11.0.16.8321 or newer, otherwise commands fail with *"You need to
 upgrade the server to version 11.0.16.8321 or higher to use the new code review system."* —
 never silently. `cm mergerequest` additionally needs `MergeRequestEnabled` on the server.

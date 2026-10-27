@@ -13,7 +13,8 @@ Planned shape:
 - **One hub skill: the `cm` CLI reference.** `cm` is the UVCS command line. This skill is the
   single source of truth for command syntax, flags, and output formats.
 - **Higher-level task skills** that build on the hub: review a branch, root cause analysis,
-  build deep links (`plastic://`, `unityhub://`) for richer output, and similar workflows.
+  merging, switching, and similar workflows. Deep links (`plastic://`, `unityhub://`) are hub
+  material, not a skill of their own.
 
 Whoever ships a skill owns the whole vertical: it must trigger reliably, be correct against a
 real `cm`, and stay portable across agents.
@@ -491,7 +492,9 @@ the two.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
   Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-switch` (shipped),
   `uvcs-root-cause` (shipped), `uvcs-code-review` (shipped), `uvcs-address-review` (shipped),
-  `uvcs-report-issue` (shipped), `uvcs-links` (see Open decisions). Review has **two** skills on purpose, split by *side* and not by object:
+  `uvcs-report-issue` (shipped). There is no `uvcs-links`: building links is hub material — the
+  reporting conventions in `uvcs-core` plus `references/deep-links.md` — and a dedicated skill
+  would only duplicate it or wrap it thinly, so it was dropped from the planned set. Review has **two** skills on purpose, split by *side* and not by object:
   `uvcs-code-review` produces findings and publishes them, `uvcs-address-review` consumes an
   existing thread as the author. Their triggers do not overlap ("review this branch" vs "fix the
   review"), and the shared vocabulary lives in the hub's `reviews-and-merge-requests.md`, so this
@@ -611,7 +614,3 @@ Do not silently invent answers to these — ask, then record the answer here.
 - Whether to submit to the vendor registries (Anthropic's community directory, Cursor, Codex,
   Grok, Awesome Copilot) and in what order. Each is a one-off publishing action, not a repo
   change, and each has its own review and branding rules.
-- Whether `uvcs-links` still needs to exist as a skill. Building links is now hub material — the
-  reporting conventions in `uvcs-core` plus `references/deep-links.md`, covering both schemes — so
-  a dedicated skill would either duplicate that or be a thin wrapper. Left in the planned set until
-  decided; do not ship it without answering this.
