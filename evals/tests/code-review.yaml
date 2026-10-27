@@ -276,3 +276,46 @@
         Setting the reviewer status to Reviewed is this skill's job; performing the merge is not.
         The response must hand the merge off to the uvcs-merge skill (or otherwise treat it as a
         separate, non-review operation) rather than running cm merge --merge itself here.
+
+- description: "The author opening a merge request assigns the reviewer and reviews nothing"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Done with my branch, send it to jsmith for review — into /main, title "Add jump
+      buffering"; that is all confirmed, do not ask again. Everything is checked in:
+      `cm status --header` prints "/main/task042@game@localhost:8087" and nothing else, and
+      `cm find mergerequest "where target='br:/main/task042'" --nototal` printed nothing.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest) (create|mk) .*task042.*--users=\S*jsmith' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm (patch|diff|cat)\b|^cm (mr|mergerequest) (comment|review)\b' }
+
+- description: "An author's pending changes are not in the merge request"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Done with my branch, send it to jsmith for review — into /main, title "Add jump
+      buffering". `cm status --header` prints:
+
+      /main/task042@game@localhost:8087
+
+      Changed
+
+      Status    Size       Last Modified    Path
+
+      Changed   2.31 KB    5 minutes ago    Assets/Scripts/PlayerJump.cs
+
+      `cm find mergerequest "where target='br:/main/task042'" --nototal` printed nothing.
+  assert:
+    - type: llm-rubric
+      value: >-
+        The workspace has a pending change to PlayerJump.cs that is not checked in, so it would
+        not be part of the merge request. The response must point that out and have it checked in
+        before the merge request is created (asking the user to check it in, or a cm checkin step
+        before the create). Creating the merge request without mentioning the pending change is a
+        failure. Whether it also asks to confirm the title or reviewer is not judged.

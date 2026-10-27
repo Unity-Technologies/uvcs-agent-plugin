@@ -155,7 +155,7 @@ not enough to get the order and the stopping points right, which is where the da
 | `uvcs-merge` | Any merge, cherry-pick or conflict resolution, including finishing a merge already in progress. Never run `cm merge --merge` without it; its first command is always the read-only preview, `cm merge <src>` with no `--merge`. |
 | `uvcs-switch` | Moving the workspace to another branch, changeset, label or shelve, creating the branch first if needed. Never `cm switch` a workspace with pending changes without it. |
 | `uvcs-root-cause` | "Why did this break / which changeset introduced it / who broke this line": tracing a bug or regression back through history. Read-only. |
-| `uvcs-code-review` | Reviewing a branch or merge request, a changeset, a shelve or pending changes, and publishing the findings as review comments. |
+| `uvcs-code-review` | Reviewing a branch or merge request, a changeset, a shelve or pending changes, and publishing the findings as review comments. Also the author opening a merge request with reviewers on it. |
 | `uvcs-address-review` | The author side of a review: applying the change requests a reviewer left, answering questions, discarding a request, re-requesting the review. |
 | `uvcs-report-issue` | Something in **this plugin** was wrong or missing — a recipe `cm` rejected, a fact `cm help` contradicts, a task no skill covers, a result the user says is not what they asked for — reported as a GitHub issue. Not for UVCS product problems. |
 

@@ -28,6 +28,27 @@ grammar) and `uvcs-core/references/diff-and-patch.md` (what each spec diffs, `--
   is where the project's own rules are merged in: a project skill named `code-review-rules` wins
   over its general rules wherever they conflict. Nothing about judgement lives here.
 
+## The author opens the merge request
+
+When the user is the branch's **author** asking to open an MR or request a review ("I'm done,
+open an MR and assign `<user>`"), there is nothing to review yet: skip steps 1–4, review nothing,
+and do only this.
+
+```
+cm status --header      # the branch@repo@server to propose, and whether anything is still pending
+```
+
+Pending changes are not in the MR: say so and let the user check them in first. Then look for an
+existing MR (step 5's `cm find mergerequest`), and if there is none, confirm the title, the
+destination and the reviewers, and create it with the reviewers on it:
+
+```
+cm mergerequest create br:/main/task001 "<title>" --destination=br:/main --users=<user>
+```
+
+Add `--mergerequeststatus=Draft` when the user says the work is not ready yet. Report the MR
+link; reviewing it is the reviewer's run of this skill, from step 1.
+
 ## 1. Route the target
 
 | The user means | Object | Review object |

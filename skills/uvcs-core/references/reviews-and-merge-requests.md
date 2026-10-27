@@ -26,6 +26,20 @@ never silently. `cm mergerequest` additionally needs `MergeRequestEnabled` on th
 
 Aliases: `cm mergerequest` = `cm mr`, `cm codereview` = `cm cr`.
 
+## Recommended branch flow
+
+The suggested path, not the only one — follow the user when they work differently, and use it to
+offer the next step:
+
+| Step | Who | Skill |
+|---|---|---|
+| 1. Create the task branch and switch to it | author | `uvcs-switch` |
+| 2. Do the work and check it in | author | `uvcs-core` (`cm checkin`) |
+| 3. Open an MR into the destination, with reviewers on it | author | `uvcs-code-review` |
+| 4. Review the MR and publish findings and a status | reviewer | `uvcs-code-review` |
+| 5. Apply or answer the findings, re-request review | author | `uvcs-address-review` |
+| 6. Merge the approved branch | author or integrator | `uvcs-merge` |
+
 ## Merge request lifecycle
 
 `create` / `mk` is **mandatory** — there is no implicit-create form. All of these are **mutating**.
