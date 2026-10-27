@@ -187,3 +187,39 @@
         One behavior is judged: the response must say that an in-place-rename edit like sed -i can
         be recorded as a delete, so a D for /src/Config.cs means the file was deleted and must be
         restored. Not mentioning that a delete is the risk is a failure.
+
+- description: "Who holds a lock on a file is a cm lock list query on that file"
+  vars:
+    reference_content: file://../skills/uvcs-core/references/locks.md
+    user_message: >-
+      I can't check out /Assets/Art/Hero.psd on /main, it says it is locked. Who has it, and in
+      which workspace?
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm lock (list|ls) .*Hero\.psd' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm lock unlock' }
+
+- description: "A file is restored to an older changeset with cm revert, not by checking in a cat"
+  vars:
+    reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
+    user_message: >-
+      src/Player.cs has no pending changes. Put it back the way it was in changeset 4100 so I can
+      check that in.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm revert .*Player\.cs#cs:4100' }
+
+- description: "A deleted file comes back with cm undelete from a changeset before the delete"
+  vars:
+    reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
+    user_message: >-
+      /src/Old.cs was deleted in changeset 4210; it existed unchanged in changeset 4209. Bring it
+      back into my workspace at src/Old.cs.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm undelete .*#cs:4209.*Old\.cs' }

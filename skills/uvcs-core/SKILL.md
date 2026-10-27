@@ -115,6 +115,7 @@ Mutating — they change the workspace or the server-side repository:
 `add`, `checkin`/`ci`, `checkout`/`co`, `switch`, `update`, `move`, `remove`, `branch`,
 `label`, `attribute`, `shelveset`, `merge`, `undo`, `undochange`, `undocheckout`, `revert`,
 `undelete`, `changeset`, `codereview`, `mergerequest`/`mr`, `xlink`, `patch --apply`,
+`lock unlock` / `lock create` (visible to everyone: locks are server-side),
 `workspace create` / `workspace delete` (client-side: no server object is created or destroyed).
 `cm mergerequest`/`cm codereview` mutate even when they only add a comment or a reviewer — those
 are visible to everyone on the review. Their one read-only verb is `reviewer list`.
@@ -201,5 +202,6 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
 | `references/merge-conflict-markers.md` | Resolving a conflicted merge headlessly: `--conflict-markers`, exit codes, marker format, the check-in guard. |
 | `references/history-and-annotate.md` | File history, blame tokens, `cm log` formats, walking `/main` history. |
 | `references/shell-gotchas.md` | Running `cm` from PowerShell / Git Bash / POSIX shells; quoting and comment pitfalls. |
+| `references/locks.md` | Exclusive checkout of binary assets: who holds a lock on a file, `Locked` vs `Retained`, taking and releasing your own locks. |
 | `references/batching-commands.md` | Running 5+ read-only commands as one `cm shell` batch: when it pays, the restrictions, and the exit-code and error-stream contract that changes. |
 | `references/deep-links.md` | Building a clickable link to a branch, changeset, label, shelve, code review or merge request: `unityhub://` in a Unity project, `plastic://` everywhere else, rendered as a markdown link. |

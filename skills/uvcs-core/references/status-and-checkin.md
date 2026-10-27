@@ -120,6 +120,25 @@ All accept `.` and `-r`/`--recursive`. The commands are state-specific (`CH` vs 
   nothing is undone: `Cannot perform the undo operation. All merge changes must be undone
   together.` Back it out with `cm undo . -r` from the workspace root.
 
+## Restoring older content
+
+Both are **mutating** and land as pending changes — nothing reaches the server until a check-in,
+and `cm undo` on the path backs them out.
+
+```
+cm revert src/Player.cs#cs:4100                          # file content as of cs:4100
+cm undelete serverpath:/src/Old.cs#cs:4100 src/Old.cs    # bring back a deleted item
+```
+
+- `cm revert` loads that changeset's revision of the item into the workspace; the item must have
+  no pending changes of its own. It replaces the whole file — to drop one changeset's change
+  while keeping later ones, that is a subtractive merge (`cm merge cs:<id> --subtractive`,
+  previewed and applied the `uvcs-merge` way), not a revert.
+- `cm undelete <revspec> <path>` needs a revision from **before** the delete — a changeset where
+  the item still existed (`serverpath:...#cs:<id>`, `revid:` or `itemid:...#cs:`), not the
+  deleting changeset — and a `<path>` not already loaded in the workspace. Not supported for
+  xlinks.
+
 ## Ignore / hidden / cloaked conf files
 
 Three workspace-root conf files control visibility. There is no `cm ignore`-style command —
