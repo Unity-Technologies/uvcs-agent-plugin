@@ -85,8 +85,39 @@ client's documentation. If you verify one, please [tell us](CONTRIBUTING.md).
 
 | Installed with | You get | Update with |
 | -------------- | ------- | ----------- |
-| `/plugin install` | the latest release | `claude plugin update unity-version-control` (see below) |
+| `/plugin install` | the latest release | auto-update, or `claude plugin update unity-version-control@unity` (see below) |
 | `npx skills add` | the `main` branch | `npx skills update` |
+
+### Turn on auto-update (Claude Code)
+
+Claude Code auto-updates only its official marketplaces by default, so turn it on for this one
+once: run `/plugin`, open the **Marketplaces** tab, select `unity`, and choose
+**Enable auto-update**.
+
+To turn it on for everyone working in a repository, add `autoUpdate` to the marketplace entry in
+the project's checked-in `.claude/settings.json`. Claude Code then offers the plugin to anyone who
+opens and trusts the folder:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "unity": {
+      "source": { "source": "github", "repo": "Unity-Technologies/uvcs-agent-plugin" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "unity-version-control@unity": true
+  }
+}
+```
+
+With auto-update on, Claude Code checks for a new release in the background after the first
+message of a session. The session keeps the version it started with; the new one loads on the
+next launch, or right away with `/reload-plugins`. Updates arrive with each release, not with
+every change to `main`.
+
+### Update by hand
 
 Claude Code reads the available versions from its cached copy of the marketplace, so refresh that
 first or the update finds nothing new. Both commands run from a terminal, and Claude Code has to
@@ -94,7 +125,7 @@ be restarted for the new version to load.
 
 ```bash
 claude plugin marketplace update unity
-claude plugin update unity-version-control      # or unity-version-control@unity
+claude plugin update unity-version-control@unity
 ```
 
 `main` is kept release-quality. Every change passes skill validation and a behavioral test
