@@ -390,19 +390,39 @@ rules below each come from a test that flaked for exactly that reason:
 
 ## Cutting a release
 
-One button, no local steps: **Actions ▸ Release ▸ Run workflow**, pick the branch and the bump
-level (patch / minor / major). `.github/workflows/release.yml` bumps `version` in **both**
-manifests, commits and tags `v<version>` on that branch, packages the plugin with `git archive` (everything
-except the paths marked `export-ignore` in `.gitattributes`), and opens a **draft** release with
-notes generated from the merged PRs since the previous tag and the zip + `.sha256` attached.
-Review the draft on the Releases page and click *Publish release*.
+Two steps, both on GitHub:
 
-Consequences worth keeping in mind: the version lives in the two manifests and nowhere else —
-never bump it by hand, or the next run fails on an existing tag. The marketplace entry
-deliberately carries **no** `version`, so a release only has to move two files; `validate-skills`
-fails the PR if the manifests disagree with each other or if a version creeps into the entry,
-which is the most common reason a plugin-directory submission is rejected. The release notes are
-only as good as the PR titles, so title PRs the way you would write a commit subject.
+1. **Bump the version in a pull request.** Set `version` in **both** manifests to the new
+   value — `plugin.json` and `.claude-plugin/plugin.json` — and nothing else, then title the PR
+   `Release v<version>`. It goes through review and the merge queue like any change.
+
+   ```bash
+   v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
+     jq --arg v "$v" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"; done
+   ```
+
+2. **The merge publishes a draft.** When the bump lands on `main`,
+   `.github/workflows/release.yml` tags `v<version>` on that commit, packages the plugin with
+   `git archive` (everything except the paths marked `export-ignore` in `.gitattributes`), and
+   opens a **draft** release with notes generated from the merged PRs since the previous tag and
+   the zip + `.sha256` attached. Review it on the Releases page and click *Publish release*.
+   *Run workflow* on `main` retries a failed run; with the tag already there it does nothing.
+
+Why the bump is a PR (settled, 2026-10): the workflow used to bump, commit and push to `main`
+itself, and the `main` rulesets — pull request required, merge queue — rejected the push
+(`GH013: Repository rule violations`), so no release could be cut. Opening the bump PR from the
+workflow does not work either: a PR created with `GITHUB_TOKEN` triggers no workflows, so the
+required `evals` / `validate-complete` checks never report and the PR can never be queued. A
+bypass for GitHub Actions on the ruleset would work but lets an unreviewed commit onto `main`.
+Tags are not covered by the branch rulesets, so tagging the commit the queue already merged needs
+no exception.
+
+Consequences worth keeping in mind: the version lives in the two manifests and nowhere else. The
+marketplace entry deliberately carries **no** `version`, so a release only has to move two files;
+`validate-skills` fails the PR if the manifests disagree with each other or if a version creeps
+into the entry, which is the most common reason a plugin-directory submission is rejected. The
+release notes are only as good as the PR titles, so title PRs the way you would write a commit
+subject.
 
 ## Commit history
 
