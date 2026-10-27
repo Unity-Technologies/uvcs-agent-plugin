@@ -183,6 +183,32 @@
         [apply-change:8123d65a] and [apply-change:a4e7f012]. Splitting the fix into two check-ins
         is a failure, because the first changeset would not compile. The wording is not judged.
 
+- description: "A tag that failed through a writable xlink is linked with editcomment on the sub-repo changeset"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Interactive mode. The review is review 77 in the sub-repo gamelib@myorg@cloud, which is a
+      writable xlink in my workspace. I approved the fix for B1 (guid
+      8123d65a-620d-49ee-bf51-f526741a3341) and you ran, from the parent workspace:
+      cm checkin libs/gamelib/src/Pool.cs -c "[apply-change:8123d65a] Return the item to the pool"
+      It printed "Created changeset cs:512@br:/main/task001@gamelib@myorg@cloud" and "Created
+      changeset cs:4210@br:/main/task001@mygame@myorg@cloud", then "The following review change
+      requests (specified in the checkin comment) cannot be found or are already applied in a
+      previous changeset" and exited 1. What do you run now?
+  assert:
+    - type: icontains
+      value: "editcomment"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm (checkin|ci) ' }
+    - type: llm-rubric
+      value: >-
+        The response must run cm changeset editcomment on the sub-repo changeset, cs:512 qualified
+        with gamelib@myorg@cloud, with a comment carrying [apply-change:8123d65a]. Running the
+        check-in again, or editing the parent changeset cs:4210, is a failure. The wording is not
+        judged.
+
 - description: "Unattended mode shelves each fix and undoes only the paths it edited"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
