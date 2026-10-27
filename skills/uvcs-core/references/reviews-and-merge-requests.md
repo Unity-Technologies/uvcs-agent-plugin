@@ -18,8 +18,8 @@ interchangeable on any review id — the two spellings exist so each workflow re
 prints its usage, `cm cr` says *"An incorrect spec has been specified."*
 
 **Availability.** The `comment`, `reviewer` and `review` subcommands, and `--users` / `--groups`
-in place of `--assignee`, are **newer than `cm` 11.0.16.10484** and are not in a public release
-yet. Detect before use: `cm mergerequest --usage` lists `comment`, `reviewer` and `review` on a
+in place of `--assignee`, first shipped in **`cm` 11.0.16.10512**; older clients lack them. Detect
+before use: `cm mergerequest --usage` lists `comment`, `reviewer` and `review` on a
 client that has them. The server must also be 11.0.16.8321 or newer, otherwise commands fail with *"You need to
 upgrade the server to version 11.0.16.8321 or higher to use the new code review system."* —
 never silently. `cm mergerequest` additionally needs `MergeRequestEnabled` on the server.
@@ -160,6 +160,10 @@ cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
   changeset"* — the same error a mistyped or already-applied GUID produces. **The changeset is
   still created**, so never re-run the check-in on this error: only the link is missing. Mark
   those comments by replying in the thread instead.
+- **Through a writable xlink it does not link** (observed): a check-in from the parent
+  workspace that lands changes in an xlinked sub-repo, tagged for a comment on a review in that
+  sub-repo, fails the tag with the same error and exit 1 — both changesets land, the comment
+  stays pending. Reply in the thread instead.
 - Several tags in one comment (`[apply-change:abc12345] [apply-change:def67890] ...`) are each
   matched independently, in any position.
 - Verify rather than assume — the tag is silent on success:

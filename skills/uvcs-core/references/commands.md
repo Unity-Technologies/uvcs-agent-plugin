@@ -45,7 +45,8 @@ cm workspace delete <path>                                 # mutating (client on
 - Workspaces cannot nest or share a path, and names are unique per client; all three cases fail
   with `The workspace <name> (<path>) already exists.`
 - Locks are server-side (`cm lock list`, read-only), so under exclusive checkout rules two of your
-  own workspaces contend with each other exactly like two people would.
+  own workspaces contend with each other exactly like two people would. Who holds what, and
+  releasing your own: `locks.md`.
 
 ## Querying: `cm find`
 
@@ -124,6 +125,9 @@ cm patch br:/main/task001        # unified diff; also takes cs: and sh: specs
 cm cat "serverpath:/src/Player.cs#br:/main/task001"
 cm cat "revid:<id>@rep:<repo>@repserver:<server>" --file=/tmp/base.cs
 ```
+
+Putting older content back in the workspace (`cm revert`, `cm undelete`, both mutating):
+`status-and-checkin.md`.
 
 ## History and blame
 

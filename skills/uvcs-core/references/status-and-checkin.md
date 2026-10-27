@@ -78,6 +78,16 @@ Gotchas, all verified:
   markers still contain them`): a merge run with `--conflict-markers` left markers in those
   files. Remove them, or `cm merge --mark-resolved <path>` when the marker text is intentional
   — see `merge-conflict-markers.md`.
+- **Dynamic workspaces: edit files in place** (observed). A tool that writes a temp file and
+  renames it over the original (`sed -i`, some editors and scripts) is recorded as a delete of
+  the controlled item plus a new private file, and a check-in naming that path commits the
+  delete. After a check-in there, read back what it recorded, one `<letter> <path>` per item
+  (`A`dded, `D`eleted, `M`oved, `C`hanged); a `D` you did not intend means stop and restore the
+  item before anything else lands:
+
+  ```
+  cm log cs:<id> --csformat="{items}" --itemformat="{shortstatus} {path}{newline}"
+  ```
 - Multi-line comments: `-c "line1\nline2"` or `-commentsfile`. To rewrite a changeset comment
   afterwards: `cm changeset editcomment cs:<id> "<new comment>"` (branch comments and review
   titles have **no** edit command — get them right at creation).
@@ -109,6 +119,25 @@ All accept `.` and `-r`/`--recursive`. The commands are state-specific (`CH` vs 
   non-recursive `cm undo .` selects when the merge reached a subdirectory — is refused and
   nothing is undone: `Cannot perform the undo operation. All merge changes must be undone
   together.` Back it out with `cm undo . -r` from the workspace root.
+
+## Restoring older content
+
+Both are **mutating** and land as pending changes — nothing reaches the server until a check-in,
+and `cm undo` on the path backs them out.
+
+```
+cm revert src/Player.cs#cs:4100                          # file content as of cs:4100
+cm undelete serverpath:/src/Old.cs#cs:4100 src/Old.cs    # bring back a deleted item
+```
+
+- `cm revert` loads that changeset's revision of the item into the workspace; the item must have
+  no pending changes of its own. It replaces the whole file — to drop one changeset's change
+  while keeping later ones, that is a subtractive merge (`cm merge cs:<id> --subtractive`,
+  previewed and applied the `uvcs-merge` way), not a revert.
+- `cm undelete <revspec> <path>` needs a revision from **before** the delete — a changeset where
+  the item still existed (`serverpath:...#cs:<id>`, `revid:` or `itemid:...#cs:`), not the
+  deleting changeset — and a `<path>` not already loaded in the workspace. Not supported for
+  xlinks.
 
 ## Ignore / hidden / cloaked conf files
 

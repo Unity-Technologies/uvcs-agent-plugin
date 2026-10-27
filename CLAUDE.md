@@ -13,7 +13,8 @@ Planned shape:
 - **One hub skill: the `cm` CLI reference.** `cm` is the UVCS command line. This skill is the
   single source of truth for command syntax, flags, and output formats.
 - **Higher-level task skills** that build on the hub: review a branch, root cause analysis,
-  build deep links (`plastic://`, `unityhub://`) for richer output, and similar workflows.
+  merging, switching, and similar workflows. Deep links (`plastic://`, `unityhub://`) are hub
+  material, not a skill of their own.
 
 Whoever ships a skill owns the whole vertical: it must trigger reliably, be correct against a
 real `cm`, and stay portable across agents.
@@ -390,19 +391,39 @@ rules below each come from a test that flaked for exactly that reason:
 
 ## Cutting a release
 
-One button, no local steps: **Actions ▸ Release ▸ Run workflow**, pick the branch and the bump
-level (patch / minor / major). `.github/workflows/release.yml` bumps `version` in **both**
-manifests, commits and tags `v<version>` on that branch, packages the plugin with `git archive` (everything
-except the paths marked `export-ignore` in `.gitattributes`), and opens a **draft** release with
-notes generated from the merged PRs since the previous tag and the zip + `.sha256` attached.
-Review the draft on the Releases page and click *Publish release*.
+Two steps, both on GitHub:
 
-Consequences worth keeping in mind: the version lives in the two manifests and nowhere else —
-never bump it by hand, or the next run fails on an existing tag. The marketplace entry
-deliberately carries **no** `version`, so a release only has to move two files; `validate-skills`
-fails the PR if the manifests disagree with each other or if a version creeps into the entry,
-which is the most common reason a plugin-directory submission is rejected. The release notes are
-only as good as the PR titles, so title PRs the way you would write a commit subject.
+1. **Bump the version in a pull request.** Set `version` in **both** manifests to the new
+   value — `plugin.json` and `.claude-plugin/plugin.json` — and nothing else, then title the PR
+   `Release v<version>`. It goes through review and the merge queue like any change.
+
+   ```bash
+   v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
+     jq --arg v "$v" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"; done
+   ```
+
+2. **The merge publishes a draft.** When the bump lands on `main`,
+   `.github/workflows/release.yml` tags `v<version>` on that commit, packages the plugin with
+   `git archive` (everything except the paths marked `export-ignore` in `.gitattributes`), and
+   opens a **draft** release with notes generated from the merged PRs since the previous tag and
+   the zip + `.sha256` attached. Review it on the Releases page and click *Publish release*.
+   *Run workflow* on `main` retries a failed run; with the tag already there it does nothing.
+
+Why the bump is a PR (settled, 2026-10): the workflow used to bump, commit and push to `main`
+itself, and the `main` rulesets — pull request required, merge queue — rejected the push
+(`GH013: Repository rule violations`), so no release could be cut. Opening the bump PR from the
+workflow does not work either: a PR created with `GITHUB_TOKEN` triggers no workflows, so the
+required `evals` / `validate-complete` checks never report and the PR can never be queued. A
+bypass for GitHub Actions on the ruleset would work but lets an unreviewed commit onto `main`.
+Tags are not covered by the branch rulesets, so tagging the commit the queue already merged needs
+no exception.
+
+Consequences worth keeping in mind: the version lives in the two manifests and nowhere else. The
+marketplace entry deliberately carries **no** `version`, so a release only has to move two files;
+`validate-skills` fails the PR if the manifests disagree with each other or if a version creeps
+into the entry, which is the most common reason a plugin-directory submission is rejected. The
+release notes are only as good as the PR titles, so title PRs the way you would write a commit
+subject.
 
 ## Commit history
 
@@ -471,7 +492,9 @@ the two.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
   Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-switch` (shipped),
   `uvcs-root-cause` (shipped), `uvcs-code-review` (shipped), `uvcs-address-review` (shipped),
-  `uvcs-report-issue` (shipped), `uvcs-links` (see Open decisions). Review has **two** skills on purpose, split by *side* and not by object:
+  `uvcs-report-issue` (shipped). There is no `uvcs-links`: building links is hub material — the
+  reporting conventions in `uvcs-core` plus `references/deep-links.md` — and a dedicated skill
+  would only duplicate it or wrap it thinly, so it was dropped from the planned set. Review has **two** skills on purpose, split by *side* and not by object:
   `uvcs-code-review` produces findings and publishes them, `uvcs-address-review` consumes an
   existing thread as the author. Their triggers do not overlap ("review this branch" vs "fix the
   review"), and the shared vocabulary lives in the hub's `reviews-and-merge-requests.md`, so this
@@ -499,7 +522,11 @@ the two.
   **Project rules** input, and *merged*: project rules win over the general rules on conflict,
   including a severity scheme of their own; the report layout and the id/anchor contract stay,
   because `uvcs-address-review` parses them. The parent does **not** search the repository for a
-  rules file — one predictable location, documented in the README. The template ships as
+  rules file — one predictable location, documented in the README. Rules that apply to one
+  area of a large repository live in files the rules skill lists under **Area rules**, each with
+  the paths it covers (relative to the rules skill's directory); the parent appends only the
+  ones the diff's paths reach. Rejected: letting the reviewer open rule files itself — its only
+  command is the read-only `cm cat`, and a rule it must fetch is a rule it can skip. The template ships as
   `assets/code-review-rules-template.md`, deliberately **not** as a nested `SKILL.md`: skill
   installers scan for that filename and would install the template as a real skill. The portable
   location for the copy is `.agents/skills/` (Codex, Cursor and Copilot all read it) and
@@ -591,7 +618,3 @@ Do not silently invent answers to these — ask, then record the answer here.
 - Whether to submit to the vendor registries (Anthropic's community directory, Cursor, Codex,
   Grok, Awesome Copilot) and in what order. Each is a one-off publishing action, not a repo
   change, and each has its own review and branding rules.
-- Whether `uvcs-links` still needs to exist as a skill. Building links is now hub material — the
-  reporting conventions in `uvcs-core` plus `references/deep-links.md`, covering both schemes — so
-  a dedicated skill would either duplicate that or be a thin wrapper. Left in the planned set until
-  decided; do not ship it without answering this.

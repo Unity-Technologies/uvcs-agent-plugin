@@ -157,6 +157,19 @@ cm merge cs:42 --merge --cherrypicking           # cherry-pick a single changese
   `--keepdestination` (take one contributor whole, per path or globally) and, on newer `cm`
   builds, `--conflict-markers` — see `merge-conflict-markers.md`.
 
+### Refused by merge rules
+
+`Cannot perform the merge because of the Merge Rules. Review the branch '<src>' to merge it to
+'<dst>'.` is server policy, not a failure to work around: merge rules configured on the server
+restrict what may merge into a protected branch — typically only a branch whose review is
+approved. Get the source branch's review approved (`reviews-and-merge-requests.md`), or ask a
+server admin about the rule; retrying with other flags changes nothing.
+
+The destination is resolved from the workspace's **changeset**, not its selector. A branch just
+created and switched to has no changesets of its own, so the workspace still sits on the parent's
+head and the parent's rules apply — a cherry-pick onto an empty new branch can be refused as if it
+targeted `/main`. Once the branch has one changeset of its own, its own rules apply.
+
 ### Reading the preview
 
 `cm merge <src> --machinereadable` prefixes every line with a stable token. The ones that

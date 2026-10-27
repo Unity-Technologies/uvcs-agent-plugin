@@ -107,7 +107,10 @@ First collect what the prompt's **Inputs** block asks for:
 
 - **Project rules.** A skill named `code-review-rules`, or any loaded skill whose description
   says it holds this project's code review rules or checklist: read it and paste its body in
-  whole. Rules the user pasted or pointed at count too. Nothing found means `none` — do not
+  whole. If its **Area rules** section lists files, append after the body each one whose
+  condition the changed paths from step 2 meet, under a heading naming the file — paths are
+  relative to that skill's directory — and leave the rest out. Rules the user pasted or pointed
+  at count too. Nothing found means `none` — do not
   search the repository for a rules file. When the user asks to *set up* review rules for the
   project, create `code-review-rules/SKILL.md` in the client's project skills directory from
   `assets/code-review-rules-template.md`.

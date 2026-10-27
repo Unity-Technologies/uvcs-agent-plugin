@@ -1,80 +1,73 @@
 name: Release
 
-# One-button release. Go to Actions ▸ Release ▸ Run workflow, pick the branch to
-# release from and the bump level (patch / minor / major), and this does
-# everything in a single run:
+# Releases are cut from main, in two steps:
 #
-#   1. bumps "version" in both manifests — plugin.json (Agent Plugins 1.0) and
-#      .claude-plugin/plugin.json (Claude Code) — commits them and tags
-#      v<version> on the branch you picked
-#   2. packages the plugin (everything except repo-only files, see .gitattributes)
-#      as a zip plus a SHA-256 checksum
-#   3. opens a draft GitHub Release for the tag with notes generated from the
-#      merged PRs since the previous tag, with the assets already attached
+#   1. A pull request bumps "version" in both manifests — plugin.json (Agent
+#      Plugins 1.0) and .claude-plugin/plugin.json (Claude Code). It goes through
+#      review and the merge queue like any other change; validate-skills fails it
+#      if the two manifests disagree.
+#   2. When that bump lands on main, this workflow tags v<version>, packages the
+#      plugin (everything except repo-only files, see .gitattributes) as a zip
+#      plus a SHA-256 checksum, and opens a draft GitHub Release with notes
+#      generated from the merged PRs since the previous tag.
 #
 # You then review the draft on the Releases page and click "Publish release".
-# There is no hand-maintained changelog and no version to bump by hand — the
-# workflow owns both.
+#
+# Why not bump from here: main only accepts changes through a pull request and
+# the merge queue, so a commit pushed by this workflow is rejected (GH013). A PR
+# opened with GITHUB_TOKEN does not trigger the required checks either, so it
+# could never be queued. Tags are not covered by the branch rules, so tagging
+# the commit the queue already merged needs nothing special.
+#
+# Run it by hand (Actions ▸ Release ▸ Run workflow, on main) to retry a failed
+# run. It is a no-op when the tag for the current version already exists.
 
 on:
+  push:
+    branches: [main]
+    paths: [plugin.json, .claude-plugin/plugin.json]
   workflow_dispatch:
-    inputs:
-      bump:
-        description: Version bump
-        type: choice
-        options: [patch, minor, major]
-        default: patch
 
-# The bump commit/tag push and the release upload both use the built-in
-# GITHUB_TOKEN, which needs write access to repo contents/releases. If the
-# release branch is ever protected with a required-PR rule, the bump push needs
-# that rule to allow GitHub Actions (or the job fails before anything is tagged).
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # full history so generated notes can diff against the last tag
+          fetch-depth: 0 # full history and tags, so generated notes can diff against the last tag
 
-      - name: Bump both manifests, commit, tag, push
-        id: bump
-        env:
-          BUMP: ${{ inputs.bump }}
+      - name: Read the version and tag it
+        id: tag
         run: |
           set -euo pipefail
 
-          current=$(jq -r '.version // "0.0.0"' plugin.json)
-          IFS=. read -r major minor patch <<< "$current"
-          case "$BUMP" in
-            major) major=$((major + 1)); minor=0; patch=0 ;;
-            minor) minor=$((minor + 1)); patch=0 ;;
-            patch) patch=$((patch + 1)) ;;
-          esac
-          version="$major.$minor.$patch"
+          version=$(jq -r '.version' plugin.json)
+          claude_version=$(jq -r '.version' .claude-plugin/plugin.json)
+          if [ "$version" != "$claude_version" ]; then
+            echo "::error::plugin.json says $version, .claude-plugin/plugin.json says $claude_version." && exit 1
+          fi
           tag="v$version"
 
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "::error::Tag $tag already exists. Pick a different bump level." && exit 1
+            echo "::notice::$tag already exists — nothing to release. Bump the version in a pull request first."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-
-          # Two manifests carry the version and must never drift: the root one
-          # is the portable Agent Plugins manifest, .claude-plugin/ is Claude
-          # Code's. The marketplace entry deliberately carries no version.
-          for manifest in plugin.json .claude-plugin/plugin.json; do
-            jq --arg v "$version" '.version = $v' "$manifest" > "$manifest.tmp"
-            mv "$manifest.tmp" "$manifest"
-          done
 
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Release $tag"
           git tag -a "$tag" -m "Release $tag"
-          git push origin "HEAD:${{ github.ref_name }}" --follow-tags
+          git push origin "refs/tags/$tag"
 
+          echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
@@ -84,9 +77,10 @@ jobs:
       # a client's plugin/skills install path expects.
       - name: Package the plugin
         id: package
+        if: steps.tag.outputs.skip == 'false'
         env:
-          TAG: ${{ steps.bump.outputs.tag }}
-          VERSION: ${{ steps.bump.outputs.version }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
           asset="unity-version-control-$VERSION.zip"
@@ -95,9 +89,10 @@ jobs:
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
 
       - name: Create draft release with generated notes
+        if: steps.tag.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.bump.outputs.tag }}
+          TAG: ${{ steps.tag.outputs.tag }}
           ASSET: ${{ steps.package.outputs.asset }}
         run: |
           set -euo pipefail
