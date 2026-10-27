@@ -194,8 +194,16 @@ verified against a real CLI, never remembered.
   plugin is rejected by `cm`, the agent offers this on its own.
 - **Security reports:** [SECURITY.md](SECURITY.md)
 
+## Maintenance
+
+The Unity Version Control team at Unity Technologies maintains this repository: it reads new issues and pull
+requests, fixes security reports first, and ships fixes as new releases. Contributions are welcome under the
+[Unity Contribution Agreement](CONTRIBUTING.md). The repository is reviewed against Unity's standards for public
+repositories once a year, and again whenever it takes in new third-party code or changes the data it handles.
+
 ## License
 
-[Apache License 2.0](LICENSE). See [NOTICE](NOTICE).
+Copyright © 2026 Unity Technologies. Made available under the
+[Unity Terms of Service](https://unity.com/legal/terms-of-service): see [LICENSE.md](LICENSE.md).
 
-Unity Version Control and Plastic SCM are trademarks of Unity Technologies.
+"Unity", "Unity Version Control" and "Plastic SCM" are trademarks of Unity Technologies. The license grants no rights to them.

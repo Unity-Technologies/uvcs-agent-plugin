@@ -30,9 +30,11 @@ real `cm`, and stay portable across agents.
    already handles it, do not write it down.
 4. **Verified, not invented.** Every `cm` command, flag, and output shape must be checked against
    a real `cm` before it lands.
-5. **Public repository.** Everything here is public and Apache-2.0 licensed. No credentials,
+5. **Public repository.** Everything here is public, under the Unity Terms of Service (`LICENSE.md`). No credentials,
    internal hostnames or links, org/user names, or customer data — anywhere, including examples
    and commit messages. Use placeholders (`<server>`, `<repo>`, `<branch>`, `<user>`).
+   Public text (commits, branch names, PR bodies, docs) says what changed, never the internal
+   process behind it: no legal, privacy or security review reasoning, approvals or ticket IDs.
 
 ## Layout (fixed by the spec — do not relocate)
 
@@ -46,7 +48,7 @@ skills/uvcs-<name>/scripts/       # optional executables
 skills/uvcs-<name>/assets/        # optional templates/data
 mcp.json                          # only if we ever ship an MCP server; root only
 com.unity/                        # our client-specific extras, reverse-domain namespaced
-README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md LICENSE NOTICE
+README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md LICENSE.md
 .github/                          # issue and PR templates
 ```
 
@@ -488,7 +490,9 @@ the two.
 
 ## Settled conventions
 
-- Plugin `name`: `unity-version-control`. License: Apache-2.0.
+- Plugin `name`: `unity-version-control`. License: Unity Terms of Service (`LICENSE.md`);
+  the manifests say `SEE LICENSE IN LICENSE.md`. Contributions come in under the Unity
+  Contribution Agreement, accepted through CLA Assistant.
 - Skills are prefixed `uvcs-` so they stay unambiguous alongside other installed plugins.
   Set: `uvcs-core` (hub, shipped), `uvcs-merge` (shipped), `uvcs-switch` (shipped),
   `uvcs-root-cause` (shipped), `uvcs-code-review` (shipped), `uvcs-address-review` (shipped),
