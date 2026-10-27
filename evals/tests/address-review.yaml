@@ -159,7 +159,29 @@
       value: >-
         The response must run a cm checkin carrying the [apply-change:8123d65a] tag for B1 alone,
         with the file path named. Batching S1 into the same changeset, or including a second
-        apply-change tag, is a failure because the link would leave one comment silently pending.
+        apply-change tag, is a failure: the two fixes are independent, so each gets its own
+        changeset.
+
+- description: "Two fixes that cannot build apart share one check-in with both apply-change tags"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Interactive mode, review 311. B1 (guid 8123d65a-620d-49ee-bf51-f526741a3341) asks to rename
+      Inventory.Add to Inventory.TryAdd in /src/Inventory.cs; I2 (guid
+      a4e7f012-1234-5678-abcd-ef0123456789) asks to handle the new bool result in
+      /src/Player.cs, the only caller. Neither file compiles without the other. I have already
+      decided: fix both now. You edited both files and I replied "ok". What do you run?
+  assert:
+    - type: icontains
+      value: "apply-change:8123d65a"
+    - type: icontains
+      value: "apply-change:a4e7f012"
+    - type: llm-rubric
+      value: >-
+        The response must run a single cm checkin naming both files whose comment carries both
+        [apply-change:8123d65a] and [apply-change:a4e7f012]. Splitting the fix into two check-ins
+        is a failure, because the first changeset would not compile. The wording is not judged.
 
 - description: "Unattended mode shelves each fix and undoes only the paths it edited"
   vars:

@@ -135,8 +135,9 @@ A change, once the diff is approved — show the comment and file list, then:
 cm checkin src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
 ```
 
-**One comment, one changeset**, always: `[apply-change:<first 8 hex of the comment GUID>]` and a
-one-line summary of the fix — batch two and one silently stays pending. Name **workspace** paths
+**One comment, one changeset**: `[apply-change:<first 8 hex of the comment GUID>]` and a one-line
+summary, so each thread reads against the diff that answers it. Two tags in one check-in (each
+matches) only for fixes that cannot build or pass tests apart. Name **workspace** paths
 (`{item}`; the `/src/...` anchor is a server path). On *"change requests … cannot be found or are
 already applied"* the changeset still landed: never re-run the check-in; report it, move on.
 
