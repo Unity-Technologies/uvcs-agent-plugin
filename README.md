@@ -43,14 +43,14 @@ Results include clickable links: `unityhub://` when the workspace is a Unity pro
 
 ```
 /plugin marketplace add Unity-Technologies/uvcs-agent-plugin
-/plugin install unity-version-control@unity
+/plugin install unity-version-control@uvcs
 ```
 
 Or from a terminal:
 
 ```bash
 claude plugin marketplace add Unity-Technologies/uvcs-agent-plugin
-claude plugin install unity-version-control@unity
+claude plugin install unity-version-control@uvcs
 ```
 
 ### Codex, Cursor, Copilot, Gemini CLI, OpenCode, Zed and others
@@ -85,7 +85,7 @@ client's documentation. If you verify one, please [tell us](CONTRIBUTING.md).
 
 | Installed with | You get | Update with |
 | -------------- | ------- | ----------- |
-| `/plugin install` | the latest release | auto-update, or `claude plugin update unity-version-control@unity` (see below) |
+| `/plugin install` | the latest release | auto-update, or `claude plugin update unity-version-control@uvcs` (see below) |
 | `npx skills add` | the `main` branch | `npx skills update` |
 
 ### Turn on auto-update (Claude Code)
@@ -94,8 +94,8 @@ Claude Code auto-updates only its official marketplaces by default, so turn it o
 once:
 
 1. Run `/plugin` and open the **Marketplaces** tab.
-2. Select the `unity` marketplace. That is the name this repository's marketplace registers (the
-   `@unity` in `unity-version-control@unity`), not a separate product.
+2. Select the `uvcs` marketplace. That is the name this repository's marketplace registers (the
+   `@uvcs` in `unity-version-control@uvcs`), not a separate product.
 3. Choose **Enable auto-update**.
 
 To turn it on for everyone working in a repository, add `autoUpdate` to the marketplace entry in
@@ -105,13 +105,13 @@ opens and trusts the folder:
 ```json
 {
   "extraKnownMarketplaces": {
-    "unity": {
+    "uvcs": {
       "source": { "source": "github", "repo": "Unity-Technologies/uvcs-agent-plugin" },
       "autoUpdate": true
     }
   },
   "enabledPlugins": {
-    "unity-version-control@unity": true
+    "unity-version-control@uvcs": true
   }
 }
 ```
@@ -128,8 +128,8 @@ first or the update finds nothing new. Both commands run from a terminal, and Cl
 be restarted for the new version to load.
 
 ```bash
-claude plugin marketplace update unity
-claude plugin update unity-version-control@unity
+claude plugin marketplace update uvcs
+claude plugin update unity-version-control@uvcs
 ```
 
 `main` is kept release-quality. Every change passes skill validation and a behavioral test
