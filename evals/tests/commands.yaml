@@ -171,3 +171,19 @@
         The response must keep the fixture's marker text intact and drop the pending entry
         with cm merge --mark-resolved. Telling the user to delete, strip, or edit the
         <<<<<<< text out of the file is a failure.
+
+- description: "After a check-in in a dynamic workspace, what it recorded is read back per item"
+  vars:
+    reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
+    user_message: >-
+      My workspace is a dynamic workspace. I edited /src/Config.cs with `sed -i` and checked it in
+      as cs:512. Give me the command that shows, item by item, what that changeset recorded.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm log cs:512 .*--itemformat=.*\{shortstatus\}' }
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the response must say that an in-place-rename edit like sed -i can
+        be recorded as a delete, so a D for /src/Config.cs means the file was deleted and must be
+        restored. Not mentioning that a delete is the risk is a failure.

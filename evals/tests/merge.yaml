@@ -110,3 +110,22 @@
     - type: javascript
       value: file://assertions/commands.cjs:notRun
       config: { pattern: '^cm undo \.\s*$' }
+
+- description: "A merge refused by the server's merge rules is not retried with other flags"
+  vars:
+    skill_content: file://../skills/uvcs-merge/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/branches-and-merge.md
+    user_message: >-
+      I ran `cm merge br:/main/task001 --merge --conflict-markers` standing on /main and got:
+      "Cannot perform the merge because of the Merge Rules. Review the branch '/main/task001' to
+      merge it to '/main'." What now? Give me the read-only command you would run next.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm find (review|mergerequest)' }
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the response must treat the refusal as server policy (merge
+        rules) that requires the branch's review to be approved, or an admin to change the rule,
+        before the merge can go in. Retrying the merge with different flags, or calling it a cm
+        bug, is a failure. Any read-only command to look up the branch's review is fine.

@@ -160,6 +160,10 @@ cm checkin --all -c "[apply-change:8123d65a] <what the fix does>"
   changeset"* — the same error a mistyped or already-applied GUID produces. **The changeset is
   still created**, so never re-run the check-in on this error: only the link is missing. Mark
   those comments by replying in the thread instead.
+- **Through a writable xlink it does not link** (observed): a check-in from the parent
+  workspace that lands changes in an xlinked sub-repo, tagged for a comment on a review in that
+  sub-repo, fails the tag with the same error and exit 1 — both changesets land, the comment
+  stays pending. Reply in the thread instead.
 - Several tags in one comment (`[apply-change:abc12345] [apply-change:def67890] ...`) are each
   matched independently, in any position.
 - Verify rather than assume — the tag is silent on success:

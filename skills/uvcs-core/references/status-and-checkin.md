@@ -78,6 +78,16 @@ Gotchas, all verified:
   markers still contain them`): a merge run with `--conflict-markers` left markers in those
   files. Remove them, or `cm merge --mark-resolved <path>` when the marker text is intentional
   — see `merge-conflict-markers.md`.
+- **Dynamic workspaces: edit files in place** (observed). A tool that writes a temp file and
+  renames it over the original (`sed -i`, some editors and scripts) is recorded as a delete of
+  the controlled item plus a new private file, and a check-in naming that path commits the
+  delete. After a check-in there, read back what it recorded, one `<letter> <path>` per item
+  (`A`dded, `D`eleted, `M`oved, `C`hanged); a `D` you did not intend means stop and restore the
+  item before anything else lands:
+
+  ```
+  cm log cs:<id> --csformat="{items}" --itemformat="{shortstatus} {path}{newline}"
+  ```
 - Multi-line comments: `-c "line1\nline2"` or `-commentsfile`. To rewrite a changeset comment
   afterwards: `cm changeset editcomment cs:<id> "<new comment>"` (branch comments and review
   titles have **no** edit command — get them right at creation).
