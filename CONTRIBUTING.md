@@ -8,6 +8,14 @@ down so an agent stops guessing.
 agents, but the rules apply to everyone — read it before writing a skill. This document covers
 the mechanics.
 
+## All contributions are subject to the [Unity Contribution Agreement (UCA)](https://unity.com/legal/licenses/unity-contribution-agreement)
+
+By making a pull request, you are confirming agreement to the terms and conditions of the UCA, including that your
+Contributions are your original creation and that you have complete right and authority to make your Contributions.
+
+When you open your first pull request, a bot (CLA Assistant) asks you to accept the UCA, as an individual or on
+behalf of your company. A pull request is merged only once it's accepted.
+
 ## Ground rules
 
 1. **Verified, not remembered.** Every `cm` command, flag, and output shape must be run against
@@ -121,8 +129,3 @@ Two ways to see the result earlier, both optional:
 - **A skill that works in one agent but not another:** please report it. Portability is a
   feature, so this is a real bug.
 - **Security issues:** do not open a public issue. See [SECURITY.md](SECURITY.md).
-
-## License of contributions
-
-By contributing you agree that your contribution is licensed under the
-[Apache License 2.0](LICENSE), the same terms as this project.
