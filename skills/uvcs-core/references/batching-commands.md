@@ -127,5 +127,3 @@ Every row is a real behavioral difference, not a style preference:
   back to plain commands. Something desynced; a partial batch is not evidence.
 - Keep a batch to one logical step (tens of commands, not hundreds). It bounds what one hung
   command costs and keeps the process short-lived.
-- `cm fileshell <file>` is **not** a batch runner — it is a different mode that blocks waiting on
-  its file. Do not use it.

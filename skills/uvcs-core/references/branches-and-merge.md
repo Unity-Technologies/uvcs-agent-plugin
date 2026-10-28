@@ -154,8 +154,8 @@ cm merge cs:42 --merge --cherrypicking           # cherry-pick a single changese
   `order by` support — see `find-queries.md`).
 - File conflicts are otherwise handed to the configured merge tool (a GUI an agent cannot
   drive), or left with the merge in progress. The headless options are `--keepsource` /
-  `--keepdestination` (take one contributor whole, per path or globally) and, on newer `cm`
-  builds, `--conflict-markers` — see `merge-conflict-markers.md`.
+  `--keepdestination` (take one contributor whole, per path or globally) and, from `cm`
+  11.0.16.10512, `--conflict-markers` — see `merge-conflict-markers.md`.
 
 ### Refused by merge rules
 
