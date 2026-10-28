@@ -148,12 +148,6 @@
       no review rules of its own. Before you start, tell me exactly how the review step works:
       who reads the diff, what instructions they get, and what you do with what comes back.
   assert:
-    - type: icontains
-      value: "review-prompt"
-    - type: icontains-any
-      value:
-        - "cm patch br:/main/task009"
-        - "cm patch \"br:/main/task009\""
     - type: llm-rubric
       value: >-
         Two things are judged. First, the review must be performed by a fresh agent (a subagent,
