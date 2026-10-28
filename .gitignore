@@ -37,3 +37,6 @@ evals/output/
 # UVCS workspace metadata, in case a workspace is created inside the repo
 .plastic/
 plastic.workspace
+
+# Browser automation snapshots (playwright-cli)
+.playwright-cli/
