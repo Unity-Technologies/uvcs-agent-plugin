@@ -177,16 +177,17 @@
     reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
     user_message: >-
       My workspace is a dynamic workspace. I edited /src/Config.cs with `sed -i` and checked it in
-      as cs:512. Give me the command that shows, item by item, what that changeset recorded.
+      as cs:512. Give me the command that shows, item by item, what that changeset recorded, and
+      tell me which result for /src/Config.cs would mean the check-in went wrong and what I do then.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
       config: { pattern: 'cm log cs:512 .*--itemformat=.*\{shortstatus\}' }
     - type: llm-rubric
       value: >-
-        One behavior is judged: the response must say that an in-place-rename edit like sed -i can
-        be recorded as a delete, so a D for /src/Config.cs means the file was deleted and must be
-        restored. Not mentioning that a delete is the risk is a failure.
+        One behavior is judged: the response must say that a D (deleted) for /src/Config.cs means
+        the check-in deleted the file, and that the file must then be restored. Whether it explains
+        why sed -i causes this is not judged.
 
 - description: "Who holds a lock on a file is a cm lock list query on that file"
   vars:
