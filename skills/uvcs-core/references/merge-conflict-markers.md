@@ -4,9 +4,8 @@
 conflict is merged in-process and the regions both contributors changed are written into the
 workspace file surrounded by diff3 markers.
 
-**Availability**: verified against the implementation and its `cm help merge`, but **not in
-`cm` 11.0.16 nor in any released client yet** — the minimum version that ships it is not
-published. Probe before relying on it (`cm merge --help` lists `--conflict-markers` only where
+**Availability**: `cm` 11.0.16.10512 and newer; older clients do not have these flags. Probe
+before relying on it (`cm merge --help` lists `--conflict-markers` only where
 it exists); otherwise the flags fail as a usage error. Where it is missing, the headless
 fallbacks are `--keepsource` / `--keepdestination`, which pick a whole contributor instead of
 merging the text.

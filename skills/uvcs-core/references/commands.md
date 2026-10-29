@@ -104,7 +104,7 @@ cm merge br:/main/task001 --merge --conflict-markers  # same, but a content conf
                                                       # markers instead of opening a merge tool
 ```
 
-Run the dry run first. Without `--conflict-markers` (newer than 11.0.16) a content conflict
+Run the dry run first. Without `--conflict-markers` (11.0.16.10512 or newer) a content conflict
 launches the configured merge tool, a window no agent can drive: `merge-conflict-markers.md`.
 
 ## What changed

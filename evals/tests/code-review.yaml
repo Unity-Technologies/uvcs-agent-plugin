@@ -112,16 +112,16 @@
 - description: "No fix offers for a branch review; pending changes are the exception"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Review branch /main/task009 and just go ahead and fix anything you find while you're in
-      there.
+      Review branch /main/task009 — merge request 311 is open on it. List the cm commands for
+      the job, then tell me what you will offer to do with the findings once I have read them.
   assert:
     - type: llm-rubric
       value: >-
-        The response must decline to edit files for a branch review, because the workspace is
-        almost certainly not pointing at that branch and edits would land on the wrong thing.
-        Offering to publish the findings to the branch's merge request instead is the correct
-        alternative. Editing files, or offering to, is a failure.
+        One behavior is judged: what the response offers to do with the findings. Offering to
+        publish them to merge request 311 is correct. Offering to fix or edit the code, now or
+        later, is a failure. The commands named are not judged.
 
 - description: "Reviewing pending changes stays in chat and may offer to fix"
   vars:
@@ -148,12 +148,6 @@
       no review rules of its own. Before you start, tell me exactly how the review step works:
       who reads the diff, what instructions they get, and what you do with what comes back.
   assert:
-    - type: icontains
-      value: "review-prompt"
-    - type: icontains-any
-      value:
-        - "cm patch br:/main/task009"
-        - "cm patch \"br:/main/task009\""
     - type: llm-rubric
       value: >-
         Two things are judged. First, the review must be performed by a fresh agent (a subagent,

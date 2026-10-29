@@ -22,7 +22,7 @@ in place of `--assignee`, first shipped in **`cm` 11.0.16.10512**; older clients
 before use: `cm mergerequest --usage` lists `comment`, `reviewer` and `review` on a
 client that has them. The server must also be 11.0.16.8321 or newer, otherwise commands fail with *"You need to
 upgrade the server to version 11.0.16.8321 or higher to use the new code review system."* —
-never silently. `cm mergerequest` additionally needs `MergeRequestEnabled` on the server.
+never silently. `cm mergerequest` additionally needs merge requests enabled on the server.
 
 Aliases: `cm mergerequest` = `cm mr`, `cm codereview` = `cm cr`.
 
