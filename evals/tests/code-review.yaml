@@ -236,6 +236,33 @@
         Both are inline comments on /src/Net/ProfileClient.cs at the lines given. Nothing has to
         be executed here.
 
+- description: "A finding in a file outside the diff is never anchored to that file"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Publish this finding on merge request 311, which I already approved. `cm diff
+      br:/main/task009 --format="{status} {path} {baserevid} {revid} {repository}"` printed
+      exactly one row:
+
+      C /src/Inventory.cs 101 118 game@cloud
+
+      [I1] `Inventory.Add(Item item)` became `Inventory.Add(Item item, int count)` at
+      /src/Inventory.cs line 42, but /src/Shop.cs line 77 still calls `inventory.Add(item)` and no
+      longer compiles. Fix: pass the count at that call.
+  assert:
+    - type: icontains
+      value: "comment add 311"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--path=\S*Shop\.cs' }
+    - type: llm-rubric
+      value: >-
+        /src/Shop.cs is not in the diff, so no inline comment may be anchored to it. Anchoring the
+        comment to /src/Inventory.cs (line 42 is the natural line) or posting it as a conversation
+        comment with no --path are both correct, as long as the comment text still names
+        /src/Shop.cs line 77. Anchoring it to /src/Shop.cs is a failure.
+
 - description: "Existing project review rules govern the judgement, the skill only carries it into UVCS"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
