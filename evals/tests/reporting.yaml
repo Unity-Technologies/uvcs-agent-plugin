@@ -68,7 +68,7 @@
   vars:
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. Write me a
-      two-line summary I can paste in our chat channel: changeset 4207 is the branch head, it was
+      two-line summary I can paste in a GitHub pull request description: changeset 4207 is the branch head, it was
       reviewed in code review 311, and I left the leftovers on shelve 12.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
@@ -84,7 +84,8 @@
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I want to
       post a conversation comment on merge request 312 that points the reviewer at changeset
-      4207. Give me the comment text itself and the command that posts it, nothing else.
+      4207, whose link is plastic://myorg.cloud/repos/mygame/changesets/4207/diff. Give me the
+      comment text itself and the command that posts it, nothing else.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
     - type: icontains

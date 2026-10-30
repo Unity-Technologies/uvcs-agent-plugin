@@ -121,8 +121,8 @@
       merge it to '/main'." What now? Give me the read-only command you would run next.
   assert:
     - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: 'cm find (review|mergerequest)' }
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'cm merge' }
     - type: llm-rubric
       value: >-
         One behavior is judged: the response must treat the refusal as server policy (merge
