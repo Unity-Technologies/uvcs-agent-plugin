@@ -10,7 +10,8 @@ chat, and release notes. Which one to emit depends on the workspace, and only on
 
 ## Render it as a markdown link
 
-Where markdown is rendered — chat answers, reports, tickets, PR and MR bodies — every object is
+Where markdown is rendered — chat answers, reports, tickets, PR and MR bodies, UVCS review
+comments — every object is
 `[<object name>](<url>)`, assembled in two steps:
 
 1. **Link text** = the object's `cm` name, exactly as the *Reporting UVCS objects* rules give it:
@@ -29,8 +30,9 @@ Where markdown is rendered — chat answers, reports, tickets, PR and MR bodies 
 - **In markdown, never emit the name and its URL as two separate pieces** — not `cs:4207` followed
   by a bare `plastic://...`, not a trailing list of links. One of the two is redundant.
 - **Link text is the object's name, never prose**: `[br:/main/task001](...)`, not `[the branch](...)`.
-- **Bare URL where markdown is not rendered**: text published into UVCS itself (review and
-  check-in comments) or any plain-text destination. Unrendered, `[cs:4207](plastic://...)` shows
+- **Bare URL where markdown is not rendered**: a check-in comment or any other plain-text
+  destination — **not** a review or merge request comment, which renders markdown and takes the
+  `[cs:4207](plastic://...)` form like a report. Unrendered, `[cs:4207](plastic://...)` shows
   both pieces as punctuation soup, so when the destination is unknown the bare URL is the safe
   form — it loses the link text, not the address.
 - A URL that contains `)` (a branch or label name can) ends the markdown target early. Wrap that
@@ -149,6 +151,6 @@ hub form, so they keep `plastic://`:
 [merge request 312](plastic://myorg.cloud/repos/mygame/merge-requests/312)
 ```
 
-Published as a review comment instead, the same changeset is
+Written into a check-in comment instead, the same changeset is
 `cs:4207 plastic://myorg.cloud/repos/mygame/changesets/4207/diff` — bare, because that text is
 not rendered.

@@ -157,7 +157,9 @@ user raised. Nothing else is added: no "checked and fine" list, no reworded find
 What gets published is `[B1] <title>` on the first line — the GUI lists threads by it — then the
 body and the fix. Leave the path and line out: the anchor already shows them, so only a comment
 with no `--path` names them. Section headings and rules are chat structure; beyond dropping them,
-do not reword what the user approved.
+do not reword what the user approved. The rest is markdown and stays markdown: keep the
+backticks, bold and fenced code blocks with their language exactly as the report has them —
+never flatten code into indented or plain text.
 
 Then let the user choose: all, all of one severity, specific ids, all except some, or none —
 "none" stops the workflow with nothing published. What you offer depends on the target:

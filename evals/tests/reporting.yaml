@@ -79,13 +79,25 @@
     - type: icontains
       value: "](plastic://myorg.cloud/repos/mygame/code-reviews/311)"
 
-- description: "A link published into a UVCS review comment is bare, not markdown"
+- description: "A link published into a UVCS review comment is a markdown link"
   vars:
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I want to
       post a conversation comment on merge request 312 that points the reviewer at changeset
       4207, whose link is plastic://myorg.cloud/repos/mygame/changesets/4207/diff. Give me the
       comment text itself and the command that posts it, nothing else.
+    reference_content: file://../skills/uvcs-core/references/deep-links.md
+  assert:
+    - type: icontains
+      value: "[cs:4207](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+
+- description: "A link written into a check-in comment is bare, not markdown"
+  vars:
+    user_message: >-
+      My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I am
+      checking in src/Shop.cs and want the check-in comment to point at changeset 4207, whose
+      link is plastic://myorg.cloud/repos/mygame/changesets/4207/diff. Give me the comment text
+      itself and the command that checks in with it, nothing else.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
     - type: icontains
