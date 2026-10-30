@@ -1,0 +1,114 @@
+name: Prepare release
+
+# One button starts a release: Actions ▸ Prepare release ▸ Run workflow, pick the bump (patch,
+# minor, major). The run bumps "version" in both manifests, pushes the bump to a release/v<version>
+# branch, and opens the pull request "Release v<version>". Approve and queue it like any other
+# change; when it lands on main, release.yml tags it and opens the draft GitHub Release.
+#
+# Why the bump goes through main and not only onto a tag: the marketplace entry's source is "./",
+# so Claude Code reads the version from main, and an install updates only when that version
+# changes. A version that lives only on a tag never reaches anyone.
+#
+# Why a GitHub App token and not GITHUB_TOKEN: a pull request opened with GITHUB_TOKEN triggers no
+# workflows, so the required checks never report and the PR can never be queued. The App needs
+# Contents and Pull requests (read and write) on this repository; its Client ID is the
+# RELEASE_APP_CLIENT_ID variable and its private key the RELEASE_APP_PRIVATE_KEY secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Bump both manifests
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+
+          current=$(jq -r '.version' plugin.json)
+          claude_current=$(jq -r '.version' .claude-plugin/plugin.json)
+          if [ "$current" != "$claude_current" ]; then
+            echo "::error::plugin.json says $current, .claude-plugin/plugin.json says $claude_current." && exit 1
+          fi
+          if ! [[ "$current" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::$current is not a plain major.minor.patch version." && exit 1
+          fi
+          major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[2]} patch=${BASH_REMATCH[3]}
+          case "$BUMP" in
+            major) version="$((major + 1)).0.0" ;;
+            minor) version="$major.$((minor + 1)).0" ;;
+            patch) version="$major.$minor.$((patch + 1))" ;;
+          esac
+
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "::error::v$version is already tagged." && exit 1
+          fi
+
+          for m in plugin.json .claude-plugin/plugin.json; do
+            jq --arg v "$version" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"
+          done
+
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # After the bump, so the token never sits in the environment of a step that does not need it.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Push the bump and open the pull request
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          CURRENT: ${{ steps.bump.outputs.current }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          branch="release/v$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "::error::$branch already exists: merge or close its pull request, delete the branch, then run again." && exit 1
+          fi
+
+          bot_id=$(gh api "users/$APP_SLUG%5Bbot%5D" --jq .id)
+          git config user.name  "$APP_SLUG[bot]"
+          git config user.email "$bot_id+$APP_SLUG[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "Release v$VERSION"
+          git push "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" "$branch"
+
+          url=$(gh pr create --base main --head "$branch" --title "Release v$VERSION" --body "$(cat <<EOF
+          Bumps \`version\` from $CURRENT to $VERSION in \`plugin.json\` and \`.claude-plugin/plugin.json\`.
+
+          When this lands on main, the Release workflow tags \`v$VERSION\` and opens a draft release with notes generated from the pull requests merged since the last tag. Review the draft on the Releases page and publish it.
+
+          Opened by the Prepare release workflow, run by @$GITHUB_ACTOR.
+          EOF
+          )")
+          echo "Release pull request: $url" | tee -a "$GITHUB_STEP_SUMMARY"
