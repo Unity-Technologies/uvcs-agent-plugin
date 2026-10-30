@@ -395,9 +395,14 @@ rules below each come from a test that flaked for exactly that reason:
 
 Two steps, both on GitHub:
 
-1. **Bump the version in a pull request.** Set `version` in **both** manifests to the new
-   value — `plugin.json` and `.claude-plugin/plugin.json` — and nothing else, then title the PR
-   `Release v<version>`. It goes through review and the merge queue like any change.
+1. **Bump the version in a pull request.** *Actions ▸ Prepare release ▸ Run workflow* on `main`,
+   pick `patch`, `minor` or `major`. `.github/workflows/prepare-release.yml` sets `version` in
+   **both** manifests (`plugin.json` and `.claude-plugin/plugin.json`) and nothing else, and opens
+   `Release v<version>` from a `release/v<version>` branch. Approve it and queue it like any change.
+   It opens the PR with the `RELEASE_TOKEN` secret: a maintainer's fine-grained personal access
+   token, this repository only, Contents and Pull requests read and write. The PR is authored as
+   that maintainer, so another one approves it. When the token has expired, renew it, or open the
+   same PR by hand:
 
    ```bash
    v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
@@ -418,7 +423,13 @@ workflow does not work either: a PR created with `GITHUB_TOKEN` triggers no work
 required `evals` / `validate-complete` checks never report and the PR can never be queued. A
 bypass for GitHub Actions on the ruleset would work but lets an unreviewed commit onto `main`.
 Tags are not covered by the branch rulesets, so tagging the commit the queue already merged needs
-no exception.
+no exception. The one-button bump (2026-10) keeps all of that: a personal token is what makes a
+workflow-opened PR run its checks, and a human still approves and queues it. A GitHub App token
+would do the same without tying releases to one person's account, but creating an App in the
+org needs org-owner rights; switch to one if those become available. A tag-only bump
+(the bump commit lives only on its tag, `main` never changes) was rejected: the marketplace
+entry's `source` is `./`, so Claude Code reads the version from `main`, and an install updates
+only when that version changes.
 
 Consequences worth keeping in mind: the version lives in the two manifests and nowhere else. The
 marketplace entry deliberately carries **no** `version`, so a release only has to move two files;

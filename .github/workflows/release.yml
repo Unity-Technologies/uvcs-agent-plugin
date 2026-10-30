@@ -3,9 +3,10 @@ name: Release
 # Releases are cut from main, in two steps:
 #
 #   1. A pull request bumps "version" in both manifests — plugin.json (Agent
-#      Plugins 1.0) and .claude-plugin/plugin.json (Claude Code). It goes through
-#      review and the merge queue like any other change; validate-skills fails it
-#      if the two manifests disagree.
+#      Plugins 1.0) and .claude-plugin/plugin.json (Claude Code). Prepare release
+#      (prepare-release.yml) opens it from one button. It goes through review and
+#      the merge queue like any other change; validate-skills fails it if the two
+#      manifests disagree.
 #   2. When that bump lands on main, this workflow tags v<version>, packages the
 #      plugin (everything except repo-only files, see .gitattributes) as a zip
 #      plus a SHA-256 checksum, and opens a draft GitHub Release with notes

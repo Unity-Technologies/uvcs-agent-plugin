@@ -61,7 +61,7 @@ jobs:
             echo "::error::plugin.json and .claude-plugin/plugin.json disagree on name/version."
             echo "  plugin.json:                $root"
             echo "  .claude-plugin/plugin.json: $claude"
-            echo "  Both are bumped together by .github/workflows/release.yml — never by hand."
+            echo "  Both are bumped together by .github/workflows/prepare-release.yml (Actions > Prepare release)."
             exit 1
           fi
 
