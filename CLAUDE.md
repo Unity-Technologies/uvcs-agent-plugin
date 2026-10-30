@@ -399,9 +399,10 @@ Two steps, both on GitHub:
    pick `patch`, `minor` or `major`. `.github/workflows/prepare-release.yml` sets `version` in
    **both** manifests (`plugin.json` and `.claude-plugin/plugin.json`) and nothing else, and opens
    `Release v<version>` from a `release/v<version>` branch. Approve it and queue it like any change.
-   It opens the PR with a GitHub App token (the `RELEASE_APP_CLIENT_ID` variable and the
-   `RELEASE_APP_PRIVATE_KEY` secret; the App needs Contents and Pull requests, read and write).
-   Without that App, open the same PR by hand:
+   It opens the PR with the `RELEASE_TOKEN` secret: a maintainer's fine-grained personal access
+   token, this repository only, Contents and Pull requests read and write. The PR is authored as
+   that maintainer, so another one approves it. When the token has expired, renew it, or open the
+   same PR by hand:
 
    ```bash
    v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
@@ -422,8 +423,10 @@ workflow does not work either: a PR created with `GITHUB_TOKEN` triggers no work
 required `evals` / `validate-complete` checks never report and the PR can never be queued. A
 bypass for GitHub Actions on the ruleset would work but lets an unreviewed commit onto `main`.
 Tags are not covered by the branch rulesets, so tagging the commit the queue already merged needs
-no exception. The one-button bump (2026-10) keeps all of that: the App token is what makes a
-workflow-opened PR run its checks, and a human still approves and queues it. A tag-only bump
+no exception. The one-button bump (2026-10) keeps all of that: a personal token is what makes a
+workflow-opened PR run its checks, and a human still approves and queues it. A GitHub App token
+would do the same without tying releases to one person's account, but creating an App in the
+org needs org-owner rights; switch to one if those become available. A tag-only bump
 (the bump commit lives only on its tag, `main` never changes) was rejected: the marketplace
 entry's `source` is `./`, so Claude Code reads the version from `main`, and an install updates
 only when that version changes.
