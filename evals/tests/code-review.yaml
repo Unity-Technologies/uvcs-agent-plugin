@@ -314,15 +314,15 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
       I reviewed merge request 311 and it looks good. Mark it approved and get it into /main.
+      The uvcs-merge skill is installed too.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
       config: { pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--reviewed' }
-    - type: llm-rubric
-      value: >-
-        Setting the reviewer status to Reviewed is this skill's job; performing the merge is not.
-        The response must hand the merge off to the uvcs-merge skill (or otherwise treat it as a
-        separate, non-review operation) rather than running cm merge --merge itself here.
+    # The merge is uvcs-merge's: a preview is fine, a merge that lands (--merge, --to) is not.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm merge .*(--merge|--to)' }
 
 - description: "The author opening a merge request assigns the reviewer and reviews nothing"
   vars:
