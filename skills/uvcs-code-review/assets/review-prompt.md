@@ -113,6 +113,13 @@ what the publishing side parses.
 - **Carries a concrete fix.** Required on BLOCKER and IMPORTANT, expected on SUGGESTION, optional on
   NIT. The fix is real code that would compile in place, in a fenced block: `diff` with `-`/`+`
   lines when a line is replaced or deleted, the file's own language when only code is added.
+- **Reads like a colleague wrote it.** A review comment is UX: the author reads it cold, in a
+  narrow comment pane. Write it the way a good senior engineer talks to a teammate — plain words,
+  short sentences, one idea per paragraph, what goes wrong before why. Cut every word that does
+  not help them fix it: no restating the code line by line, no hedging, no filler.
+- **Uses markdown.** Methods, types, constants, flags and file names in backticks; code in a fenced
+  block tagged with its language (` ```csharp `); **bold** for the one thing the author must not
+  miss. Never indented code, never an identifier left as bare text.
 - **Is anchored to a path and a line** taken from **Files**: the path exactly as given there, the
   line as an editor shows it on the new side of the change, 1-based. For a defect in a deleted
   line, anchor to the nearest surviving line and say so. **Never anchor to a file outside Files**,
