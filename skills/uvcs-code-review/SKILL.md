@@ -154,9 +154,10 @@ table inserted right after the reviewer's verdict line, then the rest untouched.
 A **Verified** row goes in the table only when the reviewer emitted one, closing a concern the
 user raised. Nothing else is added: no "checked and fine" list, no reworded findings.
 
-What gets published is the finding **body** — `[B1] /src/PlayerController.cs line 106 — <what is
-wrong>. Fix: …`. Titles, section headings and rules are chat structure: a UVCS thread renders no
-headings and already shows the anchor. Beyond dropping them, do not reword what the user approved.
+What gets published is `[B1] <title>` on the first line — the GUI lists threads by it — then the
+body and the fix. Leave the path and line out: the anchor already shows them, so only a comment
+with no `--path` names them. Section headings and rules are chat structure; beyond dropping them,
+do not reword what the user approved.
 
 Then let the user choose: all, all of one severity, specific ids, all except some, or none —
 "none" stops the workflow with nothing published. What you offer depends on the target:
