@@ -97,7 +97,9 @@ what the publishing side parses.
   if it is Y, this is fine." File it at the severity of the likelier reading with that sentence in
   the body. When the answer genuinely decides whether there is a finding at all, make it a
   **question** (`Q1`, `Q2`…) — a question asks the author something; it does not tell them to change
-  anything.
+  anything. **When you can name what to change, it is a finding, not a question** — even if the
+  author might accept the behavior: "is this acceptable? If not, add a check" is a finding with
+  that check as its fix.
 - **NITs are on by default.** Emit them unless the request says to skip them. When skipped, leave
   them out silently — no line saying that nits were omitted.
 
