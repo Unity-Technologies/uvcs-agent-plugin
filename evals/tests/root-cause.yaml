@@ -43,34 +43,29 @@
         Falling back to a default 4-week window, ignoring the date, or filtering revisions by
         the date instead of resolving it to a changeset id first, is a failure.
 
-- description: "The suspect set is expanded through dependencies before history is queried"
+- description: "The history queries cover the dependency the failing line calls"
   vars:
     skill_content: file://../skills/uvcs-root-cause/SKILL.md
     user_message: >-
-      NullReferenceException at EnemyAI.Update() (Assets/Scripts/EnemyAI.cs:34). Find what
-      caused it. You can read EnemyAI.cs yourself, so don't ask me for it: plan every step from
-      the start through to the history queries.
+      NullReferenceException at EnemyAI.Update() (Assets/Scripts/EnemyAI.cs:34). It worked at
+      cs:4100 and fails at the head of my branch. Line 34 is
+      `if (perception.FindTarget().IsHostile)`, and `Perception` lives in
+      Assets/Scripts/AI/Perception.cs. Find what caused it: plan every step from the start
+      through to the history queries.
   assert:
-    - type: llm-rubric
-      value: >-
-        This is a planning exercise with no tools, so the response cannot name a real dependency
-        file and must not be required to. It passes when both of these hold: (a) a step that
-        inspects EnemyAI.cs for what it depends on — its imports, base classes, or the symbols
-        the failing code calls — by reading the file, by a project index, or by text search, and
-        that step comes before the first cm find revision (resolving the window's lower bound
-        with cm find changeset beforehand is the skill's step 1 and is fine); and (b) the
-        history queries are described as covering that suspect set, not EnemyAI.cs alone.
-        Omitting the expansion, or raising it only after the history queries as a later "next
-        step", is a failure. Naming a Unity-specific dependency API or console API is not
-        required and not expected.
+    # The scenario names the dependency, so the behavior under test is mechanical: the history
+    # queries cover it, not the symptom file alone.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm find revision.*Perception\.cs' }
 
 - description: "The exact error line is confirmed with annotate"
   vars:
     skill_content: file://../skills/uvcs-root-cause/SKILL.md
     reference_content: file://../skills/uvcs-core/references/history-and-annotate.md
     user_message: >-
-      IndexOutOfRangeException thrown from src/combat/DamageResolver.cs line 118. I have already
-      expanded the suspect set — that file is the whole of it. Which changeset introduced this,
+      IndexOutOfRangeException thrown from src/combat/DamageResolver.cs line 118. It worked at
+      cs:4100. I have already expanded the suspect set — that file is the whole of it. Which changeset introduced this,
       and confirm it against line 118 itself.
   assert:
     - type: icontains

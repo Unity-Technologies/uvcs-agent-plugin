@@ -17,8 +17,6 @@
       command from here up to and including the filing, in order, and mark the point where you
       stop for my approval.
   assert:
-    - type: icontains
-      value: "cm version"
     - type: llm-rubric
       value: >-
         Before gh issue create there must be a stopping point where the complete report is
@@ -52,6 +50,25 @@
     - type: icontains
       value: "--order-by=date"
 
+- description: "A plugin bug report collects the cm version"
+  vars:
+    skill_content: file://../skills/uvcs-report-issue/SKILL.md
+    user_message: |
+      Report this as a plugin bug. The agent, following uvcs-core, ran:
+
+      cm find shelve "where owner='me'" --format="{shelveid} {comment}" --nototal --order-by=date
+
+      and cm said: Unexpected option --order-by. I checked cm help find myself: there is no such
+      flag. macOS 15 / zsh, Claude Code. Which commands do you run to collect the evidence for
+      the report? Only those — do not draft or file anything yet.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm version' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: 'gh issue create' }
+
 - description: "An approved report is filed with gh on the plugin repository, labelled bug"
   vars:
     skill_content: file://../skills/uvcs-report-issue/SKILL.md
@@ -72,8 +89,9 @@
     - type: llm-rubric
       value: >-
         The user has approved the text, so the response must proceed to file the issue with gh
-        issue create on the plugin repository, using the saved body file. Asking for approval
-        again is a failure; so is any label other than bug. Checking gh authentication and
+        issue create on the plugin repository, using the saved body file. Stopping to ask for
+        approval again — a question, or a wait before gh issue create — is a failure; wording
+        that merely mentions the approval is not. Any label other than bug is a failure. Checking gh authentication and
         searching for an existing issue first are correct, not required. Naming the commands is
         enough: nothing is executed here, so no issue URL can appear.
 
@@ -90,10 +108,10 @@
       config: { pattern: '^gh issue create' }
     - type: llm-rubric
       value: >-
-        The failure is a UVCS server or connection problem, not a defect in the plugin, so the
-        response must decline to file it on the plugin's issue tracker and point the user at
-        UVCS product support or their connection or sign-in instead. Filing a plugin issue is a
-        failure. Mentioning gh issue create while explaining why it does not apply is fine.
+        One behavior is judged: the failure is a UVCS server or connection problem, not a defect
+        in the plugin, so the response must not file or draft a plugin issue for it. Filing one,
+        or treating it as a plugin defect, is a failure. Where it sends the user instead is not
+        judged, and mentioning gh issue create while explaining why it does not apply is fine.
 
 - description: "A missing workflow is requested as an enhancement, not a bug"
   vars:
