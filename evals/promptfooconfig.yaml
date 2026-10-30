@@ -44,6 +44,21 @@ defaultTest:
           type: between_tools
         max_tokens: 2048
         apiKeyRequired: false
+        # Structured output: the verdict is the whole response. Free-form, the judge sometimes
+        # wrote prose before its JSON, and promptfoo takes the first object it can parse — a
+        # rubric quoting a format token turned `{target}` into `{target: null}`. promptfoo
+        # 0.124 scored that object a pass with no verdict behind it; 0.125 fails it as a
+        # grader error, which ejected PRs from the merge queue.
+        output_format:
+          type: json_schema
+          schema:
+            type: object
+            properties:
+              reason: { type: string }
+              pass: { type: boolean }
+              score: { type: number }
+            required: [reason, pass, score]
+            additionalProperties: false
         # No `temperature`, for the same reason as above; judge variance is absorbed by the
         # retry gate, not pinned.
   vars:

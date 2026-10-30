@@ -122,13 +122,12 @@
     user_message: "Show me the last 10 commits on this project. It's in a UVCS workspace."
     reference_content: file://../skills/uvcs-core/references/commands.md
   assert:
-    - type: icontains
-      value: "cm find changeset"
-    - type: llm-rubric
-      value: >-
-        Every command the response proposes running must be a cm command. Proposing git log
-        (or any other git command) as something to run in the workspace is a failure; naming
-        git only as an analogy while explaining the UVCS equivalent is fine.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm ' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^git\b' }
 
 - description: "plastic:// changeset link: server @ becomes . and /diff suffix is required"
   vars:

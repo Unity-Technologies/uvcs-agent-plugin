@@ -133,13 +133,13 @@ A change, once the diff is approved — show the comment and file list, then:
 
 ```
 cm checkin src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
+cm checkin src/Shop.cs src/Wallet.cs -c "[apply-change:3f9a0c21] [apply-change:77be4d10] Price in cents"   # cannot build apart: one check-in
 ```
 
-**One comment, one changeset**: `[apply-change:<first 8 hex of the comment GUID>]` and a one-line
-summary, so each thread reads against the diff that answers it. Two tags in one check-in (each
-matches) only for fixes that cannot build or pass tests apart. Name **workspace** paths
-(`{item}`; the `/src/...` anchor is a server path). On *"change requests … cannot be found or are
-already applied"* the changeset still landed: never re-run the check-in; report it, move on.
+**One comment, one changeset**: the tag (first 8 hex of the GUID) and a one-line summary, so each
+thread reads against its own diff — both tags in **one** check-in only for fixes that cannot build
+or pass tests apart. Name **workspace** paths (`{item}`; the `/src/...` anchor is a server path).
+On *"change requests … cannot be found or are already applied"* it landed: never re-run; report it.
 
 A fix for a question or comment — **no** tag: on anything but a change it matches nothing and errors:
 

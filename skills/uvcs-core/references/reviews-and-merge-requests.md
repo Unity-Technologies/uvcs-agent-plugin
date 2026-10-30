@@ -203,7 +203,8 @@ review's own status, **on `-e`** it is the calling user's reviewer status, exact
 Read-only. Full field lists and query grammar: `find-queries.md`.
 
 ```bash
-# The MR for a branch — target is the source branch under review
+# The MR for a branch — target is the source branch under review. There is no `source`
+# field: "where source=..." fails with "The object type 'source' is not valid on performed query."
 cm find mergerequest "where target='br:/main/task001'" --format="{id} {title} {destination}" --nototal
 
 # Open MRs into /main

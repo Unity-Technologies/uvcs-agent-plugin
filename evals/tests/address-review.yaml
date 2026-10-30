@@ -23,7 +23,8 @@
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     user_message: >-
       Address the review comments. cm status --header shows the workspace is on label
-      lb:v2.1-release, and cm status is clean.
+      lb:v2.1-release, and cm status is clean. List only the commands you run up to the point
+      where you stop, not the ones that would come after.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:notRun
@@ -201,11 +202,9 @@
     - type: javascript
       value: file://assertions/commands.cjs:notRun
       config: { pattern: 'cm (checkin|ci) ' }
-    - type: llm-rubric
-      value: >-
-        The response must run cm changeset editcomment on cs:4210 with a comment carrying the
-        corrected tag [apply-change:8123d65a]. Running the check-in again is a failure. The wording
-        is not judged.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: 'cm changeset editcomment cs:4210\S* .*\[apply-change:8123d65a\]' }
 
 - description: "Unattended mode shelves each fix and undoes only the paths it edited"
   vars:
@@ -214,7 +213,8 @@
     user_message: >-
       Unattended mode, review 311. Two pending change requests: B1 in /src/Player.cs (guid
       8123d65a-620d-49ee-bf51-f526741a3341) and S1 in /src/ItemData.cs (guid
-      a4e7f012-1234-5678-abcd-ef0123456789). Give the exact commands for both.
+      a4e7f012-1234-5678-abcd-ef0123456789). Give the exact commands you run for both — only
+      yours, not the ones I run afterwards.
   assert:
     - type: icontains
       value: "cm shelveset create"
@@ -346,8 +346,9 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: |
       Interactive mode, review 311. CH1 (change, guid 7c3d9e01-1111-2222-3333-444455556666) on
-      /src/Inventory.cs line 22 says: "Add a null check for slot here." Its revision is on the
-      branch head changeset and nothing has touched the file since. This is the code there:
+      /src/Inventory.cs line 22 says: "Throw ArgumentNullException here when slot is null." Its
+      revision is on the branch head changeset and nothing has touched the file since. This is
+      the code there:
 
           public void Add(Slot slot) {
               ArgumentNullException.ThrowIfNull(slot);
