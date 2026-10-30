@@ -33,8 +33,9 @@
 - description: "Below the 5-command threshold, stay with plain cm commands"
   vars:
     user_message: >-
-      Give me the fastest way to get the comment of changeset 4207 and the comment of
-      changeset 4210. Just those two.
+      cm feels slow on this cloud repo. I need the comment of changeset 4207 and the comment
+      of changeset 4210 — just those two. Is it worth batching them in cm shell, or should I
+      run them plainly?
     reference_content: file://../skills/uvcs-core/references/batching-commands.md
   assert:
     # No cm shell *invocation* line; mentioning cm shell in prose to reject it is fine.
