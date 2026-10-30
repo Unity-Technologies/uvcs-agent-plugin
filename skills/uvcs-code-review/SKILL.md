@@ -93,7 +93,7 @@ cm diff <spec> --format="{status} {path} {baserevid} {revid} {repository}"
 ```
 
 Every finding is anchored to a **server path** (`/src/Player.cs`, not a workspace path) and a
-line. Binaries, deleted files and files that only moved get a mention in the report, not findings.
+line, and the path is always **one of these rows**. Binaries, deleted files and files that only moved get a mention in the report, not findings.
 
 ## 3. Run the review in a fresh agent
 
@@ -202,6 +202,12 @@ cm mr comment add <id> --path=/src/Player.cs --line=58 --type=Question -comments
 cm mr comment add <id> -commentsfile=<file>                  # a remark on the review as a whole
 cm codereview comment add <id> --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
 ```
+
+**Never post an inline comment on a file that is not in the `cm diff` rows.** The desktop GUI
+opens a comment by navigating to its file, and a file outside the diff cannot be opened, so the
+comment cannot be reached. Check every `--path` against the rows before posting. If a finding
+points outside them, move it to the changed line that causes it, and name the other file and
+line in the body. If no changed line fits, post it as a conversation comment, with no `--path`.
 
 Every finding — blocker, important, suggestion, nit — is `--type=Change`: it names something
 wrong and tells the author what to fix. `--type=Question` is only for the report's `[Q]` items,

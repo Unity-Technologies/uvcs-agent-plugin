@@ -113,7 +113,9 @@ what the publishing side parses.
   lines when a line is replaced or deleted, the file's own language when only code is added.
 - **Is anchored to a path and a line** taken from **Files**: the path exactly as given there, the
   line as an editor shows it on the new side of the change, 1-based. For a defect in a deleted
-  line, anchor to the nearest surviving line and say so.
+  line, anchor to the nearest surviving line and say so. **Never anchor to a file outside Files**,
+  however much of the problem lives there: a caller left behind, a test that should have moved.
+  Anchor it to the changed line that causes it, and name the other file and line in the body.
 
 ## Report
 
