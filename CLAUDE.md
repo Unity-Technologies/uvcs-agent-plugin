@@ -398,7 +398,8 @@ Two steps, both on GitHub:
 1. **Bump the version in a pull request.** *Actions ▸ Prepare release ▸ Run workflow* on `main`,
    pick `patch`, `minor` or `major`. `.github/workflows/prepare-release.yml` sets `version` in
    **both** manifests (`plugin.json` and `.claude-plugin/plugin.json`) and nothing else, and opens
-   `Release v<version>` from a `release/v<version>` branch. Approve it and queue it like any change.
+   `Release v<version>` from a `release/v<version>` branch with auto-merge on, so it queues itself
+   once main's requirements are met: its checks, and an approval while review is required.
    It opens the PR with the `RELEASE_TOKEN` secret: a maintainer's fine-grained personal access
    token, this repository only, Contents and Pull requests read and write. The PR is authored as
    that maintainer, so another one approves it. When the token has expired, renew it, or open the
@@ -424,9 +425,11 @@ required `evals` / `validate-complete` checks never report and the PR can never 
 bypass for GitHub Actions on the ruleset would work but lets an unreviewed commit onto `main`.
 Tags are not covered by the branch rulesets, so tagging the commit the queue already merged needs
 no exception. The one-button bump (2026-10) keeps all of that: a personal token is what makes a
-workflow-opened PR run its checks, and a human still approves and queues it. A GitHub App token
-would do the same without tying releases to one person's account, but creating an App in the
-org needs org-owner rights; switch to one if those become available. A tag-only bump
+workflow-opened PR run its checks, and the PR still meets every rule on `main` before auto-merge
+queues it. Auto-merge is per PR: the repository's "Allow auto-merge" setting only makes it
+available, and only this workflow turns it on. A GitHub App token would do the same without tying
+releases to one person's account, but creating an App in the org needs org-owner rights; switch to
+one if those become available. A tag-only bump
 (the bump commit lives only on its tag, `main` never changes) was rejected: the marketplace
 entry's `source` is `./`, so Claude Code reads the version from `main`, and an install updates
 only when that version changes.
