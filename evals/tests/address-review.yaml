@@ -374,14 +374,15 @@
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/find-queries.md
     user_message: |
-      Interactive mode, review 311. CH1 (change, location=39) says "Guard against a zero divisor in
-      the average." cm find revision on its revisionid printed:
+      Interactive mode, review 311. CH1 (change, guid 5c2e9b71-0a4d-4f3e-9b8a-1d2c3e4f5a6b,
+      location=39) says "Guard against a zero divisor in the average." cm find revision on its
+      revisionid printed:
       src/Stats.cs|4201|/main/task001
-      The branch head is cs:4212, and cs:4205 added a header block to src/Stats.cs. In the
-      revision the reviewer read, line 40 was `return total / count;`. In the workspace copy line
-      40 is now `// Licensed under Apache-2.0`, and `return total / count;` is on line 58 — the
-      only division in the file. I said "fix CH1". Which line do you change, and what does it
-      become?
+      The branch head is cs:4212, and cs:4205 added a header block to src/Stats.cs. I already
+      read the revision the reviewer saw with cm cat: its line 40 was `return total / count;`. In
+      the workspace copy line 40 is now `// Licensed under Apache-2.0`, and `return total /
+      count;` is on line 58 — the only division in the file. I said "fix CH1". Which line do you
+      change, what does it become, and which check-in do you run once I approve the diff?
   assert:
     - type: icontains
       value: "58"
