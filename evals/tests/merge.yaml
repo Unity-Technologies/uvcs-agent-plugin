@@ -120,9 +120,11 @@
       "Cannot perform the merge because of the Merge Rules. Review the branch '/main/task001' to
       merge it to '/main'." What now? Give me the read-only command you would run next.
   assert:
+    # No merge is applied again, with these flags or others. A `cm merge` without --merge is
+    # the read-only preview the skill teaches, so it is not a retry.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: 'cm merge' }
+      config: { pattern: '^cm merge\b.*\s--merge\b' }
     - type: llm-rubric
       value: >-
         One behavior is judged: the response must treat the refusal as server policy (merge
