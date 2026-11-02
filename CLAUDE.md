@@ -289,8 +289,11 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    in promptfoo's tree, on exactly the lockfile PRs that miss the cache. Do not move them back.
 
    Neither workflow filters by `paths`, on either event. A filtered-out required check never
-   reports, so a PR touching neither `skills/` nor `evals/` could never be queued — paying ~90s
-   of eval on a README fix is the cheaper half of that trade.
+   reports, so a PR touching neither `skills/` nor `evals/` could never be queued. Instead the
+   eval job always runs and evaluates only the tests the change can reach, by the table in step 3
+   (`evals/reachable-tests.cjs`, against the PR's or the queue's base): a README fix runs none and
+   passes. Running the whole suite on every PR made the queue reject about two runs in five, on
+   tests the change could not have touched.
 3. **Run only the evals the change can reach.** Every test is one independent API call whose
    prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
    ~1.5 minutes of API calls and re-rolls the suite's noise floor on 72 unrelated tests, which
@@ -301,6 +304,11 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    | one test's `vars` or `assert` | **that test only** — nothing else loads it, so nothing else can break |
    | a `SKILL.md` or a `references/*.md` | the tests that name that file in `skill_content` / `reference_content` (`grep -l <filename> evals/tests/*.yaml`) — but *all* of them, since an edit anywhere in a file perturbs every prompt carrying it |
    | `promptfooconfig.yaml` (the prompt, provider or `defaultTest`), or the workflow | the whole suite — it is in every prompt |
+   | anything else (`README.md`, a skill's `scripts/`, docs) | nothing — no prompt carries it |
+
+   CI applies the same table (`evals/reachable-tests.cjs`; anything under `evals/` but the test
+   files, or the workflow, counts as "in every prompt"), so what you measure locally is what the
+   queue runs.
 
    Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
    flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
