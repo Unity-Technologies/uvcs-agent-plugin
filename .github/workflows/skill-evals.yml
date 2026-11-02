@@ -56,6 +56,10 @@ on:
   # Manual runs — handy to verify the auth setup without opening a PR, and the way a
   # contributor can run the suite in their own fork with their own key.
   workflow_dispatch:
+  # The whole suite once a week: pull requests run only the tests they reach, so this is
+  # what notices a drift no file change caused (the hosted model or the judge changing).
+  schedule:
+    - cron: "0 6 * * 1"
 
 permissions:
   id-token: write # required to request the GitHub OIDC token (wif mode only)
@@ -121,7 +125,10 @@ jobs:
 
       # Which tests the change can reach, from the files it changes against its base: the
       # pull request's base, or the queue's base for the merge group (which holds every PR
-      # queued ahead too). A manual run takes the whole suite. Renames list both names.
+      # queued ahead too). A manual or scheduled run takes the whole suite. Renames list
+      # both names; -z and quotePath=false keep any file name exactly as written. The diff
+      # is captured before it is split so a failing git fails the step (set -e does not see
+      # a process substitution), and an empty list selects everything: it fails closed.
       - name: Select the evals this change can reach
         id: select
         env:
@@ -134,9 +141,16 @@ jobs:
             exit 0
           fi
           git fetch --no-tags --depth=1 origin "$BASE"
-          mapfile -t CHANGED < <(git diff --name-only --no-renames "$BASE" HEAD)
+          git -c core.quotePath=false diff -z --name-only --no-renames "$BASE" HEAD > "$RUNNER_TEMP/changed"
+          mapfile -d '' -t CHANGED < "$RUNNER_TEMP/changed"
+          printf 'Changed: %s\n' "${CHANGED[@]}"
           TESTS=$(node evals/reachable-tests.cjs "${CHANGED[@]}")
-          echo "tests=$TESTS" >> "$GITHUB_OUTPUT"
+          echo "Selected: $TESTS"
+          {
+            echo "tests<<__TESTS__"
+            echo "$TESTS"
+            echo "__TESTS__"
+          } >> "$GITHUB_OUTPUT"
           if [ "$TESTS" = none ]; then
             echo "No eval loads a file this change touches; none ran." >> "$GITHUB_STEP_SUMMARY"
           fi
