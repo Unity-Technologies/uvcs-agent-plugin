@@ -214,8 +214,8 @@
       Unattended mode, review 311. Two pending change requests: B1 in /src/Player.cs (guid
       8123d65a-620d-49ee-bf51-f526741a3341) and S1 in /src/ItemData.cs (guid
       a4e7f012-1234-5678-abcd-ef0123456789). Both fixes are clear and each touches only its own
-      file. Give the exact commands you run for both, in order — only yours: I apply and check in
-      the shelves myself afterwards, so leave those commands out.
+      file. Give only the commands you run, in order. I land your work myself afterwards, so leave
+      my commands out.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
@@ -223,6 +223,10 @@
     - type: javascript
       value: file://assertions/commands.cjs:runs
       config: { pattern: '^cm shelveset create .*ItemData\.cs' }
+    # One shelve per fix: a single shelve holding both files would pass the two checks above.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm shelveset create (?=.*Player\.cs)(?=.*ItemData\.cs)' }
     - type: javascript
       value: file://assertions/commands.cjs:runs
       config: { pattern: '^cm undo .*Player\.cs' }
@@ -241,9 +245,7 @@
       value: >-
         One behavior is judged: the order. Each fix's cm shelveset create is followed by the cm
         undo of its own path before the next fix is shelved, so each shelve holds only its own
-        fix. Stopping to ask the user to approve a fix before shelving it is a failure — they
-        chose not to be interrupted; offering to walk them through the shelves afterwards is
-        fine. Nothing else is judged.
+        fix. Nothing else is judged.
 
 - description: "Unattended wrap-up does not re-request the review"
   vars:
