@@ -48,16 +48,14 @@
     user_message: "Find the merge request for branch /main/task009 and show me its destination."
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
   assert:
-    - type: icontains-any
-      value:
-        - "cm find mergerequest"
-        - "cm find review"
-    - type: icontains
-      value: "target='br:/main/task009'"
-    - type: llm-rubric
-      value: >-
-        The response must not print {target} as the source branch name — {target} renders
-        an internal id:<n>. Selecting {id}, {title} and/or {destination} is correct.
+    # The filter is the behavior, however it is spaced or quoted.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm find (mergerequest|review) .*target\s*=\s*\\?[''"]br:/main/task009\\?[''"]' }
+    # {target} renders an internal id:<n>, not the branch; {id}, {title}, {destination} are right.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm find (mergerequest|review) .*\{target\}' }
 
 - description: "Reviewer status is set on yourself, with the review subcommand"
   vars:
