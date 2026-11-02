@@ -213,26 +213,37 @@
     user_message: >-
       Unattended mode, review 311. Two pending change requests: B1 in /src/Player.cs (guid
       8123d65a-620d-49ee-bf51-f526741a3341) and S1 in /src/ItemData.cs (guid
-      a4e7f012-1234-5678-abcd-ef0123456789). Give the exact commands you run for both — only
-      yours, not the ones I run afterwards.
+      a4e7f012-1234-5678-abcd-ef0123456789). Both fixes are clear and each touches only its own
+      file. Give the exact commands you run for both, in order — only yours: I apply and check in
+      the shelves myself afterwards, so leave those commands out.
   assert:
-    - type: icontains
-      value: "cm shelveset create"
-    - type: icontains
-      value: "cm undo"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm shelveset create .*Player\.cs' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm shelveset create .*ItemData\.cs' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm undo .*Player\.cs' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm undo .*ItemData\.cs' }
+    # Never a workspace-wide undo: `-r`, `.`, `--all`, or no path at all.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm undo(\s*$|.*\s(-r|--all|\.)(\s|$))' }
     # No check-in *command line*; telling the user to check the shelves in afterwards is fine.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
       config: { pattern: '^cm checkin' }
     - type: llm-rubric
       value: >-
-        Each fix gets its own cm shelveset create followed by a cm undo of exactly the path that
-        was edited, so the next shelve contains only its own fix. Running cm checkin itself is a
-        failure in this mode; telling the user they will review the shelves and check them in
-        afterwards is expected and correct. Running cm undo recursively over the workspace
-        (cm undo -r, cm undo ., or undoing everything) instead of the named paths is a failure.
-        Asking the user for approval per item is also a failure — they chose not to be
-        interrupted.
+        One behavior is judged: the order. Each fix's cm shelveset create is followed by the cm
+        undo of its own path before the next fix is shelved, so each shelve holds only its own
+        fix. Stopping to ask the user to approve a fix before shelving it is a failure — they
+        chose not to be interrupted; offering to walk them through the shelves afterwards is
+        fine. Nothing else is judged.
 
 - description: "Unattended wrap-up does not re-request the review"
   vars:
