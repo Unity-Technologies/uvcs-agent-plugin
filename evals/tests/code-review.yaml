@@ -239,11 +239,11 @@
     # [N1] is inline at line 61 as a Change request: --type=Change, or no --type (the default).
     - type: javascript
       value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm (mr|mergerequest) comment add 311 (?!.*--type=(Comment|Question))(?=.*--path=/src/Net/ProfileClient\.cs)(?=.*--line=61)' }
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment add 311 (?!.*--type=(Comment|Question))(?=.*--path=[''"]?/src/Net/ProfileClient\.cs)(?=.*--line=61)' }
     # [Q1] is inline at line 58 as a Question.
     - type: javascript
       value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm (mr|mergerequest) comment add 311 (?=.*--path=/src/Net/ProfileClient\.cs)(?=.*--line=58)(?=.*--type=Question)' }
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment add 311 (?=.*--path=[''"]?/src/Net/ProfileClient\.cs)(?=.*--line=58)(?=.*--type=Question)' }
 
 - description: "A finding in a file outside the diff is never anchored to that file"
   vars:
