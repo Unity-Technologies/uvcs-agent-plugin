@@ -283,7 +283,8 @@
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Publish this one finding on merge request 311, exactly as I approved it in your report:
+      Publish this one finding on merge request 311, exactly as I approved it in your report.
+      Show me the full text you write to the comment file, then the command:
 
       ## 🔴 BLOCKERS (1)
 
