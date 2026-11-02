@@ -47,12 +47,16 @@
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm status(?=.*--machinereadable)(?=.*--iscochanged)' }
+      config: { pattern: '\bcm status\b(?=.*--machinereadable)(?=.*--iscochanged)' }
+    # No cm diff: on a workspace path it opens the GUI diff tool, and the status code answers.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '\bcm diff\b' }
     - type: llm-rubric
       value: >-
         One fact is judged: with that command, the edited checkout's row reports CO+CH while the
-        untouched ones stay CO. Naming a different code for the edited file, or proposing cm diff
-        on a workspace path instead, is a failure. Nothing else is judged.
+        untouched ones stay CO. Naming a different code for the edited file is a failure.
+        Nothing else is judged.
 
 - description: "Pending change diffed as text via serverpath:#cs:<head>, never cm diff <path>"
   vars:
