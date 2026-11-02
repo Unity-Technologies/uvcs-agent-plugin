@@ -133,12 +133,27 @@
     # Pending changes have no review object, so nothing is created or posted on the server.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm (mergerequest|mr) create|^cm codereview\s+(cs|sh|br|lb):|comment add' }
+      config: { pattern: '^cm (mergerequest|mr) create|^cm (codereview|cr)\s+(cs|sh|br|lb):|comment add' }
     - type: llm-rubric
       value: >-
         One behavior is judged: with no target named, the review is of the workspace's pending
         changes, not a branch or a changeset. Offering to fix the files is allowed, since they
         are on disk in the current workspace, and not offering is fine too.
+
+- description: "Pending changes are offered a fix, never a published review"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review my pending changes. List the cm commands for the job, then tell me what you will
+      offer to do with the findings once I have read them.
+  assert:
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: what the response offers to do with the findings. Offering to
+        fix them in the workspace is correct, since the files are on disk there. Offering to
+        publish them, or to create a merge request or code review for them, is a failure. The
+        commands named are not judged.
 
 - description: "The review itself runs in a fresh agent from the shipped reviewer prompt"
   vars:
