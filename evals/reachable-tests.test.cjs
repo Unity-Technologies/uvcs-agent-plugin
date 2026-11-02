@@ -30,7 +30,19 @@ const selected = (pattern) =>
   suite.map((t) => t.description).filter((d) => new RegExp(pattern).test(d));
 
 test('a change no test loads runs nothing', () => {
-  assert.equal(reachableTests(['README.md', 'skills/uvcs-merge/scripts/tool.sh'], suite), 'none');
+  assert.equal(
+    reachableTests(['README.md', 'evals/README.md', 'skills/uvcs-merge/scripts/tool.sh'], suite),
+    'none',
+  );
+});
+
+test('an empty change list fails closed: the whole suite', () => {
+  assert.equal(reachableTests([], suite), 'all');
+});
+
+test('a non-ASCII path is matched as written', () => {
+  const accented = [{ description: 'Accented', testFile: 'evals/tests/x.yaml', loads: new Set(['skills/uvcs-core/references/café.md']) }];
+  assert.equal(reachableTests(['skills/uvcs-core/references/café.md'], accented), '^(?:Accented)$');
 });
 
 test('a skill file runs exactly the tests whose prompt carries it', () => {
@@ -72,7 +84,8 @@ test('what every prompt or grading carries runs the whole suite', () => {
 test('the real suite: the hub reaches its default-skill tests, the README reaches none', () => {
   const real = loadSuite();
   assert.ok(real.length > 50);
-  assert.ok(real.every((t) => typeof t.description === 'string' && t.description.length > 0));
+  // One line each: the selection travels as one line of GITHUB_OUTPUT.
+  assert.ok(real.every((t) => typeof t.description === 'string' && /^[^\r\n]+$/.test(t.description)));
   assert.equal(reachableTests(['README.md', 'CLAUDE.md'], real), 'none');
   const hub = new RegExp(reachableTests(['skills/uvcs-core/SKILL.md'], real));
   const reached = real.filter((t) => hub.test(t.description));

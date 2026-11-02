@@ -10,7 +10,8 @@
 //
 // Prints one line:
 //   all        a change to what every prompt carries (the config, the runner, an assertion,
-//              the workflow, the install): run the whole suite
+//              the workflow, the install), or no changed path at all — a diff that came back
+//              empty is more likely a failed diff than an empty change, so it fails closed
 //   none       nothing any test loads changed: run nothing, and pass
 //   <regex>    a `--filter-pattern` matching exactly the reachable tests' descriptions
 //
@@ -18,7 +19,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-// promptfoo's own YAML parser, from its pinned install: evals/ has no other dependency.
+// Declared in evals/package.json; the same version promptfoo uses, so it adds no install.
 const yaml = require('js-yaml');
 
 const EVALS_DIR = __dirname;
@@ -42,7 +43,7 @@ function filesNamedIn(value) {
 
 function loadSuite() {
   const config = yaml.load(fs.readFileSync(CONFIG, 'utf8'));
-  const defaultVars = config.defaultTest?.vars ?? {};
+  const defaultTest = config.defaultTest ?? {};
   return config.tests.flatMap((entry) => {
     const testFile = toRepoPath(path.resolve(EVALS_DIR, entry.replace(/^file:\/\//, '')));
     const tests = yaml.load(fs.readFileSync(path.join(REPO_DIR, testFile), 'utf8')) ?? [];
@@ -50,18 +51,22 @@ function loadSuite() {
       description: test.description,
       testFile,
       // A var the test leaves out is the default's, so the hub SKILL.md reaches every test
-      // that does not load another skill.
-      loads: new Set(filesNamedIn({ ...defaultVars, ...test.vars, assert: test.assert })),
+      // that does not load another skill. The whole test is scanned, not only vars and
+      // assert: a file named anywhere in it (a transform, a provider) is one it loads.
+      loads: new Set(
+        filesNamedIn({ ...defaultTest, ...test, vars: { ...defaultTest.vars, ...test.vars } }),
+      ),
     }));
   });
 }
 
 // What every prompt or every grading carries: the config and the runner (prompt template,
 // providers, judge), the assertion modules, the install, this selection, and the workflow.
+// Not evals/ docs, which no prompt carries.
 function reachesEveryTest(changed) {
   return (
     changed === WORKFLOW ||
-    (changed.startsWith('evals/') && !changed.startsWith(TEST_FILES_DIR))
+    (changed.startsWith('evals/') && !changed.startsWith(TEST_FILES_DIR) && !changed.endsWith('.md'))
   );
 }
 
@@ -70,7 +75,7 @@ function escapeRegExp(text) {
 }
 
 function reachableTests(changedPaths, suite) {
-  if (changedPaths.some(reachesEveryTest)) return 'all';
+  if (changedPaths.length === 0 || changedPaths.some(reachesEveryTest)) return 'all';
   const changed = new Set(changedPaths);
   const reached = suite.filter(
     (test) => changed.has(test.testFile) || [...test.loads].some((file) => changed.has(file)),
