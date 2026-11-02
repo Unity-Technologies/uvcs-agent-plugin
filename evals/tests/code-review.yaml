@@ -130,14 +130,15 @@
   assert:
     - type: icontains
       value: "cm status"
+    # Pending changes have no review object, so nothing is created or posted on the server.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: 'cm mergerequest create' }
+      config: { pattern: '^cm (mergerequest|mr) create|^cm codereview\s+(cs|sh|br|lb):|comment add' }
     - type: llm-rubric
       value: >-
-        With no target named, the review must default to the workspace's pending changes. There
-        is no review object to publish to, so creating a merge request or a code review is a
-        failure; offering to fix the files (they are on disk in the current workspace) is correct.
+        One behavior is judged: with no target named, the review is of the workspace's pending
+        changes, not a branch or a changeset. Offering to fix the files is allowed, since they
+        are on disk in the current workspace, and not offering is fine too.
 
 - description: "The review itself runs in a fresh agent from the shipped reviewer prompt"
   vars:
