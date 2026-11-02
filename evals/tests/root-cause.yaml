@@ -73,7 +73,7 @@
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm annotate .*DamageResolver\.cs.*\{changeset\}' }
+      config: { pattern: '^cm annotate (?=.*DamageResolver\.cs)(?=.*\{changeset\})' }
     - type: javascript
       value: file://assertions/commands.cjs:notRun
       config: { pattern: '^cm annotate .*\{changesetid\}' }
