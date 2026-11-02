@@ -23,8 +23,9 @@ Once installed, just describe the task. The agent picks the right skill.
 - "Give me a link to changeset 41827 so I can paste it in the ticket."
 - "That command you gave me was wrong. Report it as a plugin bug."
 
-Read-only work such as searching, diffing and reviewing runs without asking. Anything that
-changes a repository, such as check-in, merge, undo or deleting a branch, asks you first.
+Read-only work such as searching, diffing and reviewing runs without asking. The skills are
+written to ask before changing a repository, such as check-in, merge, undo or deleting a branch.
+Whether your agent asks depends on the agent and its settings, so review what it proposes.
 
 Results include clickable links: `unityhub://` when the workspace is a Unity project, and
 `plastic://` (the UVCS desktop client) otherwise.
@@ -188,22 +189,25 @@ Contributions are welcome, especially real `cm` recipes and workflows. Read
 verified against a real CLI, never remembered.
 
 - **Bugs and feature requests:** [GitHub issues](https://github.com/Unity-Technologies/uvcs-agent-plugin/issues).
-  Or tell the agent: *"Report this as a plugin bug"*. The `uvcs-report-issue` skill writes the
-  report with server, repository and user names replaced by placeholders, shows you the full
-  text, and files it with the `gh` CLI or gives you the text to paste. When a command from the
-  plugin is rejected by `cm`, the agent offers this on its own.
+  Or tell the agent: *"Report this as a plugin bug"*. The `uvcs-report-issue` skill drafts the
+  report, replacing server, repository and user names with placeholders where it can, and shows
+  you the full text before it files it with the `gh` CLI or gives you the text to paste. Issues
+  are public, so check the text before you approve it. When a command from the plugin is rejected
+  by `cm`, the agent may offer to do this.
 - **Security reports:** [SECURITY.md](SECURITY.md)
 
 ## Maintenance
 
-The Unity Version Control team at Unity Technologies maintains this repository: it reads new issues and pull
-requests, fixes security reports first, and ships fixes as new releases. Contributions are welcome under the
-[Unity Contribution Agreement](CONTRIBUTING.md). The repository is reviewed against Unity's standards for public
-repositories once a year, and again whenever it takes in new third-party code or changes the data it handles.
+The Unity Version Control team at Unity Technologies maintains this repository. Contributions are welcome
+under the [Unity Contribution Agreement](CONTRIBUTING.md).
 
 ## License
 
 Copyright © 2026 Unity Technologies. Made available under the
 [Unity Terms of Service](https://unity.com/legal/terms-of-service): see [LICENSE.md](LICENSE.md).
+
+Use of this plugin, as published by Unity, by an AI agent you direct (and the model it uses),
+through your installed `cm` client and with your own credentials, is Authorized Agentic Access
+under those Terms. Unity designates that `cm` client for this purpose.
 
 "Unity", "Unity Version Control" and "Plastic SCM" are trademarks of Unity Technologies. The license grants no rights to them.
