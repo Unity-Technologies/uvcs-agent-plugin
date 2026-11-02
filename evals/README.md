@@ -92,8 +92,10 @@ not flake* in `CLAUDE.md`.
 `.github/workflows/skill-evals.yml` runs the suite through `run-evals.sh`, limited to the tests
 the change can reach (`reachable-tests.cjs`, by the table in `CLAUDE.md`, "Workflow for changes
 here", step 3): a test whose prompt carries no changed file can only re-roll its own noise. A
-change no test loads, such as a README fix, runs none and passes; a change to the config, the
-runner, an assertion or the workflow runs everything. The step summary
+change no test loads, such as a README fix or a doc in `evals/`, runs none and passes; a changed
+test file runs the tests in it; a change to the config, the runner, an assertion, the install or
+the workflow runs everything. A weekly scheduled run takes the whole suite, to catch drift no
+file change causes (the hosted model or the judge changing). The step summary
 lists the tests that failed and why, unstable tests are raised as PR warning annotations, and
 the full `results.json` / `retry.json` are attached to the run as the `eval-results` artifact for
 when you need the model output behind a failure. The pinned promptfoo install is cached on
@@ -111,7 +113,8 @@ samples: a failure is retried 4 times and must pass 3.
 | `pull_request`, branch in this repo | yes, the reachable tests | Fast feedback before review. |
 | `pull_request` from a **fork**, or from **Dependabot** | **skipped** | GitHub issues neither Actions secrets nor OIDC tokens to either, so the job could only fail on an empty credential. Skipping is neutral, not red, and costs no API credit. |
 | `merge_group` | **always**, the reachable tests | The real gate. |
-| `workflow_dispatch` | yes | Manual, including in your own fork with your own key. |
+| `workflow_dispatch` | yes, the whole suite | Manual, including in your own fork with your own key. |
+| `schedule` (weekly) | yes, the whole suite | Drift no pull request causes. |
 
 The merge queue is what closes the gap. A maintainer with write access queues the PR; GitHub
 creates a `gh-readonly-queue/<base>/…` branch **in this repository** with the change rebased on
