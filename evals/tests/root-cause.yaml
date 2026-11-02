@@ -67,16 +67,16 @@
       IndexOutOfRangeException thrown from src/combat/DamageResolver.cs line 118. It worked at
       cs:4100. I have already expanded the suspect set — that file is the whole of it. Which changeset introduced this,
       and confirm it against line 118 itself.
+  # The behavior is the command: annotate the symptom file with annotate's own changeset token
+  # ({changeset}; {changesetid} belongs to cm find). Nothing runs, so there is no line-118 row
+  # to read, and a rubric asking how the response "treats" it graded the explanation instead.
   assert:
-    - type: icontains
-      value: "cm annotate"
-    - type: llm-rubric
-      value: >-
-        The response must annotate src/combat/DamageResolver.cs to find which changeset last
-        modified line 118, and treat that as the strongest evidence. It must use the {changeset}
-        format token (not {changesetid}, which belongs to cm find). This is a planning exercise
-        with nothing executed, so writing out the annotate command with that token is enough —
-        the response cannot report a real changeset and must not be required to.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm annotate .*DamageResolver\.cs.*\{changeset\}' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm annotate .*\{changesetid\}' }
 
 - description: "A line annotated as changeset -1 is the user's own uncommitted edit, not a suspect"
   vars:
