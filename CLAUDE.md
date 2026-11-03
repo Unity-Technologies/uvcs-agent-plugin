@@ -389,6 +389,12 @@ rules below each come from a test that flaked for exactly that reason:
   Name the command or fact that must appear and the one that must not; say the rest is not judged.
 - **A rubric must not contradict the skill.** "Checking in is a failure" failed a response that
   followed the skill's own instruction to tell the user to check the shelves in afterwards.
+- **The judge sees the answer and the rubric — never the user message.** "Rewording the approved
+  text is a failure" failed a verbatim answer as "likely reworded": the judge had no way to know
+  what was approved. Every fact the verdict rests on goes in the rubric itself.
+- **Text the judge must read goes in a command.** The template allows three sentences of prose,
+  so a comment file's content comes back *described*, and the rubric has nothing to judge (2/8
+  in CI). Ask for the heredoc that writes the file.
 - **Skill side: a command the model must emit goes in its own fenced block**, on the step where it
   runs. Inline in prose next to another step's block, the model copies the block and drops the
   prose command — seen twice (the switch preview, the unattended wrap-up). The converse holds
