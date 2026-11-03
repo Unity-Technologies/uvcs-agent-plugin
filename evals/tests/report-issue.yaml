@@ -91,8 +91,9 @@
       value: >-
         The user has approved the text, so the response must proceed to file the issue with gh
         issue create on the plugin repository, using the saved body file. Stopping to ask for
-        approval again — a question, or a wait before gh issue create — is a failure; wording
-        that merely mentions the approval is not. Any label other than bug is a failure. Checking gh authentication and
+        approval again — a question, or a wait before gh issue create — is a failure. Not a
+        failure: wording that mentions the approval ("based on your approval"), or saying the
+        commands are only planned here, since the exercise executes nothing. Any label other than bug is a failure. Checking gh authentication and
         searching for an existing issue first are correct, not required. Naming the commands is
         enough: nothing is executed here, so no issue URL can appear.
 
