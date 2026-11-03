@@ -23,9 +23,13 @@ name: Skill evals
 # merge_group run gates nothing; a required check must also appear under `on:` for
 # merge_group or the queue waits for a status that never arrives.
 #
-# Trusted PRs therefore run the suite twice (~90s each). Kept deliberately: the queue
-# run is the only one that sees the rebase, and skipping it would mean resolving the
-# merge group back to a PR through the API — a lookup that fails by merging unverified.
+# Trusted PRs therefore run their evals twice. Kept deliberately: the queue run is the
+# only one that sees the rebase, and skipping it would mean resolving the merge group
+# back to a PR through the API — a lookup that fails by merging unverified.
+#
+# Each run evaluates only the tests the change can reach (evals/reachable-tests.cjs):
+# every test is one independent prompt built from its own files, so the others can only
+# re-roll their noise. A change no test loads (a README fix) runs none and passes.
 #
 # Auth has two interchangeable paths, selected by the ANTHROPIC_AUTH repository
 # variable — both end at the same place (credentials in the environment promptfoo
@@ -43,15 +47,19 @@ name: Skill evals
 # secret. See evals/README.md.
 
 on:
-  # Deliberately unfiltered, on both events. A path filter looks like free savings and
-  # is a deadlock: a required check that is filtered out never reports at all, so a PR
-  # touching neither skills/ nor evals/ — a README fix — can never satisfy the gate and
-  # can never be queued. Paying ~90s on a docs PR is the cheaper half of that trade.
+  # Deliberately unfiltered, on both events. A path filter is a deadlock: a required
+  # check that is filtered out never reports at all, so a PR touching neither skills/
+  # nor evals/ — a README fix — could never be queued. The job always runs, and the
+  # "Select" step below decides which tests, if any, the change can reach.
   pull_request:
   merge_group:
   # Manual runs — handy to verify the auth setup without opening a PR, and the way a
   # contributor can run the suite in their own fork with their own key.
   workflow_dispatch:
+  # The whole suite once a week: pull requests run only the tests they reach, so this is
+  # what notices a drift no file change caused (the hosted model or the judge changing).
+  schedule:
+    - cron: "0 6 * * 1"
 
 permissions:
   id-token: write # required to request the GitHub OIDC token (wif mode only)
@@ -115,6 +123,38 @@ jobs:
           path: evals/node_modules
           key: promptfoo-${{ runner.os }}-${{ hashFiles('evals/package-lock.json') }}
 
+      # Which tests the change can reach, from the files it changes against its base: the
+      # pull request's base, or the queue's base for the merge group (which holds every PR
+      # queued ahead too). A manual or scheduled run takes the whole suite. Renames list
+      # both names; -z and quotePath=false keep any file name exactly as written. The diff
+      # is captured before it is split so a failing git fails the step (set -e does not see
+      # a process substitution), and an empty list selects everything: it fails closed.
+      - name: Select the evals this change can reach
+        id: select
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          node --test evals/reachable-tests.test.cjs
+          if [ -z "$BASE" ]; then
+            echo "tests=all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$BASE"
+          git -c core.quotePath=false diff -z --name-only --no-renames "$BASE" HEAD > "$RUNNER_TEMP/changed"
+          mapfile -d '' -t CHANGED < "$RUNNER_TEMP/changed"
+          printf 'Changed: %s\n' "${CHANGED[@]}"
+          TESTS=$(node evals/reachable-tests.cjs "${CHANGED[@]}")
+          echo "Selected: $TESTS"
+          {
+            echo "tests<<__TESTS__"
+            echo "$TESTS"
+            echo "__TESTS__"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$TESTS" = none ]; then
+            echo "No eval loads a file this change touches; none ran." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       # Both auth steps run AFTER `npm ci`, and must stay there. Written into
       # GITHUB_ENV before the install, the credential is in the environment of every
       # install script in promptfoo's tree (sharp, esbuild, @swc/core,
@@ -122,7 +162,7 @@ jobs:
       # cache, so that would fire on exactly the dependency PRs worth worrying about.
 
       - name: Use the ANTHROPIC_API_KEY secret
-        if: env.ANTHROPIC_AUTH == 'api-key'
+        if: env.ANTHROPIC_AUTH == 'api-key' && steps.select.outputs.tests != 'none'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -136,7 +176,7 @@ jobs:
           echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$GITHUB_ENV"
 
       - name: Exchange GitHub OIDC token for an Anthropic access token
-        if: env.ANTHROPIC_AUTH == 'wif'
+        if: env.ANTHROPIC_AUTH == 'wif' && steps.select.outputs.tests != 'none'
         env:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
@@ -177,13 +217,20 @@ jobs:
           echo "ANTHROPIC_API_KEY=wif-placeholder-real-auth-is-bearer-header" >> "$GITHUB_ENV"
 
       - name: Run promptfoo evals
+        if: steps.select.outputs.tests != 'none'
         working-directory: evals
         env:
           PROMPTFOO_DISABLE_TELEMETRY: "1"
           PROMPTFOO_DISABLE_UPDATE: "1"
+          TESTS: ${{ steps.select.outputs.tests }}
         # Names every failing test and retries each 4 times; the job goes red only
         # on a test that passes fewer than 3. Same script locally: evals/run-evals.sh.
-        run: ./run-evals.sh
+        run: |
+          if [ "$TESTS" = all ]; then
+            ./run-evals.sh
+          else
+            ./run-evals.sh --filter-pattern "$TESTS"
+          fi
 
       # The full results, for anyone who needs the actual model output behind a
       # failure rather than the assertion reason the summary prints.

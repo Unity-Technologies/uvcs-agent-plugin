@@ -257,7 +257,7 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    on an empty credential. Every PR is verified in the queue instead: `merge_group` is in the
    workflow's `on:`, the queue branch lives in this repository so the credentials are issued, the
    check is required, and a failure drops the PR from the queue. Consequences, all deliberate:
-   **no Dependabot secret is ever needed**; a maintainer's PR runs the suite **twice** (the queue
+   **no Dependabot secret is ever needed**; a maintainer's PR runs its evals **twice** (the queue
    run is the only one testing the rebase, and skipping it would need a merge-group→PR API lookup
    that fails by merging unverified); a required check must appear under `on: merge_group` or the
    queue waits forever for a status. Rejected on the way: `pull_request_target` (secrets plus a
@@ -289,11 +289,14 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    in promptfoo's tree, on exactly the lockfile PRs that miss the cache. Do not move them back.
 
    Neither workflow filters by `paths`, on either event. A filtered-out required check never
-   reports, so a PR touching neither `skills/` nor `evals/` could never be queued — paying ~90s
-   of eval on a README fix is the cheaper half of that trade.
+   reports, so a PR touching neither `skills/` nor `evals/` could never be queued. Instead the
+   eval job always runs and evaluates only the tests the change can reach, by the table in step 3
+   (`evals/reachable-tests.cjs`, against the PR's or the queue's base): a README fix runs none and
+   passes. Running the whole suite on every PR made the queue reject about two runs in five, on
+   tests the change could not have touched.
 3. **Run only the evals the change can reach.** Every test is one independent API call whose
    prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
-   ~1.5 minutes of API calls and re-rolls the suite's noise floor on 72 unrelated tests, which
+   ~1.5 minutes of API calls and re-rolls the suite's noise floor on a hundred unrelated tests, which
    buys nothing and muddies the result:
 
    | Changed | Run |
@@ -301,6 +304,12 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    | one test's `vars` or `assert` | **that test only** — nothing else loads it, so nothing else can break |
    | a `SKILL.md` or a `references/*.md` | the tests that name that file in `skill_content` / `reference_content` (`grep -l <filename> evals/tests/*.yaml`) — but *all* of them, since an edit anywhere in a file perturbs every prompt carrying it |
    | `promptfooconfig.yaml` (the prompt, provider or `defaultTest`), or the workflow | the whole suite — it is in every prompt |
+   | anything else (`README.md`, a skill's `scripts/`, docs) | nothing — no prompt carries it |
+
+   CI applies this table (`evals/reachable-tests.cjs`), a little wider where a file cannot tell
+   it more: a changed test file runs every test in it, and anything under `evals/` but the test
+   files and docs (the runner, the assertions, the install, the selection itself) runs the whole
+   suite. A weekly scheduled run takes the whole suite too, to catch drift no file change causes.
 
    Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
    flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
