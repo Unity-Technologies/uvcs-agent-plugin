@@ -28,18 +28,35 @@
 
 - description: "Telling an edited checkout from an empty one needs --iscochanged"
   vars:
-    user_message: >-
-      Four files are checked out in my workspace but I think only one of them was actually
-      edited. Which cm command tells me which checked-out files have content changes?
+    # The script reads the parseable form on purpose: plain `cm status` already prints
+    # "Checked-out (changed)" and takes the flag as a no-op, so a human-readable question has
+    # two right answers and the rubric could only judge one.
+    user_message: |-
+      My script parses this, and only one of the four files was actually edited:
+
+      cm status --machinereadable --all --includeRevId --fieldseparator="|"
+      STATUS|4210|game|myorg@cloud
+      CO|/ws/game/src/Player.cs|False|1201|NO_MERGES
+      CO|/ws/game/src/Enemy.cs|False|1202|NO_MERGES
+      CO|/ws/game/src/Shop.cs|False|1203|NO_MERGES
+      CO|/ws/game/src/Wallet.cs|False|1204|NO_MERGES
+
+      Every row says CO. Give me the command my script should run instead, and the code it
+      should look for on the edited file's row.
     reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
   assert:
-    - type: icontains
-      value: "--iscochanged"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '\bcm status\b(?=.*--machinereadable)(?=.*--iscochanged)' }
+    # No cm diff: on a workspace path it opens the GUI diff tool, and the status code answers.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '\bcm diff\b' }
     - type: llm-rubric
       value: >-
-        The response must use --iscochanged and say that an edited checkout then reports
-        CO+CH (an untouched one plain CO). Proposing cm diff on a workspace path is a
-        failure. Whether it also explains the behaviour without the flag is not judged.
+        One fact is judged: with that command, the edited checkout's row reports CO+CH while the
+        untouched ones stay CO. Naming a different code for the edited file is a failure.
+        Nothing else is judged.
 
 - description: "Pending change diffed as text via serverpath:#cs:<head>, never cm diff <path>"
   vars:
