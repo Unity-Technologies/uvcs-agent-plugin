@@ -130,14 +130,30 @@
   assert:
     - type: icontains
       value: "cm status"
+    # Pending changes have no review object, so nothing is created or posted on the server.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: 'cm mergerequest create' }
+      config: { pattern: '^cm (mergerequest|mr) create|^cm (codereview|cr)\s+(cs|sh|br|lb):|comment add' }
     - type: llm-rubric
       value: >-
-        With no target named, the review must default to the workspace's pending changes. There
-        is no review object to publish to, so creating a merge request or a code review is a
-        failure; offering to fix the files (they are on disk in the current workspace) is correct.
+        One behavior is judged: with no target named, the review is of the workspace's pending
+        changes, not a branch or a changeset. Offering to fix the files is allowed, since they
+        are on disk in the current workspace, and not offering is fine too.
+
+- description: "Pending changes are offered a fix, never a published review"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Review my pending changes. List the cm commands for the job, then tell me what you will
+      offer to do with the findings once I have read them.
+  assert:
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: what the response offers to do with the findings. Offering to
+        fix them in the workspace is correct, since the files are on disk there. Offering to
+        publish them, or to create a merge request or code review for them, is a failure. The
+        commands named are not judged.
 
 - description: "The review itself runs in a fresh agent from the shipped reviewer prompt"
   vars:
@@ -213,28 +229,36 @@
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
-    user_message: >-
+    # The items keep the report's section headings, as the user would paste them: a bare [N1]
+    # does not say it is a finding, and the reference's "`Comment` is a plain note" then read as
+    # the type for a small remark.
+    user_message: |-
       Publish these two items from your report on merge request 311, exactly as written:
 
-      [N1] `retryCount` is spelled `retyCount` in the log message — /src/Net/ProfileClient.cs
-      line 61. Fix: correct the spelling.
+      ## ⚪ NITS (1)
 
-      [Q1] Is the 30-second timeout on `FetchProfile` intentional? — /src/Net/ProfileClient.cs
-      line 58. The previous value was 5 seconds.
+      ### [N1] `retryCount` is spelled `retyCount` in the log message
+
+      **`/src/Net/ProfileClient.cs`** line 61
+
+      **Fix** — correct the spelling.
+
+      ## ❓ QUESTIONS (1)
+
+      ### [Q1] Is the 30-second timeout on `FetchProfile` intentional?
+
+      **`/src/Net/ProfileClient.cs`** line 58
+
+      The previous value was 5 seconds.
   assert:
-    - type: icontains
-      value: "--line=61"
-    - type: icontains
-      value: "--line=58"
-    - type: icontains
-      value: "--type=Question"
-    - type: llm-rubric
-      value: >-
-        The [N1] nit is a finding and must be published as a Change request (--type=Change, or
-        with no --type since Change is the default); publishing it as a Question is a failure. The
-        [Q1] item must be published with --type=Question; publishing it as a Change is a failure.
-        Both are inline comments on /src/Net/ProfileClient.cs at the lines given. Nothing has to
-        be executed here.
+    # [N1] is inline at line 61 as a Change request: --type=Change, or no --type (the default).
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment add 311 (?!.*--type=(Comment|Question))(?=.*--path=[''"]?/src/Net/ProfileClient\.cs)(?=.*--line=61)' }
+    # [Q1] is inline at line 58 as a Question.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment add 311 (?=.*--path=[''"]?/src/Net/ProfileClient\.cs)(?=.*--line=58)(?=.*--type=Question)' }
 
 - description: "A finding in a file outside the diff is never anchored to that file"
   vars:
@@ -283,7 +307,8 @@
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Publish this one finding on merge request 311, exactly as I approved it in your report:
+      Publish this one finding on merge request 311, exactly as I approved it in your report.
+      Show me the full text you write to the comment file, then the command:
 
       ## 🔴 BLOCKERS (1)
 

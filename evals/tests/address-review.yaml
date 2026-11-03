@@ -213,26 +213,39 @@
     user_message: >-
       Unattended mode, review 311. Two pending change requests: B1 in /src/Player.cs (guid
       8123d65a-620d-49ee-bf51-f526741a3341) and S1 in /src/ItemData.cs (guid
-      a4e7f012-1234-5678-abcd-ef0123456789). Give the exact commands you run for both — only
-      yours, not the ones I run afterwards.
+      a4e7f012-1234-5678-abcd-ef0123456789). Both fixes are clear and each touches only its own
+      file. Give only the commands you run, in order. I land your work myself afterwards, so leave
+      my commands out.
   assert:
-    - type: icontains
-      value: "cm shelveset create"
-    - type: icontains
-      value: "cm undo"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm shelveset create .*Player\.cs' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm shelveset create .*ItemData\.cs' }
+    # One shelve per fix: a single shelve holding both files would pass the two checks above.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm shelveset create (?=.*Player\.cs)(?=.*ItemData\.cs)' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm undo .*Player\.cs' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm undo .*ItemData\.cs' }
+    # Never a workspace-wide undo: `-r`, `.`, `--all`, or no path at all.
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm undo(\s*$|.*\s(-r|--all|\.)(\s|$))' }
     # No check-in *command line*; telling the user to check the shelves in afterwards is fine.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
       config: { pattern: '^cm checkin' }
     - type: llm-rubric
       value: >-
-        Each fix gets its own cm shelveset create followed by a cm undo of exactly the path that
-        was edited, so the next shelve contains only its own fix. Running cm checkin itself is a
-        failure in this mode; telling the user they will review the shelves and check them in
-        afterwards is expected and correct. Running cm undo recursively over the workspace
-        (cm undo -r, cm undo ., or undoing everything) instead of the named paths is a failure.
-        Asking the user for approval per item is also a failure — they chose not to be
-        interrupted.
+        One behavior is judged: the order. Each fix's cm shelveset create is followed by the cm
+        undo of its own path before the next fix is shelved, so each shelve holds only its own
+        fix. Nothing else is judged.
 
 - description: "Unattended wrap-up does not re-request the review"
   vars:
@@ -374,14 +387,15 @@
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/find-queries.md
     user_message: |
-      Interactive mode, review 311. CH1 (change, location=39) says "Guard against a zero divisor in
-      the average." cm find revision on its revisionid printed:
+      Interactive mode, review 311. CH1 (change, guid 5c2e9b71-0a4d-4f3e-9b8a-1d2c3e4f5a6b,
+      location=39) says "Guard against a zero divisor in the average." cm find revision on its
+      revisionid printed:
       src/Stats.cs|4201|/main/task001
-      The branch head is cs:4212, and cs:4205 added a header block to src/Stats.cs. In the
-      revision the reviewer read, line 40 was `return total / count;`. In the workspace copy line
-      40 is now `// Licensed under Apache-2.0`, and `return total / count;` is on line 58 — the
-      only division in the file. I said "fix CH1". Which line do you change, and what does it
-      become?
+      The branch head is cs:4212, and cs:4205 added a header block to src/Stats.cs. I already
+      read the revision the reviewer saw with cm cat: its line 40 was `return total / count;`. In
+      the workspace copy line 40 is now `// Licensed under Apache-2.0`, and `return total /
+      count;` is on line 58 — the only division in the file. I said "fix CH1". Which line do you
+      change, what does it become, and which check-in do you run once I approve the diff?
   assert:
     - type: icontains
       value: "58"
