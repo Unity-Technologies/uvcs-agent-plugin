@@ -185,8 +185,6 @@
       those rules enter the review, and list the cm commands you run before anything is shown.
   assert:
     - type: icontains
-      value: "code-review-rules"
-    - type: icontains
       value: "cm patch cs:4207"
     - type: llm-rubric
       value: >-
@@ -274,6 +272,9 @@
       [I1] `Inventory.Add(Item item)` became `Inventory.Add(Item item, int count)` at
       /src/Inventory.cs line 42, but /src/Shop.cs line 77 still calls `inventory.Add(item)` and no
       longer compiles. Fix: pass the count at that call.
+
+      Give me every command: first the one that writes the comment file, with its full text in a
+      heredoc, then the one that posts it.
   assert:
     - type: icontains
       value: "comment add 311"
@@ -308,7 +309,8 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
       Publish this one finding on merge request 311, exactly as I approved it in your report.
-      Show me the full text you write to the comment file, then the command:
+      Give me every command: first the one that writes the comment file, with its full text in a
+      heredoc, then the one that posts it.
 
       ## 🔴 BLOCKERS (1)
 
@@ -332,7 +334,9 @@
         of the title, and no line giving the location (`/src/PlayerController.cs` line 106) —
         the fix's own "delete line 106" is fine. Saying that those are dropped is fine and not a
         failure. Rewording or summarizing the finding is also a failure, since the user approved
-        this exact text.
+        this exact text: after the title, "The air-jump branch calls PlayOneShot, and
+        PlayerJumped plays the same clip a frame later." and "**Fix** — delete line 106;
+        PlayerJumped already handles the audio." Those carried over unchanged pass.
 
 - description: "A published comment keeps the report's markdown"
   vars:

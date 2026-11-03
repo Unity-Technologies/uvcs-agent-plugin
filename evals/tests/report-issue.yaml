@@ -73,10 +73,11 @@
   vars:
     skill_content: file://../skills/uvcs-report-issue/SKILL.md
     user_message: |
-      I have read the whole report you drafted for the rejected --order-by flag and I approve it
-      as written — the title is "[uvcs-core] find-queries.md gives cm find an --order-by flag cm
-      rejects", it is saved at /tmp/uvcs-issue.md, and I do not want to be asked again. List every
-      command from here to the issue URL.
+      Your last message showed me the complete text of the report for the rejected --order-by
+      flag — title, label and body, exactly what is saved at /tmp/uvcs-issue.md. I read all of it,
+      and yes: file it as written. The title is "[uvcs-core] find-queries.md gives cm find an
+      --order-by flag cm rejects", the label is bug, and I do not want to be asked again. List
+      every command from here to the issue URL.
   assert:
     - type: icontains
       value: "gh issue create"
@@ -90,8 +91,9 @@
       value: >-
         The user has approved the text, so the response must proceed to file the issue with gh
         issue create on the plugin repository, using the saved body file. Stopping to ask for
-        approval again — a question, or a wait before gh issue create — is a failure; wording
-        that merely mentions the approval is not. Any label other than bug is a failure. Checking gh authentication and
+        approval again — a question, or a wait before gh issue create — is a failure. Not a
+        failure: wording that mentions the approval ("based on your approval"), or saying the
+        commands are only planned here, since the exercise executes nothing. Any label other than bug is a failure. Checking gh authentication and
         searching for an existing issue first are correct, not required. Naming the commands is
         enough: nothing is executed here, so no issue URL can appear.
 

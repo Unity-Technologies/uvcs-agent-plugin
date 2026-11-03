@@ -197,20 +197,18 @@ cm mr reviewer add <id> --users=me      # on one that already exists, put yourse
 Two different numbers: create takes the **object spec** from step 1 (`cs:4207`, `sh:12`, never a
 bare `4207`), and every later subcommand takes the **review id** the create printed.
 
-One comment per finding, anchored. Findings are multi-line, so write each to a file:
+One comment per finding, anchored. **`--path` is always a path from the `cm diff` rows**, even
+when the finding is about another file: the desktop GUI opens a comment by navigating to its
+file, and a file outside the diff cannot be opened, so the comment cannot be reached. Anchor such
+a finding to the changed line that causes it and name the other file and line in the body; if no
+changed line fits, post it with no `--path`. Findings are multi-line, so write each to a file:
 
 ```
-cm mr comment add <id> --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
-cm mr comment add <id> --path=/src/Player.cs --line=58 --type=Question -commentsfile=<file>   # a [Q] item
-cm mr comment add <id> -commentsfile=<file>                  # a remark on the review as a whole
-cm codereview comment add <id> --path=/src/Player.cs --line=42 --type=Change -commentsfile=<file>
+cm mr comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Change -commentsfile=<file>
+cm mr comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Question -commentsfile=<file>   # a [Q] item
+cm mr comment add <id> -commentsfile=<file>       # the review as a whole, or a finding no changed line fits
+cm codereview comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Change -commentsfile=<file>
 ```
-
-**Never post an inline comment on a file that is not in the `cm diff` rows.** The desktop GUI
-opens a comment by navigating to its file, and a file outside the diff cannot be opened, so the
-comment cannot be reached. Check every `--path` against the rows before posting. If a finding
-points outside them, move it to the changed line that causes it, and name the other file and
-line in the body. If no changed line fits, post it as a conversation comment, with no `--path`.
 
 Every finding — blocker, important, suggestion, nit — is `--type=Change`: it names something
 wrong and tells the author what to fix. `--type=Question` is only for the report's `[Q]` items,
