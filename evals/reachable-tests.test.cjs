@@ -3,7 +3,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { reachableTests, loadSuite } = require('./reachable-tests.cjs');
+const { reachableTests, editedTests, loadSuite } = require('./reachable-tests.cjs');
 
 const suite = [
   {
@@ -91,4 +91,16 @@ test('the real suite: the hub reaches its default-skill tests, the README reache
   const reached = real.filter((t) => hub.test(t.description));
   assert.ok(reached.some((t) => t.testFile === 'evals/tests/queries.yaml'));
   assert.ok(!reached.some((t) => t.testFile === 'evals/tests/code-review.yaml'));
+});
+
+test('an added or edited test is burned in; an untouched or deleted one is not', () => {
+  const t = (description, definition) => ({ description, definition });
+  const base = [t('Kept', 'a'), t('Edited', 'b'), t('Deleted', 'c')];
+  const head = [t('Kept', 'a'), t('Edited', 'B'), t('Added (new)', 'd')];
+  const pattern = editedTests(base, head);
+  assert.deepEqual(head.map((x) => x.description).filter((d) => new RegExp(pattern).test(d)), [
+    'Edited',
+    'Added (new)',
+  ]);
+  assert.equal(editedTests(head, head), 'none');
 });

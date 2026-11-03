@@ -31,8 +31,23 @@
 # scenario has little margin, and the next skill edit can tip it for good. Fix
 # the scenario, not the run.
 #
-# Usage:  evals/run-evals.sh [extra promptfoo eval flags]
+# --burn-in: the gate for a test a change can move. Instead of one run plus retries, every
+# selected test runs BURN_IN_RUNS times (8) and must pass BURN_IN_REQUIRED (7) of them:
+#
+#        true pass rate   chance it passes the burn-in (8 runs, 7 required)
+#        99%              99.7%
+#        90%              81%
+#        75%              37%
+#        50%              3.5%
+#
+# The retry gate above lets a 75% test through most of the time, and it then fails one queue
+# run in fifteen for everyone. The burn-in stops it on the pull request that wrote or moved
+# it, which is where the fix belongs. CI uses it for the tests a change can reach, and for
+# every added or edited test even when the whole suite runs (reachable-tests.cjs).
+#
+# Usage:  evals/run-evals.sh [--burn-in] [extra promptfoo eval flags]
 # e.g.    evals/run-evals.sh --filter-pattern "An approved report is filed"
+#         evals/run-evals.sh --burn-in --filter-pattern "An approved report is filed"
 #
 set -euo pipefail
 
@@ -46,15 +61,24 @@ fi
 SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
 RETRIES="${EVAL_RETRIES:-4}"
 REQUIRED="${EVAL_RETRY_PASSES:-3}"
+BURN_IN_RUNS="${EVAL_BURN_IN_RUNS:-8}"
+BURN_IN_REQUIRED="${EVAL_BURN_IN_PASSES:-7}"
+CONCURRENCY="${EVAL_CONCURRENCY:-4}"
 CONFIG=promptfooconfig.yaml
 mkdir -p output
+
+BURN_IN=false
+if [ "${1:-}" = --burn-in ]; then
+  BURN_IN=true
+  shift
+fi
 
 run_suite() {
   local out="$1"; shift
   # promptfoo exits non-zero when tests fail; we want to read the results file
   # and decide ourselves, so swallow the status here.
   npx --no-install promptfoo eval -c "$CONFIG" -o "$out" \
-    --no-share --max-concurrency 4 "$@" || true
+    --no-share --max-concurrency "$CONCURRENCY" "$@" || true
   if [ ! -s "$out" ]; then
     echo "::error::promptfoo wrote no results to $out (it failed to start)"
     exit 1
@@ -102,6 +126,58 @@ report() {
   done < <(failing_rows "$file")
 }
 
+# "<passes><TAB><runs><TAB><description><TAB><last failure reason>" per retried test.
+retry_rates() {
+  jq -r '
+    [.results.results[]
+     | { d: (.testCase.description // "(no description)"), ok: .success,
+         why: ( [ (.gradingResult.componentResults // [])[] | select(.pass == false) | .reason ]
+                | if length > 0 then join(" / ") else "" end ) }]
+    | group_by(.d)[]
+    | [ (map(select(.ok)) | length), length, .[0].d,
+        ((map(select(.ok | not)) | last | .why) // "" | gsub("[\r\n\t]+"; " ")) ]
+    | @tsv' "$1"
+}
+
+if [ "$BURN_IN" = true ]; then
+  run_suite output/burn-in.json "$@" --no-cache --repeat "$BURN_IN_RUNS"
+  {
+    echo "## Skill evals: burn-in ($BURN_IN_RUNS runs each, $BURN_IN_REQUIRED must pass)"
+    echo ""
+    echo "| Passed | Test |"
+    echo "|---|---|"
+  } >> "$SUMMARY"
+  COUNT=0
+  SHORT=()
+  while IFS=$'\t' read -r passes runs desc why; do
+    [ -n "$desc" ] || continue
+    COUNT=$((COUNT + 1))
+    echo "| $passes/$runs | $desc |" >> "$SUMMARY"
+    if [ "$passes" -lt "$BURN_IN_REQUIRED" ]; then
+      SHORT+=("$desc ($passes/$runs) — ${why:0:400}")
+    fi
+  done < <(retry_rates output/burn-in.json)
+  if [ "$COUNT" -eq 0 ]; then
+    echo "::error::Burn-in matched no tests — check the --filter-pattern"
+    exit 1
+  fi
+  if [ "${#SHORT[@]}" -eq 0 ]; then
+    echo "Burn-in passed: $COUNT test(s), each at least $BURN_IN_REQUIRED/$BURN_IN_RUNS."
+    exit 0
+  fi
+  for t in "${SHORT[@]}"; do
+    echo "::error::Short of margin: $t"
+  done
+  {
+    echo ""
+    echo "**${#SHORT[@]} test(s) passed fewer than $BURN_IN_REQUIRED of $BURN_IN_RUNS.** The scenario sits on a"
+    echo "decision boundary and will fail the merge queue at random. Fix the scenario or the skill"
+    echo "(CLAUDE.md, *Writing evals that do not flake*); re-running only re-rolls it."
+  } >> "$SUMMARY"
+  echo "::error::Burn-in failed: ${#SHORT[@]} test(s) passed fewer than $BURN_IN_REQUIRED of $BURN_IN_RUNS runs"
+  exit 1
+fi
+
 run_suite output/results.json "$@"
 
 PASSES=$(stat_of successes output/results.json)
@@ -134,19 +210,6 @@ echo ""
 echo "Re-running each of those $((FAILS + ERRORS)) test(s) $RETRIES times to measure its pass rate..."
 run_suite output/retry.json "$@" --filter-failing output/results.json --no-cache --repeat "$RETRIES"
 
-# "<passes><TAB><runs><TAB><description><TAB><last failure reason>" per retried test.
-retry_rates() {
-  jq -r '
-    [.results.results[]
-     | { d: (.testCase.description // "(no description)"), ok: .success,
-         why: ( [ (.gradingResult.componentResults // [])[] | select(.pass == false) | .reason ]
-                | if length > 0 then join(" / ") else "" end ) }]
-    | group_by(.d)[]
-    | [ (map(select(.ok)) | length), length, .[0].d,
-        ((map(select(.ok | not)) | last | .why) // "" | gsub("[\r\n\t]+"; " ")) ]
-    | @tsv' output/retry.json
-}
-
 UNSTABLE=()
 BROKEN=()
 while IFS=$'\t' read -r passes runs desc why; do
@@ -156,7 +219,7 @@ while IFS=$'\t' read -r passes runs desc why; do
   else
     BROKEN+=("$desc ($passes/$runs on retry) — ${why:0:400}")
   fi
-done < <(retry_rates)
+done < <(retry_rates output/retry.json)
 
 if [ "${#UNSTABLE[@]}" -gt 0 ]; then
   {

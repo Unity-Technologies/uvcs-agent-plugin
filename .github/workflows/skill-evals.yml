@@ -31,6 +31,14 @@ name: Skill evals
 # every test is one independent prompt built from its own files, so the others can only
 # re-roll their noise. A change no test loads (a README fix) runs none and passes.
 #
+# Those reached tests are BURNED IN: 8 runs each, 7 must pass (run-evals.sh --burn-in),
+# because the change can move them and one sample cannot tell a 95% test from a 60% one.
+# A change that reaches every test (the config, the runner, this workflow) runs the suite
+# once with retries instead, and burns in only the tests it adds or edits. Either way a
+# scenario without margin fails the pull request that wrote it, not a later stranger's
+# queue run. Measured in CI on purpose: a local run signs in through Claude Code, whose
+# system prompt CI does not have, and it has passed 8/8 a test that CI passed 2/4.
+#
 # Auth has two interchangeable paths, selected by the ANTHROPIC_AUTH repository
 # variable — both end at the same place (credentials in the environment promptfoo
 # reads), so nothing else in the job or in evals/ knows which one ran:
@@ -54,8 +62,15 @@ on:
   pull_request:
   merge_group:
   # Manual runs — handy to verify the auth setup without opening a PR, and the way a
-  # contributor can run the suite in their own fork with their own key.
+  # contributor can run the suite in their own fork with their own key. With `burn_in`,
+  # the way to measure a scenario where it counts, on any branch, HEAD and yours alike:
+  #   gh workflow run skill-evals.yml --ref <branch> -f burn_in='^(?:<description>)$'
   workflow_dispatch:
+    inputs:
+      burn_in:
+        description: "Burn in only the tests whose description matches this regex (8 runs each). Empty: the whole suite."
+        required: false
+        default: ""
   # The whole suite once a week: pull requests run only the tests they reach, so this is
   # what notices a drift no file change caused (the hosted model or the judge changing).
   schedule:
@@ -129,15 +144,24 @@ jobs:
       # both names; -z and quotePath=false keep any file name exactly as written. The diff
       # is captured before it is split so a failing git fails the step (set -e does not see
       # a process substitution), and an empty list selects everything: it fails closed.
+      #
+      # Outputs: `tests` (all | none | regex) is what the change reaches; `burn_in` (none |
+      # regex) is what runs 8 times. A regex selection is burned in whole; with `all`, the
+      # suite runs once and only the added or edited tests are burned in.
       - name: Select the evals this change can reach
         id: select
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          MEASURE: ${{ github.event.inputs.burn_in }}
         run: |
           set -euo pipefail
-          node --test evals/reachable-tests.test.cjs
+          node --test evals/reachable-tests.test.cjs evals/suite-rules.test.cjs
+          if [ -n "${MEASURE:-}" ]; then
+            printf 'tests=none\nburn_in=%s\n' "$MEASURE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "$BASE" ]; then
-            echo "tests=all" >> "$GITHUB_OUTPUT"
+            printf 'tests=all\nburn_in=none\n' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git fetch --no-tags --depth=1 origin "$BASE"
@@ -145,13 +169,23 @@ jobs:
           mapfile -d '' -t CHANGED < "$RUNNER_TEMP/changed"
           printf 'Changed: %s\n' "${CHANGED[@]}"
           TESTS=$(node evals/reachable-tests.cjs "${CHANGED[@]}")
-          echo "Selected: $TESTS"
+          if [ "$TESTS" = all ]; then
+            BURN_IN=$(node evals/reachable-tests.cjs --edited-since "$BASE")
+          else
+            BURN_IN=$TESTS
+            TESTS=none
+          fi
+          echo "Whole suite: $TESTS"
+          echo "Burn-in: $BURN_IN"
           {
             echo "tests<<__TESTS__"
             echo "$TESTS"
             echo "__TESTS__"
+            echo "burn_in<<__TESTS__"
+            echo "$BURN_IN"
+            echo "__TESTS__"
           } >> "$GITHUB_OUTPUT"
-          if [ "$TESTS" = none ]; then
+          if [ "$TESTS" = none ] && [ "$BURN_IN" = none ]; then
             echo "No eval loads a file this change touches; none ran." >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -162,7 +196,7 @@ jobs:
       # cache, so that would fire on exactly the dependency PRs worth worrying about.
 
       - name: Use the ANTHROPIC_API_KEY secret
-        if: env.ANTHROPIC_AUTH == 'api-key' && steps.select.outputs.tests != 'none'
+        if: env.ANTHROPIC_AUTH == 'api-key' && (steps.select.outputs.tests != 'none' || steps.select.outputs.burn_in != 'none')
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -176,7 +210,7 @@ jobs:
           echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$GITHUB_ENV"
 
       - name: Exchange GitHub OIDC token for an Anthropic access token
-        if: env.ANTHROPIC_AUTH == 'wif' && steps.select.outputs.tests != 'none'
+        if: env.ANTHROPIC_AUTH == 'wif' && (steps.select.outputs.tests != 'none' || steps.select.outputs.burn_in != 'none')
         env:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
@@ -217,20 +251,27 @@ jobs:
           echo "ANTHROPIC_API_KEY=wif-placeholder-real-auth-is-bearer-header" >> "$GITHUB_ENV"
 
       - name: Run promptfoo evals
-        if: steps.select.outputs.tests != 'none'
+        if: steps.select.outputs.tests != 'none' || steps.select.outputs.burn_in != 'none'
         working-directory: evals
         env:
           PROMPTFOO_DISABLE_TELEMETRY: "1"
           PROMPTFOO_DISABLE_UPDATE: "1"
           TESTS: ${{ steps.select.outputs.tests }}
-        # Names every failing test and retries each 4 times; the job goes red only
-        # on a test that passes fewer than 3. Same script locally: evals/run-evals.sh.
+          BURN_IN: ${{ steps.select.outputs.burn_in }}
+          # The burn-in is 8 calls a test; it runs twice as wide as the single pass.
+          EVAL_CONCURRENCY: "8"
+        # The whole suite: every failing test is named and retried 4 times, red below 3.
+        # The burn-in: 8 runs a test, red below 7. Both report even if the first fails.
+        # Same script locally: evals/run-evals.sh [--burn-in].
         run: |
+          status=0
           if [ "$TESTS" = all ]; then
-            ./run-evals.sh
-          else
-            ./run-evals.sh --filter-pattern "$TESTS"
+            EVAL_CONCURRENCY=4 ./run-evals.sh || status=1
           fi
+          if [ "$BURN_IN" != none ]; then
+            ./run-evals.sh --burn-in --filter-pattern "$BURN_IN" || status=1
+          fi
+          exit $status
 
       # The full results, for anyone who needs the actual model output behind a
       # failure rather than the assertion reason the summary prints.

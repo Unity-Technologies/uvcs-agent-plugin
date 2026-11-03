@@ -310,6 +310,7 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    it more: a changed test file runs every test in it, and anything under `evals/` but the test
    files and docs (the runner, the assertions, the install, the selection itself) runs the whole
    suite. A weekly scheduled run takes the whole suite too, to catch drift no file change causes.
+   The reached tests are burned in, not run once — see *Measure, both sides, in CI* below.
 
    Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
    flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
@@ -393,12 +394,18 @@ rules below each come from a test that flaked for exactly that reason:
   prose command — seen twice (the switch preview, the unattended wrap-up). The converse holds
   too: a command quoted in a "stop and ask the user" step reads as one to run — "ask the user to
   shelve them (`cm shelveset create --all …`)" got shelved by the model itself.
-- **Measure, both sides, before committing.** Run every test that loads the edited file with
-  `--repeat 4 --no-cache`, and compare with the same run on `HEAD`. Anything below 4/4 gets
-  `--repeat 8` on both sides: 7/8 or better is margin, and a test that got worse than `HEAD` means
-  the edit moved it — revert that edit rather than adjusting the test to fit. Four samples cannot
-  tell 90% from 100%, so never conclude from one 3/4; either way the fix is the scenario or the
-  skill wording, never a re-run.
+- **Measure, both sides, in CI.** The pull request does it for you: every test the change
+  reaches — and every test it adds or edits, even on a whole-suite run — is **burned in**, 8 runs
+  that must pass 7 (`run-evals.sh --burn-in`). A test below that fails the PR that wrote or moved
+  it, instead of failing a stranger's queue run later. To compare with `HEAD`, run the same
+  burn-in there: `gh workflow run skill-evals.yml --ref <branch> -f burn_in='^(?:<description>)$'`.
+  A test worse than `HEAD` means the edit moved it — revert that edit rather than adjusting the
+  test to fit. **Do not trust a local measurement**: promptfoo signs in through Claude Code
+  locally and inherits a system prompt CI does not have; it scored 8/8 a test CI scored 2/4.
+  Either way the fix is the scenario or the skill wording, never a re-run.
+- **The mechanical rules are linted** (`evals/suite-rules.test.cjs`, no API calls, first thing
+  in CI): unique one-line descriptions, a command forbidden with `notRun` and not `not-icontains`,
+  a compiling `pattern` on every command check, no rubric that requires an explanation of why.
 
 ## Cutting a release
 
