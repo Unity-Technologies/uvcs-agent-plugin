@@ -79,7 +79,14 @@ in one command. It takes any `promptfoo eval` flag:
 ```bash
 ./run-evals.sh                                        # whole suite
 ./run-evals.sh --filter-pattern "An approved report"  # one test, same reporting
+./run-evals.sh --burn-in --filter-pattern "…"         # 8 runs each, 7 must pass
+node reachable-tests.cjs --edited-since origin/main   # what CI burns in for your edits
 ```
+
+`--burn-in` is the gate for a test a change can move: it is what CI runs on the reached tests,
+and on every added or edited test (`EVAL_BURN_IN_RUNS` / `EVAL_BURN_IN_PASSES`). Locally it is a
+smoke check only — the local sign-in adds a system prompt CI does not have, so measure margin in
+CI: `gh workflow run skill-evals.yml --ref <branch> -f burn_in='^(?:<description>)$'`.
 
 Exit status is 1 when a test that failed passes fewer than 3 of its 4 retries, 0 otherwise
 (`EVAL_RETRIES` / `EVAL_RETRY_PASSES` change the numbers; the trade-off is tabulated at the top of
@@ -94,7 +101,10 @@ the change can reach (`reachable-tests.cjs`, by the table in `CLAUDE.md`, "Workf
 here", step 3): a test whose prompt carries no changed file can only re-roll its own noise. A
 change no test loads, such as a README fix or a doc in `evals/`, runs none and passes; a changed
 test file runs the tests in it; a change to the config, the runner, an assertion, the install or
-the workflow runs everything. A weekly scheduled run takes the whole suite, to catch drift no
+the workflow runs everything. Reached tests are **burned in** (8 runs, 7 must pass) rather than
+run once; a whole-suite run takes one pass with retries and burns in only the tests the change
+adds or edits. `suite-rules.test.cjs` lints the mechanical anti-flake rules before any API call.
+A weekly scheduled run takes the whole suite, to catch drift no
 file change causes (the hosted model or the judge changing). The step summary
 lists the tests that failed and why, unstable tests are raised as PR warning annotations, and
 the full `results.json` / `retry.json` are attached to the run as the `eval-results` artifact for

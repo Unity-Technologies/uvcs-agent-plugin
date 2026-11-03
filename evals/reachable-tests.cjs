@@ -7,6 +7,7 @@
 // README-only pull requests from the merge queue.
 //
 //   node reachable-tests.cjs <changed path>...     (paths relative to the repository root)
+//   node reachable-tests.cjs --edited-since <rev>  tests added or edited since <rev>
 //
 // Prints one line:
 //   all        a change to what every prompt carries (the config, the runner, an assertion,
@@ -15,10 +16,15 @@
 //   none       nothing any test loads changed: run nothing, and pass
 //   <regex>    a `--filter-pattern` matching exactly the reachable tests' descriptions
 //
+// --edited-since prints `none` or the regex of the tests whose definition is new or differs
+// from <rev>'s. CI burns those in (run-evals.sh --burn-in) even on a whole-suite run, so a
+// scenario without margin is caught on the pull request that writes it, not in the queue.
+//
 'use strict';
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 // Declared in evals/package.json; the same version promptfoo uses, so it adds no install.
 const yaml = require('js-yaml');
 
@@ -41,15 +47,31 @@ function filesNamedIn(value) {
   );
 }
 
-function loadSuite() {
+const readWorkingTree = (repoPath) => fs.readFileSync(path.join(REPO_DIR, repoPath), 'utf8');
+
+// A file as it was at <rev>; a file that did not exist then has no tests.
+const readAt = (rev) => (repoPath) => {
+  try {
+    return execFileSync('git', ['show', `${rev}:${repoPath}`], {
+      cwd: REPO_DIR, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 << 20,
+    });
+  } catch {
+    return '';
+  }
+};
+
+// The test files are the working tree's list either way: a test file new since <rev> reads
+// as empty there, so every test in it counts as added.
+function loadSuite(read = readWorkingTree) {
   const config = yaml.load(fs.readFileSync(CONFIG, 'utf8'));
   const defaultTest = config.defaultTest ?? {};
   return config.tests.flatMap((entry) => {
     const testFile = toRepoPath(path.resolve(EVALS_DIR, entry.replace(/^file:\/\//, '')));
-    const tests = yaml.load(fs.readFileSync(path.join(REPO_DIR, testFile), 'utf8')) ?? [];
+    const tests = yaml.load(read(testFile)) ?? [];
     return tests.map((test) => ({
       description: test.description,
       testFile,
+      definition: JSON.stringify(test),
       // A var the test leaves out is the default's, so the hub SKILL.md reaches every test
       // that does not load another skill. The whole test is scanned, not only vars and
       // assert: a file named anywhere in it (a transform, a provider) is one it loads.
@@ -80,13 +102,29 @@ function reachableTests(changedPaths, suite) {
   const reached = suite.filter(
     (test) => changed.has(test.testFile) || [...test.loads].some((file) => changed.has(file)),
   );
-  if (reached.length === 0) return 'none';
-  const descriptions = [...new Set(reached.map((test) => escapeRegExp(test.description)))];
+  return patternFor(reached);
+}
+
+function patternFor(tests) {
+  if (tests.length === 0) return 'none';
+  const descriptions = [...new Set(tests.map((test) => escapeRegExp(test.description)))];
   return `^(?:${descriptions.join('|')})$`;
 }
 
-module.exports = { reachableTests, loadSuite };
+// Tests whose definition is new or changed. Matched by description, so a renamed test is new.
+function editedTests(baseSuite, headSuite) {
+  const before = new Map(baseSuite.map((test) => [test.description, test.definition]));
+  return patternFor(headSuite.filter((test) => before.get(test.description) !== test.definition));
+}
+
+module.exports = { reachableTests, editedTests, loadSuite };
 
 if (require.main === module) {
-  console.log(reachableTests(process.argv.slice(2), loadSuite()));
+  const args = process.argv.slice(2);
+  if (args[0] === '--edited-since') {
+    if (!args[1]) throw new Error('--edited-since needs a revision');
+    console.log(editedTests(loadSuite(readAt(args[1])), loadSuite()));
+  } else {
+    console.log(reachableTests(args, loadSuite()));
+  }
 }
