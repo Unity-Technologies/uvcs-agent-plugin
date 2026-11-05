@@ -90,7 +90,8 @@ something is sensitive, ask.
 
 Filing publishes. Fill `assets/issue-template.md` (the bug body, or the enhancement body after
 the rule), show the user the **complete** text — title, label and body, not a summary — and wait
-for a yes. Then, in order:
+for a yes. A yes to text the user has read is the approval: file it then, without asking
+again. In order:
 
 ```
 gh auth status
