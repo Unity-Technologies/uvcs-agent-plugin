@@ -443,7 +443,6 @@
       Changed   2.31 KB    5 minutes ago    Assets/Scripts/PlayerJump.cs
 
       `cm find mergerequest "where target='br:/main/task042'" --nototal` printed nothing.
-      Give me every command, in order, through to the merge request.
   assert:
     - type: llm-rubric
       value: >-
