@@ -189,9 +189,9 @@ Show what happened to every item — applied, discarded, answered, skipped — w
 shelve it produced and the review, each a markdown link on its own `cs:<id>` / `sh:<id>` name
 (`uvcs-core/references/deep-links.md`). What comes next depends on the mode:
 
-- **Unattended** — nothing is in yet, so **do not re-request, nor print its command as a later
-  step.** Hand the user the commands that land each shelve — its comment is the check-in
-  comment, so the `[apply-change:]` tag fires — and tell them to ask you for it once they land:
+- **Unattended** — nothing is in yet, so **do not re-request.** Hand the user the commands that
+  land each shelve — its comment is the check-in comment, so the `[apply-change:]` tag fires —
+  and tell them to ask you to re-request once those land; leave the re-request command out:
 
   ```
   cm shelveset apply sh:101 --preview
