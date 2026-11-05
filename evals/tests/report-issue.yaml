@@ -73,11 +73,28 @@
   vars:
     skill_content: file://../skills/uvcs-report-issue/SKILL.md
     user_message: |
-      Your last message showed me the complete text of the report for the rejected --order-by
-      flag — title, label and body, exactly what is saved at /tmp/uvcs-issue.md. I read all of it,
-      and yes: file it as written. The title is "[uvcs-core] find-queries.md gives cm find an
-      --order-by flag cm rejects", the label is bug, and I do not want to be asked again. List
-      every command from here to the issue URL.
+      This is the complete report you drafted, saved at /tmp/uvcs-issue.md. I read all of it:
+
+      Title: [uvcs-core] find-queries.md gives cm find an --order-by flag cm rejects
+      Label: bug
+
+      ### Which skill
+
+      `uvcs-core` — `skills/uvcs-core/references/find-queries.md`
+
+      ### What the agent did
+
+      ```
+      cm find shelve "where owner='me'" --format="{shelveid} {comment}" --nototal --order-by=date
+      Unexpected option --order-by
+      ```
+
+      ### What should have happened
+
+      `cm help find` lists no --order-by flag, so the recipe should not use one.
+
+      Yes: file it as written, and do not ask me again. List every command from here to the
+      issue URL.
   assert:
     - type: icontains
       value: "gh issue create"

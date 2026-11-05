@@ -55,6 +55,8 @@ cm mergerequest delete <id> [<id> ...]        # irreversible
 ```
 
 - `--destination` is required on create. Prints the new id (`--format` tokens: `{id}`, `{guid}`).
+  Unless the user names one, use the **top-level branch** — the first segment of the source path
+  (`br:/main` for `br:/main/task001/task002`), the GUI's default — never the immediate parent.
 - **MR status** (`--mergerequeststatus`): `Draft`, `Open` (default), `Closed`, `Merged`. `None` is
   rejected.
 - A new MR always starts `Under review`. `create` and `edit` take **no** review status
@@ -62,6 +64,10 @@ cm mergerequest delete <id> [<id> ...]        # irreversible
 - `--mergechangeset=cs:<id>` is only valid together with `--mergerequeststatus=Merged`, and links
   the MR to its merge changeset in the timeline. The server sets `Merged` by itself when the
   source branch lands in the destination; do not set it by hand otherwise.
+- That automatic `Merged` fires **only at the merge check-in**, and only for an `Open` MR whose
+  destination is the branch merged into. An MR retargeted after the merge stays `Open`:
+  set it by hand with the merge changeset (`cm find merge "where srcbranch='br:<source>'"
+  --format="{dstchangeset} {dstbranch}" --nototal`).
 - Withdraw an MR with `--mergerequeststatus=Closed`. `delete` destroys the object and its whole
   comment thread.
 - `--repository` targets a server other than the workspace's (e.g. an xlinked sub-repo).

@@ -38,13 +38,19 @@ and do only this.
 cm status --header      # the branch@repo@server to propose, and whether anything is still pending
 ```
 
-Pending changes are not in the MR: say so and let the user check them in first. Then look for an
+**Pending changes are not in the MR — if `cm status` lists any, stop here.** Say so, and ask the
+user to check them in; create nothing until they have. With nothing pending, look for an
 existing MR (step 5's `cm find mergerequest`), and if there is none, confirm the title, the
 destination and the reviewers, and create it with the reviewers on it:
 
 ```
-cm mergerequest create br:/main/task001 "<title>" --destination=br:/main --users=<user>
+cm mergerequest create br:/main/task001/task002 "<title>" --destination=br:/main --users=<user>
 ```
+
+**Destination: the branch the user names, else the top-level branch** — the first segment of
+the source path (`/main` for `/main/task001/task002`), the GUI's default. Never the immediate
+parent: a nested branch usually lands in `/main` itself, and the server marks the MR `Merged`
+only when the merge goes into its destination.
 
 Add `--mergerequeststatus=Draft` when the user says the work is not ready yet. Report the MR
 link; reviewing it is the reviewer's run of this skill, from step 1.
