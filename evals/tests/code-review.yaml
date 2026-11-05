@@ -27,6 +27,22 @@
         list of changed file names. Naming the commands is enough: nothing has to be executed,
         and holding the comments back until the user picks which findings to publish is correct.
 
+- description: "A nested branch's MR targets the top-level branch, not its parent"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      I'm on /main/task001/task002 and I'm done. Open a merge request for it and assign
+      <user>. Just give me the cm command to run.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest) (create|mk) .*--destination="?(br:)?/main"?(\s|$)' }
+    - type: llm-rubric
+      value: >-
+        The merge request must target the top-level branch /main, not the parent /main/task001.
+        Asking to confirm the title, destination or reviewers before creating it is fine.
+
 - description: "A single changeset gets a plain code review, not a merge request"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
