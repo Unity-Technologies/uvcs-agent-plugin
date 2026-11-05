@@ -15,11 +15,22 @@
 
 const FENCE = /```[^\n]*\n([\s\S]*?)```/g;
 
+// Unescaped double quotes; an odd count leaves a quoted argument open at the end of the line.
+const openQuote = (s) => (s.replace(/\\./g, '').match(/"/g) || []).length % 2 === 1;
+
 function commandLines(output) {
   const lines = [];
   for (const [, body] of String(output).matchAll(FENCE)) {
     // Join shell line continuations so a flag on the next line belongs to its command.
-    for (let line of body.replace(/\\\n\s*/g, ' ').split('\n')) {
+    const raw = body.replace(/\\\n\s*/g, ' ').split('\n');
+    for (let i = 0; i < raw.length; i++) {
+      let line = raw[i];
+      // `cm mr comment add 311 -c="[Q1] …<newline>…" --type=Question` is one command: keep the
+      // flags after a multi-line quoted argument on its line. Only for a cm/gh line, so an
+      // apostrophe-free stray quote in a heredoc body cannot swallow the commands after it.
+      if (/^\s*(?:\$\s+)?(?:cm|gh)\s/.test(line)) {
+        while (openQuote(line) && i + 1 < raw.length) line += ' ' + raw[++i];
+      }
       line = line
         .replace(/^\s*(?:\$|>|PS>)\s+/, '') // prompt markers
         .replace(/\s+#\s.*$/, '') // trailing shell comment
