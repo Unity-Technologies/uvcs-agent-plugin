@@ -337,13 +337,15 @@
       Interactive mode, review 311. Q1 is a question, guid b5f8e123-9999-aaaa-bbbb-ccccddddeeee, on
       /src/Player.cs line 104: "Shouldn't this dispose the stream?" It should — you already
       edited src/Player.cs to wrap the stream in a using block, showed me the diff and I said
-      "ok, check it in and answer". The check-in will be cs:4230. Give every command, in order.
+      "ok, check it in and answer". Nothing is checked in yet; the check-in you run will create
+      cs:4230. Give every command, in order, starting with the check-in.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:notRun
       config: { pattern: 'apply-change:b5f8e123' }
-    - type: icontains
-      value: "cm checkin"
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (checkin|ci)\b' }
     - type: icontains
       value: "comment reply"
     - type: llm-rubric

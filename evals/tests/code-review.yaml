@@ -342,17 +342,21 @@
       value: "--path=/src/PlayerController.cs"
     - type: icontains
       value: "--line=106"
+    # The approved sentences, carried over word for word. Checked here and not by the judge,
+    # which failed answers that kept them but dropped the bold on the "Fix" label; whether
+    # markdown survives is the next test's behavior.
+    - type: icontains
+      value: "The air-jump branch calls PlayOneShot, and PlayerJumped plays the same clip a frame later."
+    - type: icontains
+      value: "delete line 106; PlayerJumped already handles the audio."
     - type: llm-rubric
       value: >-
-        The comment written to the file must start with "[B1] Air jumps play the jump clip twice"
-        as its first line, then state what is wrong and the fix. Carrying the report's chat
-        structure into the comment is a failure: no "BLOCKERS" section heading, no "###" in front
-        of the title, and no line giving the location (`/src/PlayerController.cs` line 106) —
-        the fix's own "delete line 106" is fine. Saying that those are dropped is fine and not a
-        failure. Rewording or summarizing the finding is also a failure, since the user approved
-        this exact text: after the title, "The air-jump branch calls PlayOneShot, and
-        PlayerJumped plays the same clip a frame later." and "**Fix** — delete line 106;
-        PlayerJumped already handles the audio." Those carried over unchanged pass.
+        One behavior is judged: the report's chat structure stays out of the comment file. Its
+        first line must be "[B1] Air jumps play the jump clip twice", and the file must have no
+        "BLOCKERS" section heading, no "###" in front of the title, and no line giving the
+        location (`/src/PlayerController.cs` line 106); the fix's own "delete line 106" is fine,
+        and so is saying that those are dropped. How the "Fix" label is formatted (bold or not,
+        a dash or a colon) is not judged.
 
 - description: "A published comment keeps the report's markdown"
   vars:
