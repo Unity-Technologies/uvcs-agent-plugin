@@ -1,14 +1,11 @@
 name: Validate skills
 
 on:
-  # Unfiltered on both events, like Skill evals and for the same reason: a required
-  # check that a path filter excludes never reports, and the PR can then never be
-  # queued. These jobs cost runner minutes and no API credit, so the trade is easy.
-  # A required check must also be wired to merge_group or the queue waits for a
-  # status that never arrives. Needs no credentials, so unlike Skill evals there is
-  # nothing here to withhold from a fork.
+  # Unfiltered, like Skill evals and for the same reason: a required check that a
+  # path filter excludes never reports, and the PR can then never be merged. These
+  # jobs cost runner minutes and no API credit, so the trade is easy. Needs no
+  # credentials, so it also runs on PRs in the public mirror.
   pull_request:
-  merge_group:
 
 permissions:
   contents: read

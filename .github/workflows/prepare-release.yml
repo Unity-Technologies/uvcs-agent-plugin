@@ -2,11 +2,11 @@ name: Prepare release
 
 # One button starts a release: Actions ▸ Prepare release ▸ Run workflow, pick the bump (patch,
 # minor, major). The run bumps "version" in both manifests, pushes the bump to a release/v<version>
-# branch, opens the pull request "Release v<version>" and turns on auto-merge for it: it joins the
-# merge queue by itself once every requirement on main is met (checks, and an approval while one is
-# required). When it lands on main, release.yml tags it and opens the draft GitHub Release.
-# Auto-merge is per pull request: the repository setting "Allow auto-merge" only makes it available,
-# so no other PR queues itself.
+# branch, opens the pull request "Release v<version>" and turns on auto-merge for it: it merges
+# itself once its checks pass. When it lands on main, release.yml tags it, mirror.yml carries the
+# tag to the public repository, and the release is published there. Auto-merge is per pull
+# request: the repository setting "Allow auto-merge" only makes it available, so no other PR
+# merges itself.
 #
 # Why the bump goes through main and not only onto a tag: the marketplace entry's source is "./",
 # so Claude Code reads the version from main, and an install updates only when that version
@@ -110,7 +110,7 @@ jobs:
           url=$(gh pr create --base main --head "$branch" --title "Release v$VERSION" --body "$(cat <<EOF
           Bumps \`version\` from $CURRENT to $VERSION in \`plugin.json\` and \`.claude-plugin/plugin.json\`.
 
-          Auto-merge is on: this joins the merge queue by itself once main's requirements are met. When it lands on main, the Release workflow tags \`v$VERSION\` and opens a draft release with notes generated from the pull requests merged since the last tag. Review the draft on the Releases page and publish it.
+          Auto-merge is on: this merges itself once its checks pass. When it lands on main, the Release workflow tags \`v$VERSION\`, the mirror carries it to the public repository, and the release is published there with notes listing the pull requests merged since the last tag.
 
           Opened by the Prepare release workflow, run by @$GITHUB_ACTOR.
           EOF

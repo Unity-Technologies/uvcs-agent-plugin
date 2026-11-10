@@ -3,8 +3,8 @@
 // Which eval tests can a change reach? CI runs only those (CLAUDE.md, "Workflow for changes
 // here", step 3), because every test is one independent prompt built from its own `vars`: a
 // test whose prompt carries no changed file cannot pass or fail differently because of the
-// change. Re-rolling the other ~100 only samples their noise, and that noise used to eject
-// README-only pull requests from the merge queue.
+// change. Re-rolling the other ~100 only samples their noise, and that noise used to fail
+// README-only pull requests.
 //
 //   node reachable-tests.cjs <changed path>...     (paths relative to the repository root)
 //   node reachable-tests.cjs --edited-since <rev>  tests added or edited since <rev>
@@ -18,7 +18,7 @@
 //
 // --edited-since prints `none` or the regex of the tests whose definition is new or differs
 // from <rev>'s. CI burns those in (run-evals.sh --burn-in) even on a whole-suite run, so a
-// scenario without margin is caught on the pull request that writes it, not in the queue.
+// scenario without margin is caught on the pull request that writes it, not on a later one.
 //
 'use strict';
 

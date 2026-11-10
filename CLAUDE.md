@@ -73,6 +73,38 @@ Rules that bite:
   `hooks` first — goes in `.claude-plugin/plugin.json`, where it is legal. Nothing else may follow
   it out of `com.unity/`; the test is whether the client *forces* the path.
 
+## How work flows here (read before changing anything)
+
+Two repositories. **Work happens in the private development repository**; the public
+`Unity-Technologies/uvcs-agent-plugin` is a read-only mirror that receives `main` and the `v*`
+tags from `.github/workflows/mirror.yml`. Never push to, or open a PR against, the public
+repository to land a change: its `main` accepts only the mirror's deploy key. Issues live **only**
+on the public repository (the development one has them turned off).
+
+1. **Start from a public issue** when there is one: `gh issue view <n> -R
+   Unity-Technologies/uvcs-agent-plugin`. Discuss there; that is the public record.
+2. **Branch in the development repository** from an up-to-date `main`: `fix/<n>-<slug>` or
+   `feat/<slug>`. Never commit on `main` — it only accepts PRs.
+3. **Reference the issue by its full name in a commit message**:
+   `Fixes Unity-Technologies/uvcs-agent-plugin#<n>` on its own line in the body. A commit, not
+   only the PR body: the PR stays private, its commits are what the mirror publishes, and GitHub
+   closes the issue when such a commit reaches the public `main`, linking it there. Never bare
+   `#<n>` — in the development repository that number means one of its own PRs.
+4. **Open the PR in the development repository** (`gh pr create`), titled like a commit subject —
+   the title becomes the line in the release notes. CI runs `validate-complete` and `evals` (only
+   the tests the change reaches, burned in); both are required. No approval is required and there
+   is no merge queue. Only Admin and Maintain roles can merge; merge commits only, and the branch
+   is deleted on merge. Ask the user before merging unless they told you to.
+5. **The mirror does the rest**: after the merge, the public `main` updates within a minute and the
+   issue closes. Nothing is ever copied by hand.
+6. **A pull request from outside the team** arrives on the public repository. Review it there, then
+   bring it in: `git fetch public pull/<n>/head:contrib/<n> && git push origin contrib/<n>`, open
+   that branch as a PR here, and after the merge close the public PR with a link to the commit.
+
+Releases are one button; see *Cutting a release*. Everything written here — files, commit
+messages, branch names, PR titles — ends up public through the mirror, so the *Public
+repository* rule above applies to all of it.
+
 ## Writing skills
 
 ### Frontmatter
@@ -274,25 +306,24 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    the jobs that only run there) — never the development repository, so the mirrored files do
    not name it. Dependabot runs in the development repository only.
 
-   **Inside the development repository, the merge queue is still the gate.** GitHub withholds
-   Actions secrets and OIDC tokens from a run triggered by Dependabot (re-running it as a
-   maintainer does not lift that), so the eval job skips those PRs instead of going red on an
-   empty credential, and the queue verifies them: `merge_group` is in the workflow's `on:`, the
-   check is required, and a failure drops the PR from the queue. **No Dependabot secret is ever
-   needed**; a PR runs its evals **twice** (the queue run is the only one testing the rebase); a
-   required check must appear under `on: merge_group` or the queue waits forever for a status.
-   Measured on 2026-09-22 with a throwaway probe workflow, since the docs are silent: a
-   `merge_group` run **does** receive the repository's secrets; a job skipped by a job-level `if`
-   **does** satisfy a required check; and a merge-group run executes **the PR's copy** of the
-   workflow file. The auth steps run **after** `npm ci` — before it, the credential sits in the
-   environment of every install script in promptfoo's tree, on exactly the lockfile PRs that
-   miss the cache. Do not move them back.
+   **The PR run is the gate; there is no merge queue** (dropped 2026-11, once the repository was
+   private and only maintainers could merge). `evals` and `validate-complete` are required checks
+   on the PR, branches need not be up to date with `main` to merge, and the weekly scheduled run
+   catches an interaction two separately green PRs did not show. Dependabot PRs run the evals too:
+   GitHub gives a Dependabot-triggered run the **Dependabot** secrets, not the Actions ones, so
+   `ANTHROPIC_API_KEY` is stored in both. That is safe here because the development repository
+   only runs code a maintainer has merged or Dependabot proposed, and a malicious package version
+   would reach the key after merging anyway. Measured on 2026-09-22 and still true: a job skipped
+   by a job-level `if` **does** satisfy a required check, so a misconfigured `ANTHROPIC_AUTH`
+   variable turns the gate green without running anything. The auth steps run **after** `npm ci`
+   — before it, the credential sits in the environment of every install script in promptfoo's
+   tree, on exactly the lockfile PRs that miss the cache. Do not move them back.
 
    Neither workflow filters by `paths`, on either event. A filtered-out required check never
-   reports, so a PR touching neither `skills/` nor `evals/` could never be queued. Instead the
+   reports, so a PR touching neither `skills/` nor `evals/` could never be merged. Instead the
    eval job always runs and evaluates only the tests the change can reach, by the table in step 3
-   (`evals/reachable-tests.cjs`, against the PR's or the queue's base): a README fix runs none and
-   passes. Running the whole suite on every PR made the queue reject about two runs in five, on
+   (`evals/reachable-tests.cjs`, against the PR's base): a README fix runs none and
+   passes. Running the whole suite on every PR failed about two runs in five, on
    tests the change could not have touched.
 3. **Run only the evals the change can reach.** Every test is one independent API call whose
    prompt is built from its own `vars`, so what you edited bounds what can break. A full run costs
@@ -403,7 +434,7 @@ rules below each come from a test that flaked for exactly that reason:
 - **Measure, both sides, in CI.** The pull request does it for you: every test the change
   reaches — and every test it adds or edits, even on a whole-suite run — is **burned in**, 8 runs
   that must pass 7 (`run-evals.sh --burn-in`). A test below that fails the PR that wrote or moved
-  it, instead of failing a stranger's queue run later. To compare with `HEAD`, run the same
+  it, instead of failing a stranger's PR later. To compare with `HEAD`, run the same
   burn-in there: `gh workflow run skill-evals.yml --ref <branch> -f burn_in='^(?:<description>)$'`.
   A test worse than `HEAD` means the edit moved it — revert that edit rather than adjusting the
   test to fit. **Do not trust a local measurement**: promptfoo signs in through Claude Code
@@ -415,50 +446,42 @@ rules below each come from a test that flaked for exactly that reason:
 
 ## Cutting a release
 
-Two steps, both on GitHub:
+One button: *Actions ▸ Prepare release ▸ Run workflow* on `main` in the development repository,
+pick `patch`, `minor` or `major` (or `gh workflow run prepare-release.yml -f bump=patch`). The rest
+is automatic and takes a few minutes:
 
-1. **Bump the version in a pull request.** *Actions ▸ Prepare release ▸ Run workflow* on `main`,
-   pick `patch`, `minor` or `major`. `.github/workflows/prepare-release.yml` sets `version` in
-   **both** manifests (`plugin.json` and `.claude-plugin/plugin.json`) and nothing else, and opens
-   `Release v<version>` from a `release/v<version>` branch with auto-merge on, so it queues itself
-   once main's requirements are met: its checks, and an approval while review is required.
-   It opens the PR with the `RELEASE_TOKEN` secret: a maintainer's fine-grained personal access
-   token, this repository only, Contents and Pull requests read and write. The PR is authored as
-   that maintainer, so another one approves it. When the token has expired, renew it, or open the
-   same PR by hand:
+1. `.github/workflows/prepare-release.yml` sets `version` in **both** manifests (`plugin.json` and
+   `.claude-plugin/plugin.json`) and nothing else, and opens `Release v<version>` from a
+   `release/v<version>` branch with auto-merge on. Its checks reach no eval, so they pass in about
+   a minute and it merges itself.
+2. On the merge, `.github/workflows/release.yml` tags `v<version>`, and `mirror.yml` carries `main`
+   and the tag to the public repository.
+3. There the arriving tag starts the same workflow's `publish` job: it packages the plugin with
+   `git archive` (everything except the paths marked `export-ignore` in `.gitattributes`) and
+   **publishes** the release with the zip + `.sha256`, using only `GITHUB_TOKEN`. The notes list
+   the merge commits since the previous tag — each one's body is the PR title — because PRs merge
+   in the development repository and GitHub's generated notes would find none in the public one.
+   Edit them on the public Releases page afterwards if needed.
 
-   ```bash
-   v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
-     jq --arg v "$v" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"; done
-   ```
+*Run workflow* on `main` retries a failed `Release` run in either repository; with the tag or the
+release already there it does nothing.
 
-2. **The merge publishes a draft, in the public repository.** When the bump lands on `main`,
-   `.github/workflows/release.yml` tags `v<version>` on that commit, and `mirror.yml` carries
-   `main` and the tag to the public repository. There the arriving tag starts the same
-   workflow's `publish` job, which packages the plugin with `git archive` (everything except the
-   paths marked `export-ignore` in `.gitattributes`) and opens a **draft** release with the zip +
-   `.sha256` attached, using only `GITHUB_TOKEN`. Its notes list the merge commits since the
-   previous tag — each one's body is the PR title — because PRs merge in the development
-   repository and GitHub's generated notes would find none in the public one. Review the draft
-   on the public Releases page and click *Publish release*. *Run workflow* on `main` retries a
-   failed run in either repository; with the tag or the release already there it does nothing.
+The bump PR is opened with `RELEASE_TOKEN`, a maintainer's fine-grained personal access token
+(this repository only, Contents and Pull requests read and write). It cannot be `GITHUB_TOKEN`: a PR
+opened with it triggers no workflows, so the required checks never report and it never merges.
+When the token expires, renew it, or open the same PR by hand:
 
-Why the bump is a PR (settled, 2026-10): the workflow used to bump, commit and push to `main`
-itself, and the `main` rulesets — pull request required, merge queue — rejected the push
-(`GH013: Repository rule violations`), so no release could be cut. Opening the bump PR from the
-workflow does not work either: a PR created with `GITHUB_TOKEN` triggers no workflows, so the
-required `evals` / `validate-complete` checks never report and the PR can never be queued. A
-bypass for GitHub Actions on the ruleset would work but lets an unreviewed commit onto `main`.
-Tags are not covered by the branch rulesets, so tagging the commit the queue already merged needs
-no exception. The one-button bump (2026-10) keeps all of that: a personal token is what makes a
-workflow-opened PR run its checks, and the PR still meets every rule on `main` before auto-merge
-queues it. Auto-merge is per PR: the repository's "Allow auto-merge" setting only makes it
-available, and only this workflow turns it on. A GitHub App token would do the same without tying
-releases to one person's account, but creating an App in the org needs org-owner rights; switch to
-one if those become available. A tag-only bump
-(the bump commit lives only on its tag, `main` never changes) was rejected: the marketplace
-entry's `source` is `./`, so Claude Code reads the version from `main`, and an install updates
-only when that version changes.
+```bash
+v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
+  jq --arg v "$v" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"; done
+```
+
+Rejected, and why: letting the workflow push the bump to `main` itself (a GitHub Actions bypass on
+the ruleset) would let anyone with write access push anything to `main` from a branch workflow;
+a tag-only bump (the version lives only on the tag) never reaches anyone, because the marketplace
+entry's `source` is `./`, so Claude Code reads the version from `main` and updates only when it
+changes. A GitHub App token would replace the personal token without tying releases to one
+account; creating an App in the org needs org-owner rights.
 
 Consequences worth keeping in mind: the version lives in the two manifests and nowhere else. The
 marketplace entry deliberately carries **no** `version`, so a release only has to move two files;

@@ -4,22 +4,22 @@ name: Release
 #
 #   1. A pull request bumps "version" in both manifests — plugin.json (Agent
 #      Plugins 1.0) and .claude-plugin/plugin.json (Claude Code). Prepare release
-#      (prepare-release.yml) opens it from one button. It goes through review and
-#      the merge queue like any other change; validate-skills fails it if the two
+#      (prepare-release.yml) opens it from one button with auto-merge on, and it
+#      merges itself once its checks pass; validate-skills fails it if the two
 #      manifests disagree.
 #   2. When that bump lands on main in the development repository, the `tag` job
 #      tags v<version>, and mirror.yml carries main and the tag to the public
 #      repository.
 #   3. In the public repository, the arriving tag starts the `publish` job: it
 #      packages the plugin (everything except repo-only files, see .gitattributes)
-#      as a zip plus a SHA-256 checksum and opens a draft GitHub Release there.
+#      as a zip plus a SHA-256 checksum and publishes the GitHub Release there.
 #
-# You then review the draft on the public repository's Releases page and click
-# "Publish release". Releases live in the public repository because that is where
+# Nothing is left to click: the notes are generated, and can be edited on the
+# public Releases page afterwards. Releases live in the public repository because that is where
 # users download them; the development repository only tags.
 #
-# Why not bump from here: main only accepts changes through a pull request and
-# the merge queue, so a commit pushed by this workflow is rejected (GH013). A PR
+# Why not bump from here: main only accepts changes through a pull request, so
+# a commit pushed by this workflow is rejected (GH013). A PR
 # opened with GITHUB_TOKEN does not trigger the required checks either, so it
 # could never be queued. Tags are not covered by the branch rules, so tagging
 # the commit the queue already merged needs nothing special.
@@ -153,7 +153,7 @@ jobs:
           } > notes.md
           cat notes.md
 
-      - name: Create the draft release
+      - name: Publish the release
         if: steps.tag.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -162,7 +162,6 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "$TAG" \
-            --draft \
             --latest \
             --title "$TAG" \
             --notes-file notes.md \

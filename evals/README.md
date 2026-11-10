@@ -124,9 +124,8 @@ this job: nothing is merged there. In the development repository:
 
 | Trigger | Runs? | Why |
 |---|---|---|
-| `pull_request`, branch in the repository | yes, the reachable tests | Fast feedback before review. |
-| `pull_request` from **Dependabot** | **skipped** | GitHub issues neither Actions secrets nor OIDC tokens to it, so the job could only fail on an empty credential. Verified in the queue instead. |
-| `merge_group` | **always**, the reachable tests | The real gate. |
+| `pull_request`, branch in the repository | yes, the reachable tests, burned in | The gate: `evals` is a required check, and there is no merge queue. |
+| `pull_request` from **Dependabot** | yes, the same | Dependabot runs get the Dependabot secrets, so `ANTHROPIC_API_KEY` is stored there too. |
 | `workflow_dispatch` | yes, the whole suite | Manual, including in your own fork with your own key. |
 | `schedule` (weekly) | yes, the whole suite | Drift no pull request causes. |
 
@@ -138,8 +137,8 @@ git fetch public pull/<n>/head:contrib/<n>
 git push origin contrib/<n>
 ```
 
-From that point it is an ordinary in-repository PR: the evals run on it and again in the merge
-queue, and a failing eval takes it back out of the queue. After the merge, the mirror carries the
+From that point it is an ordinary in-repository PR: the evals run on it, and it cannot merge
+until they pass. After the merge, the mirror carries the
 commits to the public repository with the contributor still the author, and the maintainer closes
 the public PR with a link to them.
 
@@ -153,19 +152,9 @@ bringing outside code in only after that read — leaves nothing for an unreview
 code is the documented pwn-request pattern), and so was evaluating public PRs from the
 development repository automatically, which is the same exposure with an extra hop.
 
-Two consequences worth knowing:
-
-- **No Dependabot secret is needed**, and none should be added. The case that motivated the skip
-  (a Dependabot PR failing in 6s on an empty `ANTHROPIC_API_KEY`) is handled by skipping the PR
-  run and verifying in the queue.
-- **A PR runs its evals twice**, once on the PR and once in the queue. Kept on purpose: only the
-  queue run sees the change rebased on the current base, which is the entire point of a queue,
-  and skipping it would mean mapping a merge group back to a PR through the API — a lookup whose
-  failure mode is merging something unverified.
-
-This only gates anything if the `evals` job's check is **required** on the protected branch, and
-a required check must be listed under `on:` for `merge_group` (it is) or the queue waits for a
-status that never arrives.
+The PR run is the only run: once green, the PR merges without a queue and without the branch
+being brought up to date with `main`. The weekly scheduled run of the whole suite is what notices
+an interaction between two PRs that were each green on their own.
 
 ### Authentication
 
@@ -189,9 +178,10 @@ the variable) and delete the `ANTHROPIC_API_KEY` secret. No file in this repo ne
 
 #### `api-key` mode
 
-One secret, `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions → Secrets),
-exported into the job as-is. The key is workspace-scoped and used by CI only — rotate it in
-the Console and update the secret; nothing else refers to it. The job fails with an explicit
+One secret, `ANTHROPIC_API_KEY`, stored twice with the same value: under Settings → Secrets and
+variables → **Actions** for ordinary runs, and under **Dependabot** for Dependabot's PRs, which
+get only that store. Exported into the job as-is. The key is workspace-scoped and used by CI only — rotate it in
+the Console and update both copies; nothing else refers to it. The job fails with an explicit
 error if the mode is `api-key` and the secret is empty.
 
 #### `wif` mode
@@ -211,12 +201,11 @@ bearer header (`ANTHROPIC_CUSTOM_HEADERS`). One-time setup
    `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, and (if the rule spans
    multiple workspaces) `ANTHROPIC_WORKSPACE_ID`.
 
-In `wif` mode the job skips itself until those variables are set — on the `merge_group` run too,
-so a variable deleted by mistake turns the gate green without running it. Check the variables
+In `wif` mode the job skips itself until those variables are set, and a skipped job satisfies the
+required check, so a variable deleted by mistake turns the gate green without running it. Check the variables
 after touching them.
 
-Whichever mode is active, Dependabot PRs are skipped and verified in the merge queue instead,
-and the public mirror never runs the job (see *When it runs* above). Both auth steps deliberately run **after** `npm ci`: written
+Whichever mode is active, the public mirror never runs the job (see *When it runs* above). Both auth steps deliberately run **after** `npm ci`: written
 into the environment before the install, the credential would be visible to every install script
 in promptfoo's dependency tree, on exactly the lockfile-changing PRs that miss the cache.
 
