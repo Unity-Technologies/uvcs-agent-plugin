@@ -1,0 +1,64 @@
+name: Mirror to the public repository
+
+# Development happens in a private repository; the public one is a read-only mirror
+# of its main branch and release tags. Evals need an Anthropic credential, and any
+# workflow that evaluates a pull request runs that pull request's code next to it —
+# a contributor's eval file can read the key. Keeping every secret in a repository
+# that runs only reviewed code is the one arrangement with nothing to exfiltrate.
+#
+# This job pushes main and every v* tag to the public repository with a deploy key
+# (secret PUBLIC_MIRROR_KEY; the public key is a write deploy key there, and the
+# only actor the public main ruleset lets through). Fast-forward only: if the public
+# main ever diverges, the push fails loudly instead of overwriting it.
+#
+# Two triggers, because a tag pushed by release.yml uses GITHUB_TOKEN, and a push
+# made with GITHUB_TOKEN starts no other workflow: the push to main mirrors the
+# merge, and the end of a Release run mirrors the tag it created. Both push
+# everything, so either one catches up whatever the other missed.
+#
+# The guard names the public repository, not this one, so the mirrored copy of this
+# file says nothing about where it came from. In the public repository it skips.
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    if: github.repository != 'Unity-Technologies/uvcs-agent-plugin'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0 # the whole history and every tag
+          persist-credentials: false
+
+      - name: Push main and the release tags
+        env:
+          MIRROR_KEY: ${{ secrets.PUBLIC_MIRROR_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MIRROR_KEY" ]; then
+            echo "::error::PUBLIC_MIRROR_KEY is not set." && exit 1
+          fi
+
+          key="$RUNNER_TEMP/mirror_key"
+          ( umask 077; printf '%s\n' "$MIRROR_KEY" > "$key" )
+          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          git fetch --tags --force origin
+          git push git@github.com:Unity-Technologies/uvcs-agent-plugin.git \
+            refs/remotes/origin/main:refs/heads/main \
+            'refs/tags/v*:refs/tags/v*'

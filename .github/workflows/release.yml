@@ -1,18 +1,22 @@
 name: Release
 
-# Releases are cut from main, in two steps:
+# Releases are cut from main, in three steps:
 #
 #   1. A pull request bumps "version" in both manifests — plugin.json (Agent
 #      Plugins 1.0) and .claude-plugin/plugin.json (Claude Code). Prepare release
 #      (prepare-release.yml) opens it from one button. It goes through review and
 #      the merge queue like any other change; validate-skills fails it if the two
 #      manifests disagree.
-#   2. When that bump lands on main, this workflow tags v<version>, packages the
-#      plugin (everything except repo-only files, see .gitattributes) as a zip
-#      plus a SHA-256 checksum, and opens a draft GitHub Release with notes
-#      generated from the merged PRs since the previous tag.
+#   2. When that bump lands on main in the development repository, the `tag` job
+#      tags v<version>, and mirror.yml carries main and the tag to the public
+#      repository.
+#   3. In the public repository, the arriving tag starts the `publish` job: it
+#      packages the plugin (everything except repo-only files, see .gitattributes)
+#      as a zip plus a SHA-256 checksum and opens a draft GitHub Release there.
 #
-# You then review the draft on the Releases page and click "Publish release".
+# You then review the draft on the public repository's Releases page and click
+# "Publish release". Releases live in the public repository because that is where
+# users download them; the development repository only tags.
 #
 # Why not bump from here: main only accepts changes through a pull request and
 # the merge queue, so a commit pushed by this workflow is rejected (GH013). A PR
@@ -20,13 +24,21 @@ name: Release
 # could never be queued. Tags are not covered by the branch rules, so tagging
 # the commit the queue already merged needs nothing special.
 #
+# The notes are built from the merge commits between the previous tag and this
+# one, not by GitHub's --generate-notes: pull requests merge in the development
+# repository, so in the public one GitHub finds none to list. A merge commit's
+# body is the pull request title, which is what the notes have always shown.
+#
 # Run it by hand (Actions ▸ Release ▸ Run workflow, on main) to retry a failed
-# run. It is a no-op when the tag for the current version already exists.
+# run: in the development repository it tags the current version if the tag is
+# missing; in the public one it publishes the current version's tag if it has no
+# release yet. Both are no-ops otherwise.
 
 on:
   push:
     branches: [main]
     paths: [plugin.json, .claude-plugin/plugin.json]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -37,16 +49,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  tag:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.repository != 'Unity-Technologies/uvcs-agent-plugin' &&
+      github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # full history and tags, so generated notes can diff against the last tag
+          fetch-depth: 0 # every tag, to tell whether this version is already tagged
 
       - name: Read the version and tag it
-        id: tag
         run: |
           set -euo pipefail
 
@@ -58,8 +71,7 @@ jobs:
           tag="v$version"
 
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "::notice::$tag already exists — nothing to release. Bump the version in a pull request first."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag already exists — nothing to tag. Bump the version in a pull request first."
             exit 0
           fi
 
@@ -67,10 +79,38 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$tag" -m "Release $tag"
           git push origin "refs/tags/$tag"
+          echo "::notice::Tagged $tag; mirror.yml carries it to the public repository."
 
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+  publish:
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository == 'Unity-Technologies/uvcs-agent-plugin' &&
+      (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history and tags, to find the previous tag for the notes
+
+      - name: Pick the tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="v$(jq -r '.version' plugin.json)"
+          fi
+          git rev-parse -q --verify "refs/tags/$tag" >/dev/null \
+            || { echo "::error::$tag does not exist here yet. Has mirror.yml run?"; exit 1; }
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::notice::$tag already has a release — nothing to publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          { echo "skip=false"; echo "tag=$tag"; echo "version=${tag#v}"; } >> "$GITHUB_OUTPUT"
 
       # git archive ships exactly what is committed, minus the paths marked
       # export-ignore in .gitattributes (CI config, evals, agent guidance). The
@@ -89,7 +129,31 @@ jobs:
           sha256sum "$asset" > "$asset.sha256"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
 
-      - name: Create draft release with generated notes
+      - name: Write the notes
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          prev=$(git describe --tags --abbrev=0 --match 'v*' "$TAG^" 2>/dev/null || true)
+          range="${prev:+$prev..}$TAG"
+          {
+            echo "## What's changed"
+            echo
+            # First-parent merges are the merged pull requests; the first line of a
+            # merge commit's body is the pull request title. The version bump itself
+            # ("Release v1.2.0") is left out.
+            for c in $(git log --first-parent --merges --format=%H "$range"); do
+              git log -1 --format=%b "$c" | awk 'NF { print; exit }'
+            done | grep -v '^Release v[0-9]' | sed 's/^/- /' || true
+            if [ -n "$prev" ]; then
+              echo
+              echo "**Full changelog**: https://github.com/$GITHUB_REPOSITORY/compare/$prev...$TAG"
+            fi
+          } > notes.md
+          cat notes.md
+
+      - name: Create the draft release
         if: steps.tag.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,7 +163,7 @@ jobs:
           set -euo pipefail
           gh release create "$TAG" \
             --draft \
-            --generate-notes \
             --latest \
             --title "$TAG" \
+            --notes-file notes.md \
             "$ASSET" "$ASSET.sha256"
