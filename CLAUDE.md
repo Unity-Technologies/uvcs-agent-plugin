@@ -93,7 +93,7 @@ on the public repository (the development one has them turned off).
 4. **Open the PR in the development repository** (`gh pr create`), titled like a commit subject —
    the title becomes the line in the release notes. CI runs `validate-complete` and `evals` (only
    the tests the change reaches, burned in); both are required. No approval is required and there
-   is no merge queue. Only Admin and Maintain roles can merge; merge commits only, and the branch
+   is no merge queue. Only the maintainers' team can merge (a push restriction on `main`); merge commits only, and the branch
    is deleted on merge. Ask the user before merging unless they told you to.
 5. **The mirror does the rest**: after the merge, the public `main` updates within a minute and the
    issue closes. Nothing is ever copied by hand.
