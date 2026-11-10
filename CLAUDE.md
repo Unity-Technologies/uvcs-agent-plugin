@@ -93,7 +93,7 @@ on the public repository (the development one has them turned off).
 4. **Open the PR in the development repository** (`gh pr create`), titled like a commit subject —
    the title becomes the line in the release notes. CI runs `validate-complete` and `evals` (only
    the tests the change reaches, burned in); both are required. No approval is required and there
-   is no merge queue. Only the maintainers' team can merge (a push restriction on `main`); merge commits only, and the branch
+   is no merge queue. Only the maintainers' team can merge (only it has write access); merge commits only, and the branch
    is deleted on merge. Ask the user before merging unless they told you to.
 5. **The mirror does the rest**: after the merge, the public `main` updates within a minute and the
    issue closes. Nothing is ever copied by hand.
@@ -101,7 +101,7 @@ on the public repository (the development one has them turned off).
    bring it in: `git fetch public pull/<n>/head:contrib/<n> && git push origin contrib/<n>`, open
    that branch as a PR here, and after the merge close the public PR with a link to the commit.
 
-Releases are one button; see *Cutting a release*. Everything written here — files, commit
+Releases are one button and need no PR; see *Cutting a release*. Everything written here — files, commit
 messages, branch names, PR titles — ends up public through the mirror, so the *Public
 repository* rule above applies to all of it.
 
@@ -286,7 +286,7 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    repository; the public one receives `main` and the `v*` tags from
    `.github/workflows/mirror.yml` (a deploy key, fast-forward only, the only actor the public
    `main` ruleset lets through) and nothing is merged there. Every secret — the Anthropic
-   credential, `RELEASE_TOKEN`, `PUBLIC_MIRROR_KEY` — lives in the development repository only.
+   credential, `PUBLIC_MIRROR_KEY` and `RELEASE_DEPLOY_KEY` — lives in the development repository only.
    Reason: a workflow that evaluates a pull request runs that pull request's code, and here
    that code (`evals/`, and the workflow file itself, which a merge-group run takes from the
    PR) is exactly what a contribution changes, so the job's credential is readable by the
@@ -446,42 +446,43 @@ rules below each come from a test that flaked for exactly that reason:
 
 ## Cutting a release
 
-One button: *Actions ▸ Prepare release ▸ Run workflow* on `main` in the development repository,
-pick `patch`, `minor` or `major` (or `gh workflow run prepare-release.yml -f bump=patch`). The rest
-is automatic and takes a few minutes:
+One button, in the development repository: *Actions ▸ Release ▸ Run workflow* on `main`, pick
+`patch`, `minor` or `major` — or `gh workflow run release.yml -f bump=patch`. It takes about two
+minutes and nothing is left to click:
 
-1. `.github/workflows/prepare-release.yml` sets `version` in **both** manifests (`plugin.json` and
-   `.claude-plugin/plugin.json`) and nothing else, and opens `Release v<version>` from a
-   `release/v<version>` branch with auto-merge on. Its checks reach no eval, so they pass in about
-   a minute and it merges itself.
-2. On the merge, `.github/workflows/release.yml` tags `v<version>`, and `mirror.yml` carries `main`
-   and the tag to the public repository.
-3. There the arriving tag starts the same workflow's `publish` job: it packages the plugin with
-   `git archive` (everything except the paths marked `export-ignore` in `.gitattributes`) and
-   **publishes** the release with the zip + `.sha256`, using only `GITHUB_TOKEN`. The notes list
-   the merge commits since the previous tag — each one's body is the PR title — because PRs merge
-   in the development repository and GitHub's generated notes would find none in the public one.
-   Edit them on the public Releases page afterwards if needed.
+1. The `release` job (`.github/workflows/release.yml`) sets `version` in **both** manifests
+   (`plugin.json` and `.claude-plugin/plugin.json`), commits `Release v<version>` straight to
+   `main` and tags it, pushing both atomically with a deploy key (`RELEASE_DEPLOY_KEY`). Unlike
+   a `GITHUB_TOKEN` push, a deploy-key push starts other workflows, so `mirror.yml` then carries
+   `main` and the tag to the public repository.
+2. In the public repository the arriving tag starts the `publish` job: it packages the plugin
+   with `git archive` (everything except the paths marked `export-ignore` in `.gitattributes`)
+   and **publishes** the release with the zip + `.sha256`, using only `GITHUB_TOKEN`. The notes
+   list the merge commits since the previous tag — each one's body is the PR title — because PRs
+   merge in the development repository and GitHub's generated notes would find none in the
+   public one. Edit them on the public Releases page afterwards if needed.
 
-*Run workflow* on `main` retries a failed `Release` run in either repository; with the tag or the
-release already there it does nothing.
+The push is atomic, so a failed run left nothing behind: run it again. If the mirror run after
+it fails, re-run that (*Actions ▸ Mirror to the public repository ▸ Run workflow*). In the public repository, *Run workflow* on `Release` publishes the
+current version's tag if it has no release yet.
 
-The bump PR is opened with `RELEASE_TOKEN`, a maintainer's fine-grained personal access token
-(this repository only, Contents and Pull requests read and write). It cannot be `GITHUB_TOKEN`: a PR
-opened with it triggers no workflows, so the required checks never report and it never merges.
-When the token expires, renew it, or open the same PR by hand:
+The bump skips the pull request: **deploy keys are on the bypass list** of the `main` ruleset
+(GitHub Actions itself cannot be — the org rejects it as a bypass actor), and the release key is
+the development repository's only deploy key; keep it that way. The arrangement rests on one
+invariant: **nobody outside the maintainers' team has write access** to the development
+repository. It is also what limits merging to that team — there is no separate push
+restriction, because GitHub's would block the deploy key too. Anyone with write access can
+dispatch a workflow from their own branch, and a branch copy of `release.yml` could push
+anything to `main` with the key. If write access is ever granted more widely, take deploy keys
+off the bypass list, restrict pushes to the team, and go back to a bump pull request opened with
+a maintainer's token (the previous design: a `GITHUB_TOKEN`-opened PR triggers no checks, so it
+can never merge). It replaced that design
+(2026-11) because the PR added a wait, a personal token that expires, and a second workflow, to
+guard against a risk the access list had already removed.
 
-```bash
-v=1.1.0; for m in plugin.json .claude-plugin/plugin.json; do
-  jq --arg v "$v" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"; done
-```
-
-Rejected, and why: letting the workflow push the bump to `main` itself (a GitHub Actions bypass on
-the ruleset) would let anyone with write access push anything to `main` from a branch workflow;
-a tag-only bump (the version lives only on the tag) never reaches anyone, because the marketplace
-entry's `source` is `./`, so Claude Code reads the version from `main` and updates only when it
-changes. A GitHub App token would replace the personal token without tying releases to one
-account; creating an App in the org needs org-owner rights.
+Rejected: a tag-only bump (the version lives only on the tag). It never reaches anyone, because
+the marketplace entry's `source` is `./`, so Claude Code reads the version from `main` and
+updates only when it changes.
 
 Consequences worth keeping in mind: the version lives in the two manifests and nowhere else. The
 marketplace entry deliberately carries **no** `version`, so a release only has to move two files;

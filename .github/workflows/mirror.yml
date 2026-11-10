@@ -11,10 +11,10 @@ name: Mirror to the public repository
 # only actor the public main ruleset lets through). Fast-forward only: if the public
 # main ever diverges, the push fails loudly instead of overwriting it.
 #
-# Two triggers, because a tag pushed by release.yml uses GITHUB_TOKEN, and a push
-# made with GITHUB_TOKEN starts no other workflow: the push to main mirrors the
-# merge, and the end of a Release run mirrors the tag it created. Both push
-# everything, so either one catches up whatever the other missed.
+# It runs on every push to main: a merge, or a release (release.yml pushes the bump
+# and its tag with a deploy key, and unlike GITHUB_TOKEN that push starts this
+# workflow). Every run pushes all of main and every v* tag, so the next one catches
+# up anything a failed run left behind.
 #
 # The guard names the public repository, not this one, so the mirrored copy of this
 # file says nothing about where it came from. In the public repository it skips.
@@ -22,9 +22,6 @@ name: Mirror to the public repository
 on:
   push:
     branches: [main]
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
   workflow_dispatch:
 
 permissions:
