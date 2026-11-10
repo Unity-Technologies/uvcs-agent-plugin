@@ -58,7 +58,9 @@ jobs:
           ( umask 077; printf '%s\n' "$MIRROR_KEY" > "$key" )
           export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
-          git fetch --tags --force origin
+          # No fetch here: the checkout above already has every tag, and with
+          # persist-credentials off, origin (this private repository) has no
+          # credentials to fetch with.
           git push git@github.com:Unity-Technologies/uvcs-agent-plugin.git \
             refs/remotes/origin/main:refs/heads/main \
             'refs/tags/v*:refs/tags/v*'
