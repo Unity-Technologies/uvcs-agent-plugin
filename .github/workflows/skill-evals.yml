@@ -95,7 +95,13 @@ jobs:
     # variable rather than "is the key secret present"). Note this skips the merge_group
     # run too, so a misconfigured variable turns the gate green without running it —
     # check the variables after any change to them.
+    #
+    # Third clause: never in the public mirror (see mirror.yml). It holds no credential,
+    # and a public PR is not merged there — a maintainer brings it into the development
+    # repository, whose queue runs this job. The mirror would skip on the first clause
+    # anyway; naming it keeps a variable set there by mistake from turning the job on.
     if: >-
+      github.repository != 'Unity-Technologies/uvcs-agent-plugin' &&
       (vars.ANTHROPIC_AUTH == 'api-key' || vars.ANTHROPIC_FEDERATION_RULE_ID != '') &&
       (github.event_name != 'pull_request' ||
        (github.event.pull_request.head.repo.full_name == github.repository &&

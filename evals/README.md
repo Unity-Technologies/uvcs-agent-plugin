@@ -116,44 +116,56 @@ regression, and then "a test that fails twice fails the job", which assumed a te
 that answers one prompt the same way every time. Claude 5 models cannot be pinned, so the gate now
 samples: a failure is retried 4 times and must pass 3.
 
-### When it runs — and where a fork's PR gets verified
+### When it runs — and where an outside PR gets verified
+
+The suite runs only in the development repository. The public repository is a read-only mirror
+of its `main` and release tags (`.github/workflows/mirror.yml`), holds no credential, and skips
+this job: nothing is merged there. In the development repository:
 
 | Trigger | Runs? | Why |
 |---|---|---|
-| `pull_request`, branch in this repo | yes, the reachable tests | Fast feedback before review. |
-| `pull_request` from a **fork**, or from **Dependabot** | **skipped** | GitHub issues neither Actions secrets nor OIDC tokens to either, so the job could only fail on an empty credential. Skipping is neutral, not red, and costs no API credit. |
+| `pull_request`, branch in the repository | yes, the reachable tests | Fast feedback before review. |
+| `pull_request` from **Dependabot** | **skipped** | GitHub issues neither Actions secrets nor OIDC tokens to it, so the job could only fail on an empty credential. Verified in the queue instead. |
 | `merge_group` | **always**, the reachable tests | The real gate. |
 | `workflow_dispatch` | yes, the whole suite | Manual, including in your own fork with your own key. |
 | `schedule` (weekly) | yes, the whole suite | Drift no pull request causes. |
 
-The merge queue is what closes the gap. A maintainer with write access queues the PR; GitHub
-creates a `gh-readonly-queue/<base>/…` branch **in this repository** with the change rebased on
-the current base, and the workflow runs there under the `merge_group` event — in-repo, so the
-credentials are issued normally. A failing eval takes the PR back out of the queue instead of
-merging it. So a contributor with no Anthropic account still gets the full suite run against
-their change, paid for by this repo, and nothing merges unverified.
+An outside contribution is opened on the public repository and reviewed there. Once approved, a
+maintainer fetches it into the development repository and opens it there as a branch of its own:
+
+```bash
+git fetch public pull/<n>/head:contrib/<n>
+git push origin contrib/<n>
+```
+
+From that point it is an ordinary in-repository PR: the evals run on it and again in the merge
+queue, and a failing eval takes it back out of the queue. After the merge, the mirror carries the
+commits to the public repository with the contributor still the author, and the maintainer closes
+the public PR with a link to them.
+
+Why it is shaped this way: a workflow that evaluates a pull request runs that pull request's
+code, and here that code — `evals/` and the workflow itself — is exactly what a contribution
+changes, so whatever credential the job holds is readable by the change under test. There is no
+sandbox to put around a suite whose executable surface is the thing under review. Keeping the
+credential in a repository that only ever runs commits a maintainer has already read — and
+bringing outside code in only after that read — leaves nothing for an unreviewed change to reach.
+`pull_request_target` was rejected for the same reason (secrets plus a checkout of contributor
+code is the documented pwn-request pattern), and so was evaluating public PRs from the
+development repository automatically, which is the same exposure with an extra hop.
 
 Two consequences worth knowing:
 
-- **No Dependabot secret is needed**, and none should be added. The case that motivated all of
-  this (a Dependabot PR failing in 6s on an empty `ANTHROPIC_API_KEY`) is handled by skipping the
-  PR run and verifying in the queue.
-- **A maintainer's own PR runs its evals twice**, once on the PR and once in the queue. Kept on purpose: only the queue run sees the change rebased on the current base, which is
-  the entire point of a queue, and skipping it would mean mapping a merge group back to a PR
-  through the API — a lookup whose failure mode is merging something unverified.
+- **No Dependabot secret is needed**, and none should be added. The case that motivated the skip
+  (a Dependabot PR failing in 6s on an empty `ANTHROPIC_API_KEY`) is handled by skipping the PR
+  run and verifying in the queue.
+- **A PR runs its evals twice**, once on the PR and once in the queue. Kept on purpose: only the
+  queue run sees the change rebased on the current base, which is the entire point of a queue,
+  and skipping it would mean mapping a merge group back to a PR through the API — a lookup whose
+  failure mode is merging something unverified.
 
 This only gates anything if the `evals` job's check is **required** on the protected branch, and
 a required check must be listed under `on:` for `merge_group` (it is) or the queue waits for a
 status that never arrives.
-
-The design has no sandbox: from the queue, a contributor's `evals/` code runs with this repo's
-credential. That is unavoidable for a suite whose executable surface *is* the thing under review,
-so the control is human — `.github/CODEOWNERS` puts `.github/` and `evals/` in front of a
-maintainer before anything can be queued. `pull_request_target` was rejected for the same
-question: it hands secrets to a job that must then check out contributor code, which is the
-documented pwn-request pattern and is being blocked by default in public repos. A two-stage
-`workflow_run` was rejected because it cannot run the eval suite itself on a fork's changes,
-which is most of what a contribution here touches.
 
 ### Authentication
 
@@ -203,8 +215,8 @@ In `wif` mode the job skips itself until those variables are set — on the `mer
 so a variable deleted by mistake turns the gate green without running it. Check the variables
 after touching them.
 
-Whichever mode is active, fork and Dependabot PRs are skipped and verified in the merge queue
-instead (see *When it runs* above). Both auth steps deliberately run **after** `npm ci`: written
+Whichever mode is active, Dependabot PRs are skipped and verified in the merge queue instead,
+and the public mirror never runs the job (see *When it runs* above). Both auth steps deliberately run **after** `npm ci`: written
 into the environment before the install, the credential would be visible to every install script
 in promptfoo's dependency tree, on exactly the lockfile-changing PRs that miss the cache.
 

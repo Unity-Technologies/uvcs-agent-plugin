@@ -250,43 +250,43 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    federated account is funded — see `evals/README.md`). If a change alters what a skill
    teaches, update or add an eval.
 
-   **Where the evals actually gate: the merge queue.** Settled — do not re-litigate. GitHub
-   withholds Actions secrets and OIDC tokens from any run triggered by a fork *or by Dependabot*
-   (re-running it as a maintainer does not lift that, and the fork "Approve and run" button is an
-   abuse control that grants no secrets), so the eval job **skips** those PRs instead of going red
-   on an empty credential. Every PR is verified in the queue instead: `merge_group` is in the
-   workflow's `on:`, the queue branch lives in this repository so the credentials are issued, the
-   check is required, and a failure drops the PR from the queue. Consequences, all deliberate:
-   **no Dependabot secret is ever needed**; a maintainer's PR runs its evals **twice** (the queue
-   run is the only one testing the rebase, and skipping it would need a merge-group→PR API lookup
-   that fails by merging unverified); a required check must appear under `on: merge_group` or the
-   queue waits forever for a status. Rejected on the way: `pull_request_target` (secrets plus a
-   checkout of contributor code is the pwn-request pattern, and GitHub blocks it by default in
-   public repos from 2026-11-02); a two-stage `workflow_run` (cannot run the suite on a fork's
-   `evals/` changes, which is most real contributions); environment secrets with required
-   reviewers (the fork exclusion is wholesale — approval does not grant secrets); and persisting
-   promptfoo's response cache to make the duplicate run free (it works, but a seeded cache entry
-   could make a failing eval pass — revisit only if API spend becomes a real line item).
+   **Two repositories: the public one is a mirror.** Development happens in a private
+   repository; the public one receives `main` and the `v*` tags from
+   `.github/workflows/mirror.yml` (a deploy key, fast-forward only, the only actor the public
+   `main` ruleset lets through) and nothing is merged there. Every secret — the Anthropic
+   credential, `RELEASE_TOKEN`, `PUBLIC_MIRROR_KEY` — lives in the development repository only.
+   Reason: a workflow that evaluates a pull request runs that pull request's code, and here
+   that code (`evals/`, and the workflow file itself, which a merge-group run takes from the
+   PR) is exactly what a contribution changes, so the job's credential is readable by the
+   change under test. No sandbox can fix that for a suite whose executable surface is the thing
+   under review. The only arrangement with nothing to exfiltrate is a credential in a
+   repository that runs only commits a maintainer has already read. This replaced (2026-11) an
+   earlier design that verified outside PRs in the merge queue of a single public repository,
+   with CODEOWNERS as the control; it worked, and was dropped because the queue ran contributor
+   code with the key in scope. Also rejected: a private repository that clones each
+   public PR and runs its evals automatically — the same exposure with an extra hop.
 
-   **Measured, not assumed** (2026-09-22, throwaway probe workflow on a scratch branch with its
-   own merge-queue ruleset, since GitHub documents `merge_group` in exactly one table and says
-   nothing about its secrets or its trust model): a `merge_group` run **does** receive the
-   repository's Actions secrets — that is the load-bearing fact and it is nowhere in the docs. A
-   job skipped by a job-level `if` **does** satisfy a required status check, so the fork and
-   Dependabot skips leave the PR `CLEAN` and queueable rather than blocked. And the workflow file
-   a merge-group run executes comes from **the merge group ref, i.e. the pull request's copy** —
-   the probe's base branch printed `BASE_VERSION` and the queued run printed `PR_VERSION`.
+   Consequences, all deliberate: an outside PR is reviewed on the public repository, then a
+   maintainer fetches it into the development repository (`git fetch public pull/<n>/head`) and
+   opens it there, where it runs like any in-repository branch; the mirror brings the merged
+   commits back with the contributor as author. Every workflow names the public repository in a
+   job-level `if` (`github.repository != 'Unity-Technologies/uvcs-agent-plugin'`, or `==` for
+   the jobs that only run there) — never the development repository, so the mirrored files do
+   not name it. Dependabot runs in the development repository only.
 
-   There is **no sandbox** here: from the queue, a contributor's `evals/` code runs with the
-   repo's credential, and for a suite whose executable surface is the thing under review there
-   cannot be one. The `PR_VERSION` result extends that to the workflow file itself, so the
-   control — a human read the diff — has to cover `.github/` as well, which is what
-   `.github/CODEOWNERS` is for. **CODEOWNERS enforces nothing on its own: "Require review from
-   Code Owners" must be enabled on the protected branch, or this mitigation is decorative.** The
-   structural fix, if it is ever worth the org-admin rights, is a ruleset workflow pinning the
-   file to a repository contributors cannot touch. For the same reason the two auth steps run
-   **after** `npm ci` — before it, the credential sits in the environment of every install script
-   in promptfoo's tree, on exactly the lockfile PRs that miss the cache. Do not move them back.
+   **Inside the development repository, the merge queue is still the gate.** GitHub withholds
+   Actions secrets and OIDC tokens from a run triggered by Dependabot (re-running it as a
+   maintainer does not lift that), so the eval job skips those PRs instead of going red on an
+   empty credential, and the queue verifies them: `merge_group` is in the workflow's `on:`, the
+   check is required, and a failure drops the PR from the queue. **No Dependabot secret is ever
+   needed**; a PR runs its evals **twice** (the queue run is the only one testing the rebase); a
+   required check must appear under `on: merge_group` or the queue waits forever for a status.
+   Measured on 2026-09-22 with a throwaway probe workflow, since the docs are silent: a
+   `merge_group` run **does** receive the repository's secrets; a job skipped by a job-level `if`
+   **does** satisfy a required check; and a merge-group run executes **the PR's copy** of the
+   workflow file. The auth steps run **after** `npm ci` — before it, the credential sits in the
+   environment of every install script in promptfoo's tree, on exactly the lockfile PRs that
+   miss the cache. Do not move them back.
 
    Neither workflow filters by `paths`, on either event. A filtered-out required check never
    reports, so a PR touching neither `skills/` nor `evals/` could never be queued. Instead the
@@ -432,12 +432,16 @@ Two steps, both on GitHub:
      jq --arg v "$v" '.version = $v' "$m" > "$m.tmp" && mv "$m.tmp" "$m"; done
    ```
 
-2. **The merge publishes a draft.** When the bump lands on `main`,
-   `.github/workflows/release.yml` tags `v<version>` on that commit, packages the plugin with
-   `git archive` (everything except the paths marked `export-ignore` in `.gitattributes`), and
-   opens a **draft** release with notes generated from the merged PRs since the previous tag and
-   the zip + `.sha256` attached. Review it on the Releases page and click *Publish release*.
-   *Run workflow* on `main` retries a failed run; with the tag already there it does nothing.
+2. **The merge publishes a draft, in the public repository.** When the bump lands on `main`,
+   `.github/workflows/release.yml` tags `v<version>` on that commit, and `mirror.yml` carries
+   `main` and the tag to the public repository. There the arriving tag starts the same
+   workflow's `publish` job, which packages the plugin with `git archive` (everything except the
+   paths marked `export-ignore` in `.gitattributes`) and opens a **draft** release with the zip +
+   `.sha256` attached, using only `GITHUB_TOKEN`. Its notes list the merge commits since the
+   previous tag — each one's body is the PR title — because PRs merge in the development
+   repository and GitHub's generated notes would find none in the public one. Review the draft
+   on the public Releases page and click *Publish release*. *Run workflow* on `main` retries a
+   failed run in either repository; with the tag or the release already there it does nothing.
 
 Why the bump is a PR (settled, 2026-10): the workflow used to bump, commit and push to `main`
 itself, and the `main` rulesets — pull request required, merge queue — rejected the push

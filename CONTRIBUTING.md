@@ -103,14 +103,17 @@ Nothing deeper is discovered.
 - Paste a short transcript showing the skill doing the thing. That is the real review artifact.
 - Run through the review checklist at the bottom of [CLAUDE.md](CLAUDE.md).
 
-### Why `Skill evals` shows as skipped on your PR
+### How your PR gets merged, and why `Skill evals` skips on it
 
-It is not broken and you do not need an Anthropic key. GitHub does not give Actions secrets to a
-workflow run from a fork (or from Dependabot), so the eval job skips rather than fail on a
-credential it was never handed. The suite runs on your change when a maintainer adds the PR to
-the **merge queue**: GitHub rebuilds it on a branch in this repository, the workflow runs there
-with the project's own credentials, and a failing eval takes the PR back out of the queue instead
-of merging it. Expect review first, then that run.
+This repository is a read-only mirror: `main` and the release tags are pushed here from the
+repository the maintainers develop in, and nothing is merged here directly. Open your pull
+request here as usual — review, the format checks and the CLA all happen on it. Once it is
+approved, a maintainer brings your commits into the development repository, where the eval suite
+runs on them, and merges them there. They arrive back here on the next mirror push, with you as
+the author, and the maintainer closes your PR with a link to the merged commit.
+
+The eval job skips on your PR because this repository holds no Anthropic credential. That is not
+a failure, and you do not need a key.
 
 Two ways to see the result earlier, both optional:
 
