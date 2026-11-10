@@ -40,8 +40,8 @@
 #        75%              37%
 #        50%              3.5%
 #
-# The retry gate above lets a 75% test through most of the time, and it then fails one queue
-# run in fifteen for everyone. The burn-in stops it on the pull request that wrote or moved
+# The retry gate above lets a 75% test through most of the time, and it then fails one later
+# pull request in fifteen, for whoever opens it. The burn-in stops it on the pull request that wrote or moved
 # it, which is where the fix belongs. CI uses it for the tests a change can reach, and for
 # every added or edited test even when the whole suite runs (reachable-tests.cjs).
 #
@@ -171,7 +171,7 @@ if [ "$BURN_IN" = true ]; then
   {
     echo ""
     echo "**${#SHORT[@]} test(s) passed fewer than $BURN_IN_REQUIRED of $BURN_IN_RUNS.** The scenario sits on a"
-    echo "decision boundary and will fail the merge queue at random. Fix the scenario or the skill"
+    echo "decision boundary and will fail later pull requests at random. Fix the scenario or the skill"
     echo "(CLAUDE.md, *Writing evals that do not flake*); re-running only re-rolls it."
   } >> "$SUMMARY"
   echo "::error::Burn-in failed: ${#SHORT[@]} test(s) passed fewer than $BURN_IN_REQUIRED of $BURN_IN_RUNS runs"

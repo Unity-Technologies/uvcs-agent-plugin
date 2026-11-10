@@ -1,31 +1,15 @@
 name: Skill evals
 
-# Runs the promptfoo eval suite on every pull request and every merge group.
+# Runs the promptfoo eval suite on every pull request, in the development repository only.
 #
-# WHERE THE SUITE ACTUALLY RUNS, and why there are three cases:
+# The PR run is the gate: the `evals` check is required on main and there is no merge
+# queue, so a change is evaluated once, on its own branch, and not again after merging.
+# Branches need not be up to date with main to merge; the weekly scheduled run below is
+# what catches an interaction two separately green PRs did not show.
 #
-#   pull_request, branch in this repo   runs now, with the repo's credentials.
-#                                       Fast feedback before review.
-#   pull_request, fork or dependabot    skipped, cleanly. GitHub withholds Actions
-#                                       secrets (and OIDC tokens) from both, so the
-#                                       job could only fail on an empty credential —
-#                                       a red X that says nothing. Skipping also
-#                                       keeps drive-by PRs from spending API credit.
-#   merge_group                         always runs, with the repo's credentials.
-#                                       This is the real gate: the merge queue builds
-#                                       the branch in THIS repo, so secrets are
-#                                       issued, and it is the only run that tests the
-#                                       change rebased on the current base branch.
-#
-# So an outside contributor's (or Dependabot's) PR is verified when a maintainer
-# queues it, paid for by this repo's credentials, with no Dependabot secret and no
-# pull_request_target. Mark this job's check required on the protected branch or the
-# merge_group run gates nothing; a required check must also appear under `on:` for
-# merge_group or the queue waits for a status that never arrives.
-#
-# Trusted PRs therefore run their evals twice. Kept deliberately: the queue run is the
-# only one that sees the rebase, and skipping it would mean resolving the merge group
-# back to a PR through the API — a lookup that fails by merging unverified.
+# The public repository is a read-only mirror (mirror.yml) with no credential, so the job
+# never runs there. Dependabot PRs run like any other: GitHub gives Dependabot runs the
+# *Dependabot* secrets, not the Actions ones, so ANTHROPIC_API_KEY is stored in both.
 #
 # Each run evaluates only the tests the change can reach (evals/reachable-tests.cjs):
 # every test is one independent prompt built from its own files, so the others can only
@@ -60,7 +44,6 @@ on:
   # nor evals/ — a README fix — could never be queued. The job always runs, and the
   # "Select" step below decides which tests, if any, the change can reach.
   pull_request:
-  merge_group:
   # Manual runs — handy to verify the auth setup without opening a PR, and the way a
   # contributor can run the suite in their own fork with their own key. With `burn_in`,
   # the way to measure a scenario where it counts, on any branch, HEAD and yours alike:
@@ -83,29 +66,19 @@ permissions:
 jobs:
   evals:
     runs-on: ubuntu-latest
-    # Second clause: skip the PR run when no credential will be issued to it — a fork
-    # head, or Dependabot. Dependabot needs its own test even though its branch lives
-    # in this repo: GitHub treats its runs as untrusted and withholds Actions secrets
-    # from them, and re-running as a maintainer does not lift that. Both are covered
-    # by the merge_group run instead, which is why `github.event_name != 'pull_request'`
-    # lets merge_group and workflow_dispatch straight through.
-    #
-    # First clause: in wif mode the job skips itself until the federation variables are
+    # First clause: never in the public mirror (see mirror.yml), which holds no credential.
+    # Second clause: in wif mode the job skips itself until the federation variables are
     # set (`secrets` is not available in a job-level `if`, which is why the mode is a
-    # variable rather than "is the key secret present"). Note this skips the merge_group
-    # run too, so a misconfigured variable turns the gate green without running it —
+    # variable rather than "is the key secret present"). A skipped job still satisfies the
+    # required check, so a misconfigured variable turns the gate green without running it —
     # check the variables after any change to them.
-    #
-    # Third clause: never in the public mirror (see mirror.yml). It holds no credential,
-    # and a public PR is not merged there — a maintainer brings it into the development
-    # repository, whose queue runs this job. The mirror would skip on the first clause
-    # anyway; naming it keeps a variable set there by mistake from turning the job on.
+    # Third clause: a PR from a fork gets no secrets at all; it is brought into this
+    # repository as a branch instead (CONTRIBUTING.md).
     if: >-
       github.repository != 'Unity-Technologies/uvcs-agent-plugin' &&
       (vars.ANTHROPIC_AUTH == 'api-key' || vars.ANTHROPIC_FEDERATION_RULE_ID != '') &&
       (github.event_name != 'pull_request' ||
-       (github.event.pull_request.head.repo.full_name == github.repository &&
-        github.actor != 'dependabot[bot]'))
+       github.event.pull_request.head.repo.full_name == github.repository)
     env:
       ANTHROPIC_AUTH: ${{ vars.ANTHROPIC_AUTH || 'wif' }}
     steps:
@@ -157,7 +130,7 @@ jobs:
       - name: Select the evals this change can reach
         id: select
         env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          BASE: ${{ github.event.pull_request.base.sha }}
           MEASURE: ${{ github.event.inputs.burn_in }}
         run: |
           set -euo pipefail
