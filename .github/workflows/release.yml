@@ -174,11 +174,17 @@ jobs:
           {
             echo "## What's changed"
             echo
-            # First-parent merges are the merged pull requests; the first line of a
-            # merge commit's body is the pull request title. The version bump itself
-            # ("Release v1.2.0") is left out.
+            # First-parent merges are the merged pull requests. With GitHub's default
+            # message the subject is "Merge pull request #N from ..." and the title is
+            # the first line of the body; a merge written by hand puts the title in the
+            # subject, often with " (#N)" after it. The version bump is not a merge, so
+            # it never appears.
             for c in $(git log --first-parent --merges --format=%H "$range"); do
-              git log -1 --format=%b "$c" | awk 'NF { print; exit }'
+              subject=$(git log -1 --format=%s "$c")
+              case "$subject" in
+                "Merge pull request #"*) git log -1 --format=%b "$c" | awk 'NF { print; exit }' ;;
+                *) printf '%s\n' "$subject" | sed -E 's/ \(#[0-9]+\)$//' ;;
+              esac
             done | grep -v '^Release v[0-9]' | sed 's/^/- /' || true
             if [ -n "$prev" ]; then
               echo
