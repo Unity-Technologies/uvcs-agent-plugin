@@ -90,7 +90,7 @@
   assert:
     - type: javascript
       value: file://assertions/comments.cjs:bareSpec
-      config: { spec: "cs:4207" }
+      config: { spec: "cs:4207", noLink: true }
 
 - description: "A changeset named in a check-in comment is a bare spec, not a markdown link"
   vars:
@@ -103,7 +103,7 @@
   assert:
     - type: javascript
       value: file://assertions/comments.cjs:bareSpec
-      config: { spec: "cs:4207" }
+      config: { spec: "cs:4207", noLink: true }
 
 - description: "An id the output does not contain is not invented"
   vars:
