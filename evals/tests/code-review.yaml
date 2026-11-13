@@ -469,9 +469,11 @@
       value: "```suggestion"
     - type: icontains
       value: 'logger.Info($"Retrying, retryCount={retryCount}");'
-    - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm (mr|mergerequest) comment add 311 (?!.*--type=(Comment|Question))(?=.*--line=61)' }
+    # On the whole output: the comment file's nested fence threw off the command-line parse.
+    - type: regex
+      value: 'cm (mr|mergerequest) comment add 311 [^\n]*--line=61'
+    - type: not-regex
+      value: 'comment add 311 [^\n]*--type=(Comment|Question)'
 
 - description: "A fix that spans several lines stays a diff, not a suggestion"
   vars:
