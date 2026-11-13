@@ -136,7 +136,7 @@ That is the user's call, and "merge this branch" does not ask for it. Report wha
 offer:
 
 > The merge is applied and nothing is left to resolve. To finish it, the changes need to be
-> checked in — `cm checkin --all -c "merged /main/task001"`. Want me to run that?
+> checked in — `cm checkin --all -c "Merge br:/main/task001"`. Want me to run that?
 
 Run it only once they say yes. `cm checkin` also refuses while any marked file still contains
 markers and names them — that guard is the safety net, not the plan.
