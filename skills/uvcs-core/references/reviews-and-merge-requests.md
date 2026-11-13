@@ -187,6 +187,30 @@ A **shelve comment links nothing**: `cm shelveset create -c "[apply-change:...]"
 because only a check-in or `cm changeset editcomment` triggers the match. Putting the tag in the shelve comment is
 still useful — it becomes the ready-made check-in comment when the shelve is applied.
 
+## Suggested changes: the `suggestion` fence
+
+A `Change` comment can carry a fix to apply as written, in GitHub's syntax, as plain text in the
+comment body:
+
+````
+[I1] `retryDelay` is in seconds, not milliseconds
+
+```suggestion
+        await Task.Delay(TimeSpan.FromSeconds(retryDelay));
+```
+````
+
+- The fence **replaces exactly the anchored line** (`--line`, new side) with its lines: verbatim,
+  with the file's indentation, no `-`/`+` markers. Several lines replace that one line; an empty
+  fence deletes it. A comment anchors to one line only, so there are no multi-line ranges: a fix
+  that touches any other line is not a suggestion.
+- `Change` comments only, one fence per comment, posted with `-commentsfile` (it is multi-line).
+  `cm` stores and returns the text unchanged; clients that do not apply suggestions show it as a
+  code block.
+- **Applying one** is an ordinary fix: put the fence's lines in place of the anchored line, then
+  check in with the comment's `[apply-change:]` tag (above). The anchor is a line of the commented
+  revision: if the file changed since, find that line by its content.
+
 ## Code reviews (changesets and shelves)
 
 ```

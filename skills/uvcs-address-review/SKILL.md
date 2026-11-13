@@ -119,7 +119,7 @@ finding flattened into one line loses its fix), and your proposal; then **stop a
 
 | Item | You propose, and revise until the user approves | On "ok" |
 |---|---|---|
-| change | the fix, applied in the workspace and shown as a diff | check in with the tag |
+| change | the fix, applied in the workspace and shown as a diff — a ` ```suggestion ` block is the reviewer's proposed replacement for the anchored line, weighed like any fix, never applied blindly | check in with the tag |
 | question or comment | a reply | post it |
 | question or comment pointing at a sensible change | the fix as a diff, then the reply | check in *without* the tag, then post "fixed in `cs:<id>`" |
 | disagree | a discard, with the reason | post it |

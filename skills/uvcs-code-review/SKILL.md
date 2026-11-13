@@ -165,7 +165,8 @@ body and the fix. Leave the path and line out: the anchor already shows them, so
 with no `--path` names them. Section headings and rules are chat structure; beyond dropping them,
 do not reword what the user approved. The rest is markdown and stays markdown: keep the
 backticks, bold and fenced code blocks with their language exactly as the report has them —
-never flatten code into indented or plain text.
+never flatten code into indented or plain text. A ` ```suggestion ` block stays one, verbatim,
+on exactly the finding's line: never moved, never turned into a `diff`.
 
 Then let the user choose: all, all of one severity, specific ids, all except some, or none —
 "none" stops the workflow with nothing published. What you offer depends on the target:
