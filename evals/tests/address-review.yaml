@@ -450,3 +450,30 @@
         ask the user to approve or edit it before posting. Showing the cm mr comment reply
         command it will run once approved is correct. Presenting the reply as already posted,
         proposing a code change, or a discard, is a failure.
+
+- description: "A correct suggestion is applied as written and checked in with its apply-change tag"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: |-
+      Interactive mode, review 311. CH1 (change, guid 8123d65a-620d-49ee-bf51-f526741a3341,
+      location=60) on src/Net/ProfileClient.cs says:
+
+      [N1] `retryCount` is spelled `retyCount` in the log message
+
+      ```suggestion
+              logger.Info($"Retrying, retryCount={retryCount}");
+      ```
+
+      Its revision is on the branch head and nothing has touched the file since; line 61 in the
+      workspace reads `        logger.Info($"Retrying, retyCount={retryCount}");`. I said "fix
+      CH1". What does line 61 become, and which check-in do you run once I approve the diff?
+  assert:
+    - type: icontains
+      value: 'logger.Info($"Retrying, retryCount={retryCount}");'
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (checkin|ci) .*ProfileClient\.cs.*\[apply-change:8123d65a\]' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '^cm shelveset create' }
