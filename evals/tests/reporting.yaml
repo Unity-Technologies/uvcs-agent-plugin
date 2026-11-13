@@ -79,7 +79,7 @@
     - type: icontains
       value: "](plastic://myorg.cloud/repos/mygame/code-reviews/311)"
 
-- description: "A link published into a UVCS review comment is a markdown link"
+- description: "A changeset named in a UVCS review comment is a bare spec, not a markdown link"
   vars:
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I want to
@@ -88,10 +88,11 @@
       comment text itself and the command that posts it, nothing else.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
-    - type: icontains
-      value: "[cs:4207](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "cs:4207" }
 
-- description: "A link written into a check-in comment is bare, not markdown"
+- description: "A changeset named in a check-in comment is a bare spec, not a markdown link"
   vars:
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I am
@@ -100,10 +101,9 @@
       itself and the command that checks in with it, nothing else.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
-    - type: icontains
-      value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
-    - type: not-icontains
-      value: "](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "cs:4207" }
 
 - description: "An id the output does not contain is not invented"
   vars:
