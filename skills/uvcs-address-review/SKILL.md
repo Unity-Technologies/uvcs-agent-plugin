@@ -121,7 +121,7 @@ finding flattened into one line loses its fix), and your proposal; then **stop a
 |---|---|---|
 | change | the fix, applied in the workspace and shown as a diff | check in with the tag |
 | question or comment | a reply | post it |
-| question or comment pointing at a sensible change | the fix as a diff, then the reply | check in *without* the tag, then post "fixed in `cs:<id>`" |
+| question or comment pointing at a sensible change | the fix as a diff, then the reply | check in *without* the tag, then post "Fixed in cs:<id>." |
 | disagree | a discard, with the reason | post it |
 | unclear | your question to the user | carry on with their answer |
 
@@ -147,7 +147,7 @@ A fix for a question or comment — **no** tag: on anything but a change it matc
 cm checkin src/InventoryManager.cs -c "Dispose the stream"
 ```
 
-A reply, once its text is approved — by the comment's **GUID**, not the numeric `parent` id:
+A reply, once approved — by the comment's **GUID**, not the numeric `parent` id; one line per paragraph, objects as bare specs (`uvcs-core/references/writing-comments.md`):
 
 ```
 cm mr comment reply <comment_guid> -commentsfile=<file>
