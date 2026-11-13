@@ -113,6 +113,13 @@ what the publishing side parses.
 - **Carries a concrete fix.** Required on BLOCKER and IMPORTANT, expected on SUGGESTION, optional on
   NIT. The fix is real code that would compile in place, in a fenced block: `diff` with `-`/`+`
   lines when a line is replaced or deleted, the file's own language when only code is added.
+- **Is a `suggestion` when the author can accept it at a glance.** When the whole fix is the
+  anchored line itself and you are certain of it — a typo, a wrong constant, a missing `await`, a
+  nit — the block is ` ```suggestion `: the complete replacement for that line, one or more lines
+  with the file's indentation, no `-`/`+`. It replaces exactly the anchored line (an empty block
+  deletes it), so the anchor **must** be the line it replaces. Keep `diff` or the language block
+  when the fix touches any other line, needs a design choice, is not certain, or spans several
+  places. A question never carries one.
 - **Reads like a colleague wrote it.** A review comment is UX: the author reads it cold, in a
   narrow comment pane. Write it the way a good senior engineer talks to a teammate — plain words,
   short sentences, one idea per paragraph, what goes wrong before why. Cut every word that does
@@ -144,8 +151,7 @@ The air-jump branch calls `PlayOneShot`, and `PlayerJumped` plays the same clip 
 
 **Fix** — delete line 106; `PlayerJumped` already handles the audio:
 
-```diff
-- audioSource.PlayOneShot(jumpAudio);
+```suggestion
 ```
 
 ---
