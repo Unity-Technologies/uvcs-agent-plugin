@@ -193,10 +193,10 @@ A `Change` comment can carry a fix to apply as written, in GitHub's syntax, as p
 comment body:
 
 ````
-[N1] `count` reads better as `times`
+[I1] `retryDelay` is in seconds, not milliseconds
 
 ```suggestion
-        for (var i = 0; i < times; i++) action();
+        await Task.Delay(TimeSpan.FromSeconds(retryDelay));
 ```
 ````
 
@@ -206,9 +206,10 @@ comment body:
   that touches any other line is not a suggestion.
 - `Change` comments only, one fence per comment, posted with `-commentsfile` (it is multi-line).
   `cm` stores and returns the text unchanged; clients that do not apply suggestions show it as a
-  code block. Read back with `--xml`, the text is XML-escaped (`<` is `&lt;`).
+  code block.
 - **Applying one** is an ordinary fix: put the fence's lines in place of the anchored line, then
-  check in with the comment's `[apply-change:]` tag (above).
+  check in with the comment's `[apply-change:]` tag (above). The anchor is a line of the commented
+  revision: if the file changed since, find that line by its content.
 
 ## Code reviews (changesets and shelves)
 
