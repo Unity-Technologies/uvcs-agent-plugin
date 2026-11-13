@@ -130,3 +130,18 @@
         defer to the uvcs-merge skill by name, or — if it proceeds — run the read-only
         cm merge preview before any applying merge and avoid anything that opens a GUI merge
         tool. Applying a merge immediately with no preview is a failure.
+
+# Comments stored in UVCS (references/writing-comments.md): the desktop client keeps their line
+# breaks, so a wrapped paragraph shows broken mid-sentence.
+- description: "A check-in comment written to a file keeps each paragraph on one line"
+  vars:
+    reference_content: file://../skills/uvcs-core/references/writing-comments.md
+    user_message: >-
+      Check in src/Inventory/SlotCache.cs. The comment's title is "Cache inventory slots once per
+      frame", then one paragraph saying that SlotCache.Get used to rebuild the slot list on every
+      call, which allocated on each UI refresh, and that it now rebuilds once per frame and
+      reuses the list, so the inventory screen no longer stutters while it is open. Give me the
+      heredoc that writes the comment file, then the check-in command.
+  assert:
+    - type: javascript
+      value: file://assertions/comments.cjs:unwrappedParagraphs

@@ -140,6 +140,9 @@ Results must round-trip: every object named in a report should paste back into `
   `{repository}` in `cm diff` output): one markdown link per object, `unityhub://` in a Unity
   project (`Assets/` + `ProjectSettings/`) and `plastic://` anywhere else. Shapes, rendering and
   encoding: `references/deep-links.md`.
+- **Text stored in UVCS is different**: check-in, shelve and review comments and review titles
+  name objects as bare specs (`cs:4207`, no backticks, no link) and never hard-wrap a paragraph —
+  `references/writing-comments.md` before writing one.
 - **Report only what command output shows.** Never fill in a changeset id, branch name, author or
   date from inference — if a command did not print it, say it is unknown and name the command
   that would answer it.
@@ -208,4 +211,5 @@ For any task these do not cover, this skill plus judgement is the whole toolkit.
 | `references/shell-gotchas.md` | Running `cm` from PowerShell / Git Bash / POSIX shells; quoting and comment pitfalls. |
 | `references/locks.md` | Exclusive checkout of binary assets: who holds a lock on a file, `Locked` vs `Retained`, taking and releasing your own locks. |
 | `references/batching-commands.md` | Running 5+ read-only commands as one `cm shell` batch: when it pays, the restrictions, and the exit-code and error-stream contract that changes. |
+| `references/writing-comments.md` | Writing any comment `cm` stores — check-in, shelve, review comment or reply, merge request title: what renders, which specs become clickable, line breaks. |
 | `references/deep-links.md` | Building a clickable link to a branch, changeset, label, shelve, code review or merge request: `unityhub://` in a Unity project, `plastic://` everywhere else, rendered as a markdown link. |
