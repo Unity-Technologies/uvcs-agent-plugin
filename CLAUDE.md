@@ -623,6 +623,15 @@ the two.
   (`show/changeset`, `show/branch`, `show/shelve`); the Hub's `merge/…`, `open/…` and `refresh/…`
   actions are deliberately out of scope, and a `merge/…` link must never appear in a report. Labels,
   ranges, code reviews and merge requests have no hub form and stay `plastic://` everywhere.
+- **Comments stored in UVCS take bare specs, never links.** A check-in, shelve or review comment
+  names an object as `cs:4207`, not `[cs:4207](plastic://…)` and not a bare URL (a name with spaces
+  aside, which no spec can hold): the desktop client turns a bare spec into a clickable chip and
+  reads no reference inside a link, and every other client (the legacy GUI, `cm log`, the Unity
+  plugin, the web) shows the raw text, where the spec still pastes into `cm` and the markdown link
+  is punctuation soup. Links stay for chat, tickets and PR bodies. This reversed an earlier rule
+  that gave review comments the markdown link, on the belief that every client rendered them; the
+  legacy GUI renders Markdown only in attribute values. The facts are
+  `uvcs-core/references/writing-comments.md`.
 - **`cm shell` batching is a hub reference, opt-in, read-only.** `cm shell` holds one `cm` process
   open and reads commands from stdin, paying client startup (and the cloud handshake) once:
   measured ~3× on 20 commands, and 12.55s → 4.83s on a realistic 10-changeset `log`+`diff` review.
