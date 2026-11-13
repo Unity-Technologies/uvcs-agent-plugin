@@ -119,7 +119,9 @@ what the publishing side parses.
   not help them fix it: no restating the code line by line, no hedging, no filler.
 - **Uses markdown.** Methods, types, constants, flags and file names in backticks; code in a fenced
   block tagged with its language (` ```csharp `); **bold** for the one thing the author must not
-  miss. Never indented code, never an identifier left as bare text.
+  miss. Never indented code, never an identifier left as bare text. The exception is a UVCS object:
+  a changeset, branch, label or shelve is its bare spec (`cs:4207`, `br:/main/task001`), never in
+  backticks, so the review shows it as a link. Each paragraph is one line: line breaks are kept.
 - **Is anchored to a path and a line** taken from **Files**: the path exactly as given there, the
   line as an editor shows it on the new side of the change, 1-based. For a defect in a deleted
   line, anchor to the nearest surviving line and say so. **Never anchor to a file outside Files**,

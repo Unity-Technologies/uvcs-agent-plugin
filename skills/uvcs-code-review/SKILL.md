@@ -207,7 +207,8 @@ One comment per finding, anchored. **`--path` is always a path from the `cm diff
 when the finding is about another file: the desktop GUI opens a comment by navigating to its
 file, and a file outside the diff cannot be opened, so the comment cannot be reached. Anchor such
 a finding to the changed line that causes it and name the other file and line in the body; if no
-changed line fits, post it with no `--path`. Findings are multi-line, so write each to a file:
+changed line fits, post it with no `--path`. Findings are multi-line, so write each to a file,
+each paragraph on one line and objects as bare specs (`uvcs-core/references/writing-comments.md`):
 
 ```
 cm mr comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Change -commentsfile=<file>
