@@ -79,7 +79,7 @@
     - type: icontains
       value: "](plastic://myorg.cloud/repos/mygame/code-reviews/311)"
 
-- description: "A link published into a UVCS review comment is a markdown link"
+- description: "A changeset named in a UVCS review comment is a bare spec, not a markdown link"
   vars:
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I want to
@@ -88,10 +88,11 @@
       comment text itself and the command that posts it, nothing else.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
-    - type: icontains
-      value: "[cs:4207](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "cs:4207", noLink: true }
 
-- description: "A link written into a check-in comment is bare, not markdown"
+- description: "A changeset named in a check-in comment is a bare spec, not a markdown link"
   vars:
     user_message: >-
       My workspace is /main/task055@mygame@myorg@cloud and it is not a Unity project. I am
@@ -100,10 +101,9 @@
       itself and the command that checks in with it, nothing else.
     reference_content: file://../skills/uvcs-core/references/deep-links.md
   assert:
-    - type: icontains
-      value: "plastic://myorg.cloud/repos/mygame/changesets/4207/diff"
-    - type: not-icontains
-      value: "](plastic://myorg.cloud/repos/mygame/changesets/4207/diff)"
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "cs:4207", noLink: true }
 
 - description: "An id the output does not contain is not invented"
   vars:
@@ -130,3 +130,18 @@
         defer to the uvcs-merge skill by name, or — if it proceeds — run the read-only
         cm merge preview before any applying merge and avoid anything that opens a GUI merge
         tool. Applying a merge immediately with no preview is a failure.
+
+# Comments stored in UVCS (references/writing-comments.md): the desktop client keeps their line
+# breaks, so a wrapped paragraph shows broken mid-sentence.
+- description: "A check-in comment written to a file keeps each paragraph on one line"
+  vars:
+    reference_content: file://../skills/uvcs-core/references/writing-comments.md
+    user_message: >-
+      Check in src/Inventory/SlotCache.cs. The comment's title is "Cache inventory slots once per
+      frame", then one paragraph saying that SlotCache.Get used to rebuild the slot list on every
+      call, which allocated on each UI refresh, and that it now rebuilds once per frame and
+      reuses the list, so the inventory screen no longer stutters while it is open. Give me the
+      heredoc that writes the comment file, then the check-in command.
+  assert:
+    - type: javascript
+      value: file://assertions/comments.cjs:unwrappedParagraphs

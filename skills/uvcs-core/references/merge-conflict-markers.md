@@ -119,5 +119,5 @@ Marked items are recorded in `.plastic/plastic.conflictmarkers`, per mount.
 cm merge br:/main/task001 --merge --conflict-markers    # exit 1 = there is work to do
 # resolve every CONFLICT_MARKERS file; choose a side for every UNRESOLVED one
 cm merge --list-conflict-markers                        # exit 0 = clean
-cm checkin --all -c "merged /main/task001"
+cm checkin --all -c "Merge br:/main/task001"
 ```

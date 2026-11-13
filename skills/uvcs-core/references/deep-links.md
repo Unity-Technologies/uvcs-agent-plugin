@@ -1,7 +1,7 @@
 # Deep links to UVCS objects
 
-Two URL schemes open a UVCS object straight from a link — useful in review comments, tickets,
-chat, and release notes. Which one to emit depends on the workspace, and only one is emitted:
+Two URL schemes open a UVCS object straight from a link — useful in tickets, chat, PR bodies
+and release notes. Which one to emit depends on the workspace, and only one is emitted:
 
 | Workspace | Scheme | A click opens |
 |---|---|---|
@@ -10,8 +10,7 @@ chat, and release notes. Which one to emit depends on the workspace, and only on
 
 ## Render it as a markdown link
 
-Where markdown is rendered — chat answers, reports, tickets, PR and MR bodies, UVCS review
-comments — every object is
+Where markdown is rendered — chat answers, reports, tickets, PR bodies — every object is
 `[<object name>](<url>)`, assembled in two steps:
 
 1. **Link text** = the object's `cm` name, exactly as the *Reporting UVCS objects* rules give it:
@@ -30,11 +29,10 @@ comments — every object is
 - **In markdown, never emit the name and its URL as two separate pieces** — not `cs:4207` followed
   by a bare `plastic://...`, not a trailing list of links. One of the two is redundant.
 - **Link text is the object's name, never prose**: `[br:/main/task001](...)`, not `[the branch](...)`.
-- **Bare URL where markdown is not rendered**: a check-in comment or any other plain-text
-  destination — **not** a review or merge request comment, which renders markdown and takes the
-  `[cs:4207](plastic://...)` form like a report. Unrendered, `[cs:4207](plastic://...)` shows
-  both pieces as punctuation soup, so when the destination is unknown the bare URL is the safe
-  form — it loses the link text, not the address.
+- **Text stored in UVCS takes no link**: a check-in, shelve or review comment names the object
+  by its bare spec (`cs:4207`), which the desktop client turns into a clickable chip — see
+  `writing-comments.md`. Any other plain-text destination takes the bare URL: unrendered,
+  `[cs:4207](plastic://...)` shows both pieces as punctuation soup.
 - A URL that contains `)` (a branch or label name can) ends the markdown target early. Wrap that
   target in angle brackets: `[lb:fix(2)](<plastic://myorg.cloud/repos/mygame/labels/fix(2)/diff>)`.
 - The scheme is chosen per object, so one report can mix them: in a Unity project a changeset
@@ -151,6 +149,5 @@ hub form, so they keep `plastic://`:
 [merge request 312](plastic://myorg.cloud/repos/mygame/merge-requests/312)
 ```
 
-Written into a check-in comment instead, the same changeset is
-`cs:4207 plastic://myorg.cloud/repos/mygame/changesets/4207/diff` — bare, because that text is
-not rendered.
+Written into a check-in or review comment instead, the same changeset is just `cs:4207`
+(`writing-comments.md`).

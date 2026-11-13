@@ -290,6 +290,23 @@
         which cm rejects. Suggesting --discard for a question the user asked to be answered is a
         failure.
 
+- description: "A reply naming the fix's changeset writes it as a bare spec"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/writing-comments.md
+    user_message: >-
+      Question Q1 on review 311 (GUID 5d2e9a10-4c1b-4e7a-9f00-2b6c1d3e8a77) asked whether
+      SlotCache.Get can return null. I approved your fix and it is checked in as changeset 4212.
+      Now post the reply I approved: that it is fixed in that changeset. Show me the full text
+      you write to the comment file, then the command.
+  assert:
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "cs:4212" }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment reply 5d2e9a10-4c1b-4e7a-9f00-2b6c1d3e8a77' }
+
 - description: "A reviewer comment with no reply is pending, alongside changes and questions"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md

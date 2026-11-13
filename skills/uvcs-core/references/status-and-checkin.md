@@ -90,7 +90,7 @@ Gotchas, all verified:
   ```
 - Multi-line comments: `-c "line1\nline2"` or `-commentsfile`. To rewrite a changeset comment
   afterwards: `cm changeset editcomment cs:<id> "<new comment>"` (branch comments and review
-  titles have **no** edit command — get them right at creation).
+  titles have **no** edit command — get them right at creation). What to write: `writing-comments.md`.
 
 ## Checkout
 

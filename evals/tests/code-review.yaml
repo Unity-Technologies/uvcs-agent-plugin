@@ -393,6 +393,23 @@
         indented or plain text, or dropping the fix is a failure. Whether the title line or the
         location line is kept is not judged. Nothing has to be executed here.
 
+- description: "A published review comment names a changeset and a branch as bare specs"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/writing-comments.md
+    user_message: >-
+      Post a conversation comment on merge request 311 telling the author that this change
+      undoes the null check that changeset 4180 added on the branch /main/task070, and that the
+      fix is to keep that check in SlotCache.Get. Show me the full text you write to the comment
+      file, then the command.
+  assert:
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "cs:4180" }
+    - type: javascript
+      value: file://assertions/comments.cjs:bareSpec
+      config: { spec: "br:/main/task070" }
+
 - description: "Approving a merge request is not merging it"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
