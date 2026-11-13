@@ -37,8 +37,8 @@ comments, replies and status comments.
   in every other client. A name with spaces cannot be a spec: write its bare `plastic://` link,
   even in a Unity project (shapes and encoding: `deep-links.md`), which Desktop shows as the same
   chip; `unityhub://` makes none.
-- **Code**: identifiers, paths, flags and constants in backticks; code in a fence tagged with its
-  language (or `suggestion`, see `reviews-and-merge-requests.md`). Links open only for `http(s)://`,
-  `plastic://` and `uvcs://`; images show only from `http(s)://`.
+- **Code**: identifiers, paths, flags and constants in backticks, but never an object spec (above);
+  code in a fence tagged with its language (or `suggestion`, see `reviews-and-merge-requests.md`).
+  Links open only for `http(s)://`, `plastic://` and `uvcs://`; images show only from `http(s)://`.
 - **In a review comment**: no headings (it shows whole, as a message), a list when there are items,
   bold for the one thing not to miss, a table only when the data is truly tabular.
