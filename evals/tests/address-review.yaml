@@ -451,7 +451,7 @@
         command it will run once approved is correct. Presenting the reply as already posted,
         proposing a code change, or a discard, is a failure.
 
-- description: "A correct suggestion is applied as written and checked in with its apply-change tag"
+- description: "A suggestion anchored before a later changeset replaces the code where it now is"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
@@ -459,21 +459,26 @@
       Interactive mode, review 311. CH1 (change, guid 8123d65a-620d-49ee-bf51-f526741a3341,
       location=60) on src/Net/ProfileClient.cs says:
 
-      [N1] `retryCount` is spelled `retyCount` in the log message
+      [I1] `retryDelay` is in seconds, not milliseconds
 
       ```suggestion
-              logger.Info($"Retrying, retryCount={retryCount}");
+              await Task.Delay(TimeSpan.FromSeconds(retryDelay));
       ```
 
-      Its revision is on the branch head and nothing has touched the file since; line 61 in the
-      workspace reads `        logger.Info($"Retrying, retyCount={retryCount}");`. I said "fix
-      CH1". What does line 61 become, and which check-in do you run once I approve the diff?
+      cm find revision on its revisionid printed: src/Net/ProfileClient.cs|4201|/main/task001.
+      The branch head is cs:4212, and cs:4205 added three using lines at the top of the file. In
+      the revision the reviewer saw, line 61 was `        await Task.Delay(retryDelay);`. In the
+      workspace copy line 61 is now `        var attempt = 0;`, and
+      `        await Task.Delay(retryDelay);` is on line 64, the only Task.Delay in the file. I said
+      "fix CH1". Which line do you change, what does it become, and which check-in do you run
+      once I approve the diff?
   assert:
     - type: icontains
-      value: 'logger.Info($"Retrying, retryCount={retryCount}");'
-    - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm (checkin|ci) .*ProfileClient\.cs.*\[apply-change:8123d65a\]' }
-    - type: javascript
-      value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm shelveset create' }
+      value: "64"
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the comment was anchored at cs:4201 and cs:4205 later shifted the
+        file, so the fix must replace `await Task.Delay(retryDelay);` on line 64 with
+        `await Task.Delay(TimeSpan.FromSeconds(retryDelay));`. Replacing line 61
+        (`var attempt = 0;`), or refusing because line 61 does not match, is a failure. Whether
+        the edit is shown as already applied, and the check-in wording, are not judged.
