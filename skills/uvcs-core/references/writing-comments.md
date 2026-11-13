@@ -10,7 +10,7 @@ comments, replies and status comments.
   references into clickable chips showing the object's name and summary.
 - **Every other client** (the legacy desktop GUI, `cm log`, the Unity plugin, the web) shows the raw
   text. So write Markdown sparingly: what reads well raw (backticks, `-` lists, `**bold**`, a fence)
-  is fine; tables, nested structure and HTML are noise there. Raw HTML shows as text in Desktop too.
+  is fine; tables, nested structure and HTML are noise there.
 
 ## Rules
 
@@ -28,15 +28,17 @@ comments, replies and status comments.
   | `cr:311` | a code review or merge request (Desktop's notation; `cm` does not take it) |
   | `serverpath:/src/Player.cs#cs:4207` | a file at a changeset (`#br:`, `#lb:`, `#sh:` too) |
   | any of these + `@<repo>` or `@<repo>@<server>` | the object in another repository |
-  | `@<user>`, as `cm` names owners | a person — only someone meant to see it |
+  | `@<user>`, as `cm` names owners | a person |
   | `[apply-change:<8 hex>]` | the change request a check-in applies (`reviews-and-merge-requests.md`) |
 
   Prefixes are lower case. Trailing punctuation and bold are fine (`see cs:4207.`). **Never inside
   backticks or a markdown link**: neither is read as a reference, so `` `cs:4207` `` and
   `[cs:4207](plastic://…)` stay plain text or a link with no chip, and the link is punctuation soup
-  in every other client. A name with spaces cannot be a spec: write its bare `plastic://` link
-  (`deep-links.md`), which Desktop shows as the same chip.
+  in every other client. A name with spaces cannot be a spec: write its bare `plastic://` link,
+  even in a Unity project (shapes and encoding: `deep-links.md`), which Desktop shows as the same
+  chip; `unityhub://` makes none.
 - **Code**: identifiers, paths, flags and constants in backticks; code in a fence tagged with its
-  language. Links open only for `http(s)://`, `plastic://` and `uvcs://`; images show only from `https://`.
+  language (or `suggestion`, see `reviews-and-merge-requests.md`). Links open only for `http(s)://`,
+  `plastic://` and `uvcs://`; images show only from `http(s)://`.
 - **In a review comment**: no headings (it shows whole, as a message), a list when there are items,
   bold for the one thing not to miss, a table only when the data is truly tabular.
