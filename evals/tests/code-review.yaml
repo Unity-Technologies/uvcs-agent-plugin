@@ -451,3 +451,71 @@
         before the merge request is created (asking the user to check it in, or a cm checkin step
         before the create). Creating the merge request without mentioning the pending change is a
         failure. Whether it also asks to confirm the title or reviewer is not judged.
+
+- description: "A one-line typo fix is published as a suggestion anchored to that line"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-code-review/assets/review-prompt.md
+    user_message: |-
+      You are the reviewer of merge request 311. The only problem in the diff is a typo on
+      /src/Net/ProfileClient.cs line 61, new side, which reads exactly (8 spaces of indentation):
+
+              logger.Info($"Retrying, retyCount={retryCount}");
+
+      It should say retryCount. I approve it as a nit. Give every command: first the one that
+      writes the comment file, with its full text in a heredoc, then the one that posts it.
+  assert:
+    - type: icontains
+      value: "```suggestion"
+    - type: icontains
+      value: 'logger.Info($"Retrying, retryCount={retryCount}");'
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest) comment add 311 (?!.*--type=(Comment|Question))(?=.*--line=61)' }
+
+- description: "A fix that spans several lines stays a diff, not a suggestion"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-code-review/assets/review-prompt.md
+    user_message: |-
+      You are the reviewer of merge request 311. In /src/Save/SaveWriter.cs the change added
+      lines 30-33, new side:
+
+      30          var stream = File.OpenWrite(path);
+      31          var writer = new StreamWriter(stream);
+      32          writer.Write(json);
+      33          writer.Flush();
+
+      Nothing disposes the stream or the writer, so the save file stays locked when Write
+      throws. I approve it as an important finding anchored to line 30. Give every command: first
+      the one that writes the comment file, with its full text in a heredoc, then the one that
+      posts it.
+  assert:
+    - type: icontains
+      value: "--line=30"
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the fix in the comment text. Disposing the stream and writer
+        changes lines 30-33 (a using block, or using declarations on both lines), not just line
+        30, so it must be a diff or a csharp code block. A ```suggestion fence as the fix is a
+        failure. Saying in prose that a suggestion does not fit is fine.
+
+- description: "A question never carries a suggestion"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-code-review/assets/review-prompt.md
+    user_message: |-
+      You are the reviewer of merge request 311. /src/Net/ProfileClient.cs line 58, new side, now
+      reads `var timeout = TimeSpan.FromSeconds(30);` and used to be 5 seconds. Nothing in the
+      change says why, and 30 could be on purpose for slow networks. I approve it as [Q1], a
+      question. Give every command: first the one that writes the comment file, with its full
+      text in a heredoc, then the one that posts it.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest) comment add 311 (?=.*--line=58)(?=.*--type=Question)' }
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the comment text asks the author about the timeout and carries no
+        ```suggestion fence. A suggestion block in the question is a failure. Whether it shows
+        other code is not judged.
