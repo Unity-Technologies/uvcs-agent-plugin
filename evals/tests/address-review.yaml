@@ -252,22 +252,37 @@
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Unattended mode on review 311 is finished: B1 shelved as sh:101, S1 shelved as sh:102, Q1
-      answered. Nothing is checked in yet. Write the wrap-up and give me only the commands I run
-      myself in this sitting; leave out anything you would run for me in a later turn.
+      Unattended mode on review 311 is finished: B1 shelved as sh:101 with the comment
+      "[apply-change:4c1e9a07] Clamp the stack size to the slot limit", S1 shelved as sh:102 with
+      the comment "[apply-change:9d02b7e5] Log the save path once", Q1 answered. Nothing is checked
+      in yet. Write the wrap-up and give me only the commands I run myself in this sitting; leave
+      out anything you would run for me in a later turn.
   assert:
     - type: icontains
       value: "cm shelveset apply sh:101"
-    # No re-request *command line*; saying "ask me to re-request afterwards" in prose is fine.
+    # The behavior is the order: no re-request before the last check-in. Listing it as the step
+    # after the check-ins, or leaving it out for the user to ask for later, both pass.
     - type: javascript
-      value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--re-request' }
-    - type: llm-rubric
-      value: >-
-        Nothing has been checked in yet, so the response must not re-request the review now:
-        running cm mr review 311 --re-request as one of its commands is a failure. It must tell
-        the user to apply the shelves and check them in — reusing the shelve comment so the
-        [apply-change:] tag fires at check-in — and to ask for the re-request afterwards.
+      value: file://assertions/commands.cjs:onlyAfter
+      config:
+        pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--re-request'
+        after: '^cm (ci|checkin)\b'
+
+- description: "An unattended shelve is checked in with its own comment, so the apply-change tag fires"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Unattended mode on review 311 is finished: B1 shelved as sh:101 with the comment
+      "[apply-change:4c1e9a07] Clamp the stack size to the slot limit". Nothing is checked in yet,
+      and the workspace has no other pending changes. Give me the commands that land sh:101.
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm shelveset apply sh:101(\s|$)' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (ci|checkin) .*\[apply-change:4c1e9a07\] Clamp the stack size to the slot limit' }
 
 - description: "A reply is posted against the comment GUID, and a question is never discarded"
   vars:
