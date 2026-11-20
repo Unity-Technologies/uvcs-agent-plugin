@@ -26,4 +26,6 @@ This is the real review artifact.
 - [ ] Commands are labelled read-only / mutating / irreversible; user-confirmation policy lives
       in the workflow skills, not the hub.
 - [ ] No secrets, internal hostnames, or real user/customer data.
+- [ ] Every eval this PR adds or edits is built to pass on its first run (see *Writing evals
+      that do not flake* in `CLAUDE.md`), and none of them showed up as unstable in CI.
 - [ ] Reviewed against the checklist in `CLAUDE.md` and cut anything that didn't earn its tokens.

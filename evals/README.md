@@ -72,27 +72,24 @@ npx --no-install promptfoo eval --no-cache                  # ignore cached resu
 
 `./run-evals.sh` is the exact entry point CI uses, and it is worth using locally for the same
 two reasons. It **names every failing test** (promptfoo's own table truncates at 25 rows, so a
-plain run tells you *how many* failed and not *which*), and it **re-runs each failure 4 times**
-with `--no-cache` to measure its pass rate, so a one-off miss separates itself from a regression
-in one command. It takes any `promptfoo eval` flag:
+plain run tells you *how many* failed and not *which*), and it **re-runs each failure up to 3
+times** with `--no-cache`, so a one-off miss does not fail the run. It takes any `promptfoo eval`
+flag:
 
 ```bash
 ./run-evals.sh                                        # whole suite
 ./run-evals.sh --filter-pattern "An approved report"  # one test, same reporting
-./run-evals.sh --burn-in --filter-pattern "…"         # 8 runs each, 7 must pass
-node reachable-tests.cjs --edited-since origin/main   # what CI burns in for your edits
 ```
 
-`--burn-in` is the gate for a test a change can move: it is what CI runs on the reached tests,
-and on every added or edited test (`EVAL_BURN_IN_RUNS` / `EVAL_BURN_IN_PASSES`). Locally it is a
-smoke check only — the local sign-in adds a system prompt CI does not have, so measure margin in
-CI: `gh workflow run skill-evals.yml --ref <branch> -f burn_in='^(?:<description>)$'`.
+**An eval must pass on its first run.** The retries below are a safety net against a rare miss,
+not part of the design; see *Writing evals that do not flake* in `CLAUDE.md` before writing one.
 
-Exit status is 1 when a test that failed passes fewer than 3 of its 4 retries, 0 otherwise
-(`EVAL_RETRIES` / `EVAL_RETRY_PASSES` change the numbers; the trade-off is tabulated at the top of
-the script). A test that failed and then passed its retries is reported as **unstable**, with its
-rate — treat that as a scenario with too little margin, not as a pass: see *Writing evals that do
-not flake* in `CLAUDE.md`.
+Exit status is 1 only when a test fails its first run and every retry (`EVAL_RETRIES` changes
+the count; the odds are tabulated at the top of the script). A test that failed and then passed
+a retry does not fail the run, but it is reported as **unstable**: a defect in the test, to fix
+in a PR of its own. A local run is a smoke
+check only, since the local sign-in adds a system prompt CI does not have; to run chosen tests in
+CI: `gh workflow run skill-evals.yml --ref <branch> -f tests='^(?:<description>)$'`.
 
 ## CI
 
@@ -101,9 +98,8 @@ the change can reach (`reachable-tests.cjs`, by the table in `CLAUDE.md`, "Workf
 here", step 3): a test whose prompt carries no changed file can only re-roll its own noise. A
 change no test loads, such as a README fix or a doc in `evals/`, runs none and passes; a changed
 test file runs the tests in it; a change to the config, the runner, an assertion, the install or
-the workflow runs everything. Reached tests are **burned in** (8 runs, 7 must pass) rather than
-run once; a whole-suite run takes one pass with retries and burns in only the tests the change
-adds or edits. `suite-rules.test.cjs` lints the mechanical anti-flake rules before any API call.
+the workflow runs everything. Each reached test runs **once**; a failure is retried up to 3
+times and one pass settles it. `suite-rules.test.cjs` lints the mechanical anti-flake rules before any API call.
 A weekly scheduled run takes the whole suite, to catch drift no
 file change causes (the hosted model or the judge changing). The step summary
 lists the tests that failed and why, unstable tests are raised as PR warning annotations, and
@@ -113,8 +109,11 @@ when you need the model output behind a failure. The pinned promptfoo install is
 
 The gate used to be "two or more failures fail the job", which hid a genuine single-test
 regression, and then "a test that fails twice fails the job", which assumed a temperature-0 model
-that answers one prompt the same way every time. Claude 5 models cannot be pinned, so the gate now
-samples: a failure is retried 4 times and must pass 3.
+that answers one prompt the same way every time. Then it sampled pass rates: a failure retried 4
+times had to pass 3, and later every reached test ran 8 times and had to pass 7. A skill edit
+reaches dozens of tests, so a pass-rate bar on each of them failed pull requests on noise — 8/7
+failed a 64-test PR about half the time at 98% per test, a different test on every re-run. The
+gate now asks only whether a test *can* pass: once, with up to 3 retries.
 
 ### When it runs — and where an outside PR gets verified
 
@@ -124,9 +123,9 @@ this job: nothing is merged there. In the development repository:
 
 | Trigger | Runs? | Why |
 |---|---|---|
-| `pull_request`, branch in the repository | yes, the reachable tests, burned in | The gate: `evals` is a required check, and there is no merge queue. |
+| `pull_request`, branch in the repository | yes, the reachable tests, once each | The gate: `evals` is a required check, and there is no merge queue. |
 | `pull_request` from **Dependabot** | yes, the same | Dependabot runs get the Dependabot secrets, so `ANTHROPIC_API_KEY` is stored there too. |
-| `workflow_dispatch` | yes, the whole suite | Manual, including in your own fork with your own key. |
+| `workflow_dispatch` | yes, the whole suite or the `tests` regex | Manual, including in your own fork with your own key. |
 | `schedule` (weekly) | yes, the whole suite | Drift no pull request causes. |
 
 An outside contribution is opened on the public repository and reviewed there. Once approved, a

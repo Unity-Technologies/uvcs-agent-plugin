@@ -92,7 +92,7 @@ on the public repository (the development one has them turned off).
    `#<n>` — in the development repository that number means one of its own PRs.
 4. **Open the PR in the development repository** (`gh pr create`), titled like a commit subject —
    the title becomes the line in the release notes. CI runs `validate-complete` and `evals` (only
-   the tests the change reaches, burned in); both are required. No approval is required and there
+   the tests the change reaches, once each); both are required. No approval is required and there
    is no merge queue. Only the maintainers' team can merge (only it has write access); merge commits only, and the branch
    is deleted on merge. Ask the user before merging unless they told you to.
 5. **The mirror does the rest**: after the merge, the public `main` updates within a minute and the
@@ -341,14 +341,20 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    it more: a changed test file runs every test in it, and anything under `evals/` but the test
    files and docs (the runner, the assertions, the install, the selection itself) runs the whole
    suite. A weekly scheduled run takes the whole suite too, to catch drift no file change causes.
-   The reached tests are burned in, not run once — see *Measure, both sides, in CI* below.
 
    Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
    flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
-   a count) and retries each failure 4 times with `--no-cache`, failing the job only below 3/4, so
-   a one-off miss separates itself from a regression without a second command. A test that fails
-   and then passes its retries is reported as unstable, with its rate — a scenario short of
-   margin, not a pass.
+   a count) and retries each failure up to 3 times with `--no-cache`: one pass settles it, and
+   only a test that fails every time fails the job. **The gate's goal is a CI that is green unless
+   something is really broken**, so it asks whether a test *can* pass, never for a pass rate. A
+   test that fails and then passes a retry does not fail the job, but it is reported as unstable:
+   a defect in the test, since an eval must pass on its first run (*Writing evals that do not
+   flake* below).
+
+   Settled (2026-11), after a pass-rate gate failed PRs on noise: every reached test ran 8 times
+   and had to pass 7. A skill edit reaches dozens of tests, so at a 98% pass rate per test that
+   failed a 64-test PR about half the time, with a different test on every re-run, and each
+   "fix" re-rolled the dice. Do not bring back repeats or a pass-rate bar in the PR gate.
 
    Select with `--filter-pattern "<test description>"`: a **case-sensitive regex**, so confirm the
    matched count is what you expected — bare `promptfoo eval` reports a clean pass for a pattern
@@ -368,15 +374,26 @@ so keep skills independent and self-contained.
 
 ### Writing evals that do not flake
 
-Every test has a **pass rate**, not a result. The evaluated model takes no `temperature` (Claude
-5 models reject sampling parameters), so one prompt gets a different answer each run; even
-Haiku 4.5 at `temperature: 0` flipped about one run in eight on a prompt near a decision
-boundary. The gate in `run-evals.sh` absorbs a rare miss, but a test that passes 75% of the time
-turns a full run red about half the time. That is not noise to re-roll: the scenario has no
-margin, and the next edit will tip it for good. Word-golfing the skill until the test flips back
-does not help either — that tunes the suite to one model, and the 2026-10 move from Haiku 4.5 to
-5.5 broke a dozen tests tuned that way. Move the scenario away from the boundary instead. The
-rules below each come from a test that flaked for exactly that reason:
+**An eval must pass on its first run, every run.** That is the design target for every test you
+write or edit, not an aspiration. CI retries a failure, but only as a safety net against the rare
+miss no design removes. A test that needs that retry is a **defect in the test**, as much as one
+that fails: it is the next PR's red build, and the next skill edit tips it for good.
+
+Why it takes design: the evaluated model takes no `temperature` (Claude 5 models reject sampling
+parameters), so the same prompt gets a different answer each run; even Haiku 4.5 at
+`temperature: 0` flipped about one run in eight on a prompt near a decision boundary. A test is
+first-try reliable only when **every reasonable answer passes it and only a wrong one fails**. Before
+adding a test, imagine three good answers worded differently: if any of them fails an assertion,
+the test is wrong, not the model. Then:
+
+- **When a test shows up as unstable** (CI's warning, or the weekly run's summary), fix it in a
+  PR of its own; do not leave it for the next author whose change happens to reach it.
+- **Fix the scenario, not the skill wording.** Word-golfing the skill until the test flips back
+  tunes the suite to one model — the 2026-10 move from Haiku 4.5 to 5.5 broke a dozen tests tuned
+  that way. Move the scenario away from the boundary instead.
+- **Never fix it by re-running.** A green re-run says nothing about the next run.
+
+The rules below each come from a test that flaked for exactly that reason:
 
 - **One behavior per test.** An 8-entry review thread asking which items are pending was a
   reasoning exercise the small model failed half the time; two tests of 3–4 entries each pass.
@@ -431,14 +448,12 @@ rules below each come from a test that flaked for exactly that reason:
   prose command — seen twice (the switch preview, the unattended wrap-up). The converse holds
   too: a command quoted in a "stop and ask the user" step reads as one to run — "ask the user to
   shelve them (`cm shelveset create --all …`)" got shelved by the model itself.
-- **Measure, both sides, in CI.** The pull request does it for you: every test the change
-  reaches — and every test it adds or edits, even on a whole-suite run — is **burned in**, 8 runs
-  that must pass 7 (`run-evals.sh --burn-in`). A test below that fails the PR that wrote or moved
-  it, instead of failing a stranger's PR later. To compare with `HEAD`, run the same
-  burn-in there: `gh workflow run skill-evals.yml --ref <branch> -f burn_in='^(?:<description>)$'`.
-  A test worse than `HEAD` means the edit moved it — revert that edit rather than adjusting the
-  test to fit. **Do not trust a local measurement**: promptfoo signs in through Claude Code
-  locally and inherits a system prompt CI does not have; it scored 8/8 a test CI scored 2/4.
+- **Measure in CI, not locally.** When a test keeps showing up as unstable or failing, run it
+  on your branch and on `main` the same way:
+  `gh workflow run skill-evals.yml --ref <branch> -f tests='^(?:<description>)$'`. A test worse
+  than on `main` means the edit moved it — revert that edit rather than adjusting the test to fit.
+  **Do not trust a local measurement**: promptfoo signs in through Claude Code locally and
+  inherits a system prompt CI does not have; it scored 8/8 a test CI scored 2/4.
   Either way the fix is the scenario or the skill wording, never a re-run.
 - **The mechanical rules are linted** (`evals/suite-rules.test.cjs`, no API calls, first thing
   in CI): unique one-line descriptions, a command forbidden with `notRun` and not `not-icontains`,
@@ -520,6 +535,8 @@ finished skills.
 - [ ] No client-specific tools, paths, or assumptions in the portable core.
 - [ ] Every `cm` command verified against a real CLI; read-only vs mutating labelled.
 - [ ] No secrets, internal URLs, real user/customer/org data.
+- [ ] Every eval added or edited is built to pass on its first run, and none showed up as
+      unstable in CI.
 - [ ] If a skill was added/renamed or a `description` changed: triggering smoke-tested in a
       second agent.
 
