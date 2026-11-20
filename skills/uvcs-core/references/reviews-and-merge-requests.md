@@ -110,7 +110,7 @@ Same group under both commands. All **mutating**; reading is `cm find changerevi
 ```
 cm mr comment add <id> -c="<text>"                                  # conversation comment
 cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42  # inline comment
-cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42-48   # lines 42 to 48
+cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42-48   # lines 42-48, cm 11.0.16.10694 or newer only
 cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42 \
     --type=Question --changeset=cs:4207
 cm mr comment reply <comment_guid> -c="<text>" [--discard]
@@ -124,12 +124,13 @@ cm mr comment delete <comment_guid> [<guid> ...]
   `--line`, and `--line`, `--type` and `--changeset` each require `--path`.
 - `--line` is **1-based**, like an editor and like the `line` query field. The stored `location`
   is 0-based — see the `changereviewcomment` fields in `find-queries.md`.
-- **A range of lines**: `--line=<first>-<last>`, both included, first line first (`--line=48-42`
-  is rejected). Everything else is the same as a one-line comment. **Availability: `cm`
-  11.0.16.10694 and newer** — compare with the number `cm version` prints. On an older client,
-  comment on the range's **first line** instead and name the range in the text
-  ("Lines 42-48: ..."): the first line is where a reader starts, and it is the line `{line}`
-  prints for a range.
+- **A range of lines: read `cm version` before writing the command.** Below 11.0.16.10694 (on
+  11.0.16, a last number under 10694, such as 11.0.16.10512) `--line` takes **one number**:
+  comment on the range's **first line** (`--line=42`) and name the range in the text
+  ("Lines 42-48: ..."); the first line is where a reader starts, and it is the line `{line}`
+  prints for a range. From 11.0.16.10694 on, `--line=<first>-<last>` covers both lines and
+  everything between, first line first (`--line=48-42` is rejected); everything else is the
+  same as a one-line comment.
 - `--type`: `Change` (default) requests a change and stays pending until applied or discarded;
   `Question` asks something; `Comment` is a plain note.
 - `--changeset=cs:<id>` files the comment under that one changeset's diff instead of the whole
