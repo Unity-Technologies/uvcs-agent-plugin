@@ -71,8 +71,8 @@ Take the thread **once** and keep it. Whether a parent is pending is decided by 
 `-1` is "unset" on every numeric field, never a real id. A `discarded` child settles its parent
 whoever posted it — reviewer, author, or you earlier. All buckets empty: say so and stop.
 
-**Line numbers: `{location}` + 1.** It is 0-based and works on every client; `-1` means the
-comment is not anchored to a line (`uvcs-core/references/find-queries.md`).
+**Line numbers: `{location}` + 1**, 0-based: `11` is line 12, `lines:11-17` lines 12 to 18 (`{line}`
+shows a range's first only); `-1` or other `kind:` text is no line (`uvcs-core/references/find-queries.md`).
 
 **The file** comes from the comment's revision id — never search or guess it from the comment:
 
@@ -119,7 +119,7 @@ finding flattened into one line loses its fix), and your proposal; then **stop a
 
 | Item | You propose, and revise until the user approves | On "ok" |
 |---|---|---|
-| change | the fix, applied in the workspace and shown as a diff — a ` ```suggestion ` block is the reviewer's proposed replacement for the anchored line, weighed like any fix, never applied blindly | check in with the tag |
+| change | the fix, applied in the workspace and shown as a diff — a ` ```suggestion ` block is the reviewer's proposed replacement for the anchored line or whole range, weighed like any fix, never applied blindly | check in with the tag |
 | question or comment | a reply | post it |
 | question or comment pointing at a sensible change | the fix as a diff, then the reply | check in *without* the tag, then post "Fixed in cs:<id>." |
 | disagree | a discard, with the reason | post it |
