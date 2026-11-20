@@ -114,6 +114,11 @@ shelve `{shelveid} {date} {owner} {comment} {parent}` · review/mergerequest `{i
   not valid on performed query."*; `location` works on both. Reading `{location}` and adding 1
   needs no version probe and is the portable choice — but then the **+1 is mandatory**, and
   `location` is `-1`, not empty, when the comment is not anchored.
+- **A range comment** (`cm` 11.0.16.10694 and newer) stores `lines:<first>-<last>`, 0-based:
+  `lines:11-17` is lines 12 to 18. `{line}` prints only the first line (`12`), and `where line=12`
+  matches one-line comments only — read `{location}` for the whole range. Any other text with a
+  `<kind>:` prefix (`image:120,80`) is a location another client stored: treat it as no line,
+  like `-1`.
 - `revisionid` is a real revision id: feed it to `cm find revision` for the file it points at
   (recipe below). It is *not* a changeset — `appliedinchangeset` and `changeset` are.
 
@@ -147,7 +152,7 @@ cm find review "where assignee='me' and status='Under review'" --format="{id} {t
 # The merge request for a branch (target filters on the source branch; don't print it)
 cm find mergerequest "where target='br:/main/task001'" --format="{id} {title} {destination}" --nototal
 
-# Pending change requests on a review ({location} is 0-based: add 1 for the editor line)
+# Pending change requests on a review ({location} is 0-based: 11 is line 12, lines:11-17 is 12 to 18)
 cm find changereviewcomment "where reviewid=311 and type='change'" --format="{guid} {location} {comment}" --nototal
 
 # A revision id -> the file it is a revision of, and where that revision lives
