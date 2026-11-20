@@ -121,7 +121,8 @@ what the publishing side parses.
   complete replacement for the anchored line or range, with the file's indentation, no `-`/`+`.
   It replaces **every** anchored line: on a range it holds the whole new text of lines A-B, with
   more lines, fewer, or none (an empty block deletes them), so the anchor **must** be exactly the
-  lines it replaces. With **Line ranges** `yes`, a certain fix to consecutive lines is a
+  lines it replaces. An anchored line the fix leaves alone is copied into the block unchanged —
+  that never makes it a `diff`. With **Line ranges** `yes`, a certain fix to consecutive lines is a
   suggestion: anchor the finding to exactly the lines the fix replaces. Keep `diff` or the
   language block when the fix touches any line outside the anchor, needs a design choice, is not
   certain, or spans several places. A question never carries one.
