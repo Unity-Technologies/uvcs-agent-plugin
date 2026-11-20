@@ -100,8 +100,8 @@ change no test loads, such as a README fix or a doc in `evals/`, runs none and p
 test file runs the tests in it; a change to the config, the runner, an assertion, the install or
 the workflow runs everything. Each reached test runs **once**; a failure is retried up to 3
 times and one pass settles it. `suite-rules.test.cjs` lints the mechanical anti-flake rules before any API call.
-A weekly scheduled run takes the whole suite, to catch drift no
-file change causes (the hosted model or the judge changing). The step summary
+There is no scheduled run; `gh workflow run skill-evals.yml` runs the whole suite on demand.
+The step summary
 lists the tests that failed and why, unstable tests are raised as PR warning annotations, and
 the full `results.json` / `retry.json` are attached to the run as the `eval-results` artifact for
 when you need the model output behind a failure. The pinned promptfoo install is cached on
@@ -126,7 +126,6 @@ this job: nothing is merged there. In the development repository:
 | `pull_request`, branch in the repository | yes, the reachable tests, once each | The gate: `evals` is a required check, and there is no merge queue. |
 | `pull_request` from **Dependabot** | yes, the same | Dependabot runs get the Dependabot secrets, so `ANTHROPIC_API_KEY` is stored there too. |
 | `workflow_dispatch` | yes, the whole suite or the `tests` regex | Manual, including in your own fork with your own key. |
-| `schedule` (weekly) | yes, the whole suite | Drift no pull request causes. |
 
 An outside contribution is opened on the public repository and reviewed there. Once approved, a
 maintainer fetches it into the development repository and opens it there as a branch of its own:
@@ -152,8 +151,8 @@ code is the documented pwn-request pattern), and so was evaluating public PRs fr
 development repository automatically, which is the same exposure with an extra hop.
 
 The PR run is the only run: once green, the PR merges without a queue and without the branch
-being brought up to date with `main`. The weekly scheduled run of the whole suite is what notices
-an interaction between two PRs that were each green on their own.
+being brought up to date with `main`. An interaction between two PRs that were each green on
+their own shows up on the next PR that reaches the test.
 
 ### Authentication
 

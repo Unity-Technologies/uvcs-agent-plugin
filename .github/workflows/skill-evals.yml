@@ -4,8 +4,8 @@ name: Skill evals
 #
 # The PR run is the gate: the `evals` check is required on main and there is no merge
 # queue, so a change is evaluated once, on its own branch, and not again after merging.
-# Branches need not be up to date with main to merge; the weekly scheduled run below is
-# what catches an interaction two separately green PRs did not show.
+# Branches need not be up to date with main to merge. There is no scheduled run: a drift
+# shows up on the next PR that reaches the test, or in a manual run of the whole suite.
 #
 # The public repository is a read-only mirror (mirror.yml) with no credential, so the job
 # never runs there. Dependabot PRs run like any other: GitHub gives Dependabot runs the
@@ -52,10 +52,6 @@ on:
         description: "Run only the tests whose description matches this regex. Empty: the whole suite."
         required: false
         default: ""
-  # The whole suite once a week: pull requests run only the tests they reach, so this is
-  # what notices a drift no file change caused (the hosted model or the judge changing).
-  schedule:
-    - cron: "0 6 * * 1"
 
 permissions:
   id-token: write # required to request the GitHub OIDC token (wif mode only)
@@ -117,7 +113,7 @@ jobs:
 
       # Which tests the change can reach, from the files it changes against its base: the
       # pull request's base, or the queue's base for the merge group (which holds every PR
-      # queued ahead too). A manual or scheduled run takes the whole suite. Renames list
+      # queued ahead too). A manual run takes the whole suite. Renames list
       # both names; -z and quotePath=false keep any file name exactly as written. The diff
       # is captured before it is split so a failing git fails the step (set -e does not see
       # a process substitution), and an empty list selects everything: it fails closed.

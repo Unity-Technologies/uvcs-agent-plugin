@@ -308,8 +308,10 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
 
    **The PR run is the gate; there is no merge queue** (dropped 2026-11, once the repository was
    private and only maintainers could merge). `evals` and `validate-complete` are required checks
-   on the PR, branches need not be up to date with `main` to merge, and the weekly scheduled run
-   catches an interaction two separately green PRs did not show. Dependabot PRs run the evals too:
+   on the PR, and branches need not be up to date with `main` to merge. There is **no scheduled
+   run** (removed 2026-11, by decision): an interaction between two green PRs, or a drift in the
+   hosted model, shows up on the next PR that reaches the test, and a whole-suite run is a manual
+   `gh workflow run skill-evals.yml` away. Dependabot PRs run the evals too:
    GitHub gives a Dependabot-triggered run the **Dependabot** secrets, not the Actions ones, so
    `ANTHROPIC_API_KEY` is stored in both. That is safe here because the development repository
    only runs code a maintainer has merged or Dependabot proposed, and a malicious package version
@@ -340,7 +342,6 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    CI applies this table (`evals/reachable-tests.cjs`), a little wider where a file cannot tell
    it more: a changed test file runs every test in it, and anything under `evals/` but the test
    files and docs (the runner, the assertions, the install, the selection itself) runs the whole
-   suite. A weekly scheduled run takes the whole suite too, to catch drift no file change causes.
 
    Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
    flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
@@ -386,7 +387,7 @@ first-try reliable only when **every reasonable answer passes it and only a wron
 adding a test, imagine three good answers worded differently: if any of them fails an assertion,
 the test is wrong, not the model. Then:
 
-- **When a test shows up as unstable** (CI's warning, or the weekly run's summary), fix it in a
+- **When a test shows up as unstable** (CI's warning on a PR), fix it in a
   PR of its own; do not leave it for the next author whose change happens to reach it.
 - **Fix the scenario, not the skill wording.** Word-golfing the skill until the test flips back
   tunes the suite to one model — the 2026-10 move from Haiku 4.5 to 5.5 broke a dozen tests tuned
