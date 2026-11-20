@@ -129,10 +129,16 @@ First collect what the prompt's **Inputs** block asks for:
 
   For pending changes the after side is the file on disk.
 - **The request**, in the user's words: a focus, "skip nits", a concern to verify.
+- **Line ranges**: `yes` when the number `cm version` prints is 11.0.16.10694 or newer (a comment
+  can then cover lines A-B), otherwise `no`.
+
+  ```
+  cm version
+  ```
 
 Read the prompt file, fill the block in, and hand the whole text to the new agent together with
 the patch path. What comes back is the report body: a verdict line, one section per severity, and
-findings with a bracketed id, a path and a 1-based line. Keep it exactly — the `[B1]` ids are how
+findings with a bracketed id, a path and a 1-based line or range. Keep it exactly — the `[B1]` ids are how
 the author says "fix B1" and how **`uvcs-address-review`** finds the comment again.
 
 ## 4. Show the report, then ask what to publish
@@ -166,7 +172,7 @@ with no `--path` names them. Section headings and rules are chat structure; beyo
 do not reword what the user approved. The rest is markdown and stays markdown: keep the
 backticks, bold and fenced code blocks with their language exactly as the report has them —
 never flatten code into indented or plain text. A ` ```suggestion ` block stays one, verbatim,
-on exactly the finding's line: never moved, never turned into a `diff`.
+on exactly the finding's line or range: never moved, never turned into a `diff`.
 
 Then let the user choose: all, all of one severity, specific ids, all except some, or none —
 "none" stops the workflow with nothing published. What you offer depends on the target:
@@ -214,6 +220,7 @@ each paragraph on one line and objects as bare specs, `cs:4207` and never `` `cs
 
 ```
 cm mr comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Change -commentsfile=<file>
+cm mr comment add <id> --path=<path in the cm diff rows> --line=<first>-<last> --type=Change -commentsfile=<file>   # a finding on lines <first> to <last>
 cm mr comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Question -commentsfile=<file>   # a [Q] item
 cm mr comment add <id> -commentsfile=<file>       # the review as a whole, or a finding no changed line fits
 cm codereview comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Change -commentsfile=<file>
