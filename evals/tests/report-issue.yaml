@@ -82,6 +82,32 @@
 
       `uvcs-core` — `skills/uvcs-core/references/find-queries.md`
 
+      ### Agent and version
+
+      unknown
+
+      ### Plugin version
+
+      installed with npx skills
+
+      ### cm version
+
+      11.0.16.10694
+
+      ### OS and shell
+
+      macOS / zsh
+
+      ### What you asked the agent
+
+      > list my shelves, newest first
+
+      ### What the skill says
+
+      Quoted from `skills/uvcs-core/references/find-queries.md`:
+
+      > cm find shelve "where owner='me'" --format="{shelveid} {comment}" --nototal --order-by=date
+
       ### What the agent did
 
       ```
@@ -93,7 +119,23 @@
 
       `cm help find` lists no --order-by flag, so the recipe should not use one.
 
-      Yes: file it as written, and do not ask me again. List every command from here to the
+      ### Reproduction, as a test
+
+      **Skill loaded:** `skills/uvcs-core/SKILL.md` (+ `skills/uvcs-core/references/find-queries.md`)
+
+      **User message:**
+
+      > List my shelves, newest first.
+
+      **Must contain:** cm find shelve
+
+      **Must not contain:** --order-by
+
+      ### Does it also happen in another agent?
+
+      not tried
+
+      Every field is filled in. Yes: file it as written, and do not ask me again. List every command from here to the
       issue URL.
   assert:
     - type: icontains

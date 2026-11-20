@@ -268,7 +268,8 @@
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
       Unattended mode on review 311 is finished: B1 shelved as sh:101, S1 shelved as sh:102, Q1
-      answered. Write the wrap-up and give me the commands I run now.
+      answered. Nothing is checked in yet. Write the wrap-up and give me only the commands I run
+      myself in this sitting; leave out anything you would run for me in a later turn.
   assert:
     - type: icontains
       value: "cm shelveset apply sh:101"

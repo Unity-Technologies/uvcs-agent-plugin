@@ -223,8 +223,9 @@
   vars:
     reference_content: file://../skills/uvcs-core/references/status-and-checkin.md
     user_message: >-
-      src/Player.cs has no pending changes. Put it back the way it was in changeset 4100 so I can
-      check that in.
+      src/Player.cs has no pending changes. Put its content back the way it was in changeset 4100,
+      as a pending change in my workspace. I will review and check it in myself later, so only
+      give me the command that restores it.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
