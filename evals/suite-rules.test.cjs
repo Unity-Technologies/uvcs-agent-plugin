@@ -50,6 +50,11 @@ test('every command check has a pattern that compiles', () => {
     const pattern = a.config && a.config.pattern;
     assert.ok(typeof pattern === 'string' && pattern.length > 0, `${a.where}: no config.pattern`);
     assert.doesNotThrow(() => new RegExp(pattern, 'i'), a.where);
+    if (String(a.value).endsWith(':onlyAfter')) {
+      const after = a.config.after;
+      assert.ok(typeof after === 'string' && after.length > 0, `${a.where}: no config.after`);
+      assert.doesNotThrow(() => new RegExp(after, 'i'), a.where);
+    }
   }
 });
 

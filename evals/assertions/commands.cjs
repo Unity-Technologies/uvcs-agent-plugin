@@ -66,4 +66,21 @@ function runs(output, context) {
     : { pass: false, score: 0, reason: `No command matches /${re.source}/ (${lines.length} command lines)` };
 }
 
-module.exports = { notRun, runs, commandLines };
+// Passes unless a command line matching `pattern` comes before the last one matching
+// `config.after` — "no re-request until the last check-in". With no `after` line at all, any
+// match fails. For an order rule, where notRun would also fail a right answer that lists the
+// command as the last step.
+function onlyAfter(output, context) {
+  const re = matcher(context);
+  const after = new RegExp(context.config.after, 'i');
+  const lines = commandLines(output);
+  const last = lines.map((l) => after.test(l)).lastIndexOf(true);
+  const early = lines.filter((l, i) => re.test(l) && i < last);
+  const orphan = last === -1 ? lines.filter((l) => re.test(l)) : [];
+  const bad = [...early, ...orphan];
+  return bad.length === 0
+    ? { pass: true, score: 1, reason: `No /${re.source}/ before the last /${after.source}/` }
+    : { pass: false, score: 0, reason: `Runs too early: ${bad.join(' | ')}` };
+}
+
+module.exports = { notRun, runs, onlyAfter, commandLines };
