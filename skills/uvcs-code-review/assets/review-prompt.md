@@ -16,6 +16,7 @@ The requester fills this block in before handing you the prompt.
 - **To read a whole file:** <read-only command with placeholders for the path and the side>
 - **Request:** <the user's words: a focus, "skip nits", a concern to check — or "general review">
 - **Project rules:** <the project's code review rules, pasted in whole — or "none">
+- **Line ranges:** <"yes" if a finding can be anchored to a range of lines, otherwise "no">
 
 Read the patch **completely and in order** before writing anything. If it is long, read it in
 sequential chunks; never sample it — a review of half a diff is wrong about the other half. Where
@@ -115,12 +116,16 @@ what the publishing side parses.
   the bullet below allows it, otherwise `diff` with `-`/`+` lines when lines are replaced or
   deleted, or the file's own language when only code is added.
 - **Is a `suggestion` when the author can accept it at a glance.** When the whole fix is the
-  anchored line itself and you are certain of it — a typo, a wrong constant, a missing `await`, a
-  stale comment — the block is ` ```suggestion `: the complete replacement for that line, one or more lines
-  with the file's indentation, no `-`/`+`. It replaces exactly the anchored line (an empty block
-  deletes it), so the anchor **must** be the line it replaces. Keep `diff` or the language block
-  when the fix touches any other line, needs a design choice, is not certain, or spans several
-  places. A question never carries one.
+  anchored lines themselves and you are certain of it — a typo, a wrong constant, a missing
+  `await`, a stale comment, a loop or method rewritten — the block is ` ```suggestion `: the
+  complete replacement for the anchored line or range, with the file's indentation, no `-`/`+`.
+  It replaces **every** anchored line: on a range it holds the whole new text of lines A-B, with
+  more lines, fewer, or none (an empty block deletes them), so the anchor **must** be exactly the
+  lines it replaces. An anchored line the fix leaves alone is copied into the block unchanged —
+  that never makes it a `diff`. With **Line ranges** `yes`, a certain fix to consecutive lines is a
+  suggestion: anchor the finding to exactly the lines the fix replaces. Keep `diff` or the
+  language block when the fix touches any line outside the anchor, needs a design choice, is not
+  certain, or spans several places. A question never carries one.
 - **Reads like a colleague wrote it.** A review comment is UX: the author reads it cold, in a
   narrow comment pane. Write it the way a good senior engineer talks to a teammate — plain words,
   short sentences, one idea per paragraph, what goes wrong before why. Cut every word that does
@@ -131,7 +136,11 @@ what the publishing side parses.
   a changeset, branch, label or shelve is its bare spec (`cs:4207`, `br:/main/task001`), never in
   backticks, so the review shows it as a link. Each paragraph is one line: line breaks are kept.
 - **Is anchored to a path and a line** taken from **Files**: the path exactly as given there, the
-  line as an editor shows it on the new side of the change, 1-based. For a defect in a deleted
+  line as an editor shows it on the new side of the change, 1-based. When **Line ranges** is
+  `yes` and the finding is about a block — a whole method, a loop, several related lines — anchor
+  it to that range instead (`lines 30-33`); keep it tight, the smallest block the finding is
+  about, and use one line when the finding is about one line. When it is `no`, anchor to the
+  block's first line and name the range in the body. For a defect in a deleted
   line, anchor to the nearest surviving line and say so. **Never anchor to a file outside Files**,
   however much of the problem lives there: a caller left behind, a test that should have moved.
   Anchor it to the changed line that causes it, and name the other file and line in the body.
@@ -196,6 +205,6 @@ The previous value was 5 seconds; a slow server now blocks the login screen for 
 - **Within a section**, findings follow the order of the files in the patch, then the line. Ids
   number from 1 within each severity and are never reused.
 - **Each finding**: `### [id] <short title — what is wrong, not where>`, then the path in bold
-  backticks followed by `line <n>` on its own line (never `path:106`), then the body, then
+  backticks followed by `line <n>` or `lines <first>-<last>` on its own line (never `path:106`), then the body, then
   `**Fix** —` with its block. A `---` goes between findings, never before the first or after the
   last in a section.

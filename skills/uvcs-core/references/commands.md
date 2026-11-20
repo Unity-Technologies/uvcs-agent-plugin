@@ -161,6 +161,7 @@ than 11.0.16** (that release has only `--assignee`); the reference says how to d
 cm mergerequest create br:/main/task001 "MR title" --destination=br:/main --users=<user>
 cm mr review <id> --reviewed -c="LGTM"
 cm mr comment add <id> -c="Rename this" --path=/src/Player.cs --line=42
+cm mr comment add <id> -c="Extract this" --path=/src/Player.cs --line=42-48   # a range: 11.0.16.10694+
 cm codereview cs:4207 "Review title" --users=<user>      # changesets and shelves (sh:)
 cm find mergerequest "where target='br:/main/task001'" --format="{id} {title}" --nototal
 cm find changereviewcomment "where reviewid=<id>" --format="{guid} {type} {comment}" --nototal

@@ -43,6 +43,31 @@
         or claiming the CLI cannot add inline comments and falling back to the REST API or
         the GUI, is a failure.
 
+- description: "A comment on a range of lines passes --line=first-last on a client that has ranges"
+  vars:
+    user_message: >-
+      cm version prints 11.0.16.10694. On merge request 311, leave a change request on lines 40
+      to 52 of /src/Player.cs, the whole UpdateMovement method, saying it should be split in two.
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment (add|mk) 311 .*--line=40-52' }
+
+- description: "A client older than range support comments on the range's first line"
+  vars:
+    user_message: >-
+      cm version prints 11.0.16.10512. On merge request 311, leave a change request on lines 40
+      to 52 of /src/Player.cs, the whole UpdateMovement method, saying it should be split in two.
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+  assert:
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment (add|mk) 311 .*--line=40(?![-\d])' }
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--line=40-52' }
+
 - description: "Branch to merge request lookup filters on target with a br: spec"
   vars:
     user_message: "Find the merge request for branch /main/task009 and show me its destination."

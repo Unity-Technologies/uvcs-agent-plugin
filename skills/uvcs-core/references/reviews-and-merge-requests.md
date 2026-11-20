@@ -110,6 +110,7 @@ Same group under both commands. All **mutating**; reading is `cm find changerevi
 ```
 cm mr comment add <id> -c="<text>"                                  # conversation comment
 cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42  # inline comment
+cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42-48   # lines 42-48, cm 11.0.16.10694 or newer only
 cm mr comment add <id> -c="<text>" --path=/src/Player.cs --line=42 \
     --type=Question --changeset=cs:4207
 cm mr comment reply <comment_guid> -c="<text>" [--discard]
@@ -123,6 +124,13 @@ cm mr comment delete <comment_guid> [<guid> ...]
   `--line`, and `--line`, `--type` and `--changeset` each require `--path`.
 - `--line` is **1-based**, like an editor and like the `line` query field. The stored `location`
   is 0-based — see the `changereviewcomment` fields in `find-queries.md`.
+- **A range of lines: read `cm version` before writing the command.** Below 11.0.16.10694 (on
+  11.0.16, a last number under 10694, such as 11.0.16.10512) `--line` takes **one number**:
+  comment on the range's **first line** (`--line=42`) and name the range in the text
+  ("Lines 42-48: ..."); the first line is where a reader starts, and it is the line `{line}`
+  prints for a range. From 11.0.16.10694 on, `--line=<first>-<last>` covers both lines and
+  everything between, first line first (`--line=48-42` is rejected); everything else is the
+  same as a one-line comment.
 - `--type`: `Change` (default) requests a change and stays pending until applied or discarded;
   `Question` asks something; `Comment` is a plain note.
 - `--changeset=cs:<id>` files the comment under that one changeset's diff instead of the whole
@@ -200,16 +208,19 @@ comment body:
 ```
 ````
 
-- The fence **replaces exactly the anchored line** (`--line`, new side) with its lines: verbatim,
-  with the file's indentation, no `-`/`+` markers. Several lines replace that one line; an empty
-  fence deletes it. A comment anchors to one line only, so there are no multi-line ranges: a fix
-  that touches any other line is not a suggestion.
+- The fence **replaces exactly the anchored lines** (`--line`, new side) with its lines: verbatim,
+  with the file's indentation, no `-`/`+` markers. On a range (`--line=42-48`) it replaces
+  **every** line of the range, so it holds the whole new text of lines 42-48 — more lines, fewer,
+  or none (an empty fence deletes them). Rewriting a whole method is one suggestion on the
+  method's lines. A fix that touches any line outside the anchor is not a suggestion; on a client
+  without ranges, that is any fix beyond the one anchored line.
 - `Change` comments only, one fence per comment, posted with `-commentsfile` (it is multi-line).
   `cm` stores and returns the text unchanged; clients that do not apply suggestions show it as a
   code block.
-- **Applying one** is an ordinary fix: put the fence's lines in place of the anchored line, then
-  check in with the comment's `[apply-change:]` tag (above). The anchor is a line of the commented
-  revision: if the file changed since, find that line by its content.
+- **Applying one** is an ordinary fix: put the fence's lines in place of the anchored line or
+  range (read the range from `{location}`, not `{line}`: `find-queries.md`), then check in with
+  the comment's `[apply-change:]` tag (above). The anchor is in the commented revision: if the
+  file changed since, find those lines by their content.
 
 ## Code reviews (changesets and shelves)
 

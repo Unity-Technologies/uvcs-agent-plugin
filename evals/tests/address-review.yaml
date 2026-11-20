@@ -95,6 +95,21 @@
         revisionid 5501234 to cm find revision; searching the filesystem, grepping for a
         filename, or guessing a path from the comment text is a failure.
 
+- description: "A location of lines:a-b is a range, read as lines a+1 to b+1"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
+    user_message: >-
+      Review 311 has one pending change request: type=change, parent=-1,
+      appliedinchangeset=-1, line=88, location=lines:87-93, revisionid=5501234,
+      guid=8123d65a-620d-49ee-bf51-f526741a3341. Which lines of the file does this comment point at?
+  assert:
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the comment covers lines 88 to 94 of the file (location is
+        0-based, so lines:87-93 is 88 to 94). Answering only line 88, or lines 87 to 93, is a
+        failure. How the file is found is not judged.
+
 - description: "A change with a discarded child is not pending, and neither is an applied one"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
