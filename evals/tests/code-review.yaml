@@ -479,8 +479,9 @@
 
               logger.Info($"Retrying, retyCount={retryCount}");
 
-      It should say retryCount. I approve it as a nit. Give every command: first the one that
-      writes the comment file, with its full text in a heredoc, then the one that posts it.
+      It should say retryCount. I approve it as a nit. cm version prints 11.0.16.10694. Give every
+      command: first the one that writes the comment file, with its full text in a heredoc, then
+      the one that posts it.
   assert:
     - type: icontains
       value: "```suggestion"
@@ -491,8 +492,10 @@
       value: 'cm (mr|mergerequest) comment add 311 [^\n]*--line=61'
     - type: not-regex
       value: 'comment add 311 [^\n]*--type=(Comment|Question)'
+    - type: not-regex
+      value: 'comment add 311 [^\n]*--line=61-'
 
-- description: "A fix that spans several lines stays a diff, not a suggestion"
+- description: "Without range support, a fix that spans several lines stays a diff"
   vars:
     skill_content: file://../skills/uvcs-code-review/SKILL.md
     reference_content: file://../skills/uvcs-code-review/assets/review-prompt.md
@@ -506,9 +509,9 @@
       33          writer.Flush();
 
       Nothing disposes the stream or the writer, so the save file stays locked when Write
-      throws. I approve it as an important finding anchored to line 30. Give every command: first
-      the one that writes the comment file, with its full text in a heredoc, then the one that
-      posts it.
+      throws. I approve it as an important finding anchored to line 30. cm version prints
+      11.0.16.10512. Give every command: first the one that writes the comment file, with its
+      full text in a heredoc, then the one that posts it.
   assert:
     - type: icontains
       value: "--line=30"
@@ -518,6 +521,37 @@
         changes lines 30-33 (a using block, or using declarations on both lines), not just line
         30, so it must be a diff or a csharp code block. A ```suggestion fence as the fix is a
         failure. Saying in prose that a suggestion does not fit is fine.
+
+- description: "With range support, a fix for a block is one suggestion on the block's lines"
+  vars:
+    skill_content: file://../skills/uvcs-code-review/SKILL.md
+    reference_content: file://../skills/uvcs-code-review/assets/review-prompt.md
+    user_message: |-
+      You are the reviewer of merge request 311. In /src/Save/SaveWriter.cs the change added
+      lines 30-33, new side:
+
+      30          var stream = File.OpenWrite(path);
+      31          var writer = new StreamWriter(stream);
+      32          writer.Write(json);
+      33          writer.Flush();
+
+      Nothing disposes the stream or the writer, so the save file stays locked when Write
+      throws. The fix is using declarations on lines 30 and 31. I approve it as an important
+      finding. cm version prints 11.0.16.10694. Give every command: first the one that writes the
+      comment file, with its full text in a heredoc, then the one that posts it.
+  assert:
+    - type: icontains
+      value: "```suggestion"
+    - type: regex
+      value: 'cm (mr|mergerequest) comment add 311 [^\n]*--line=30-3[13](?![0-9])'
+    - type: llm-rubric
+      value: >-
+        One behavior is judged: the comment is anchored to a range (lines 30-31 or 30-33) and
+        its text carries a ```suggestion fence that is the complete new text of that whole
+        range, with using declarations on the stream and the writer. Anchored to 30-33, the
+        fence must still hold `writer.Write(json);` (dropping the Flush line is fine), because
+        it replaces all four lines. A fence that would delete code the fix keeps, or a diff or
+        csharp block instead of a suggestion, is a failure. Other text is not judged.
 
 - description: "A question never carries a suggestion"
   vars:
