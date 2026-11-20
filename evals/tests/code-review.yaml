@@ -479,7 +479,7 @@
 
               logger.Info($"Retrying, retyCount={retryCount}");
 
-      It should say retryCount. I approve it as a nit. cm version prints 11.0.16.10694. Give every
+      It should say retryCount. I approve it as a nit, with its fix. cm version prints 11.0.16.10694. Give every
       command: first the one that writes the comment file, with its full text in a heredoc, then
       the one that posts it.
   assert:
