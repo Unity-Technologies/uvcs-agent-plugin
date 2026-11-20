@@ -1,7 +1,7 @@
 // node --test evals/suite-rules.test.cjs   (no API calls; CI runs it before selecting the evals)
 //
 // The rules from CLAUDE.md, "Writing evals that do not flake", that a machine can check. The
-// rest need a measurement, which is the burn-in (run-evals.sh --burn-in).
+// rest need a measurement, which is a run in CI (CLAUDE.md, "Measure in CI, not locally").
 'use strict';
 
 const test = require('node:test');
@@ -22,7 +22,7 @@ const tests = config.tests.flatMap((entry) => {
 const assertions = tests.flatMap((t) => (t.assert ?? []).map((a) => ({ ...a, where: t.where })));
 
 test('every test has a one-line description no other test uses', () => {
-  // CI selects, retries and burns in by description: a shared one merges two tests' rates.
+  // CI selects and retries by description: a shared one merges two tests' results.
   const seen = new Set();
   for (const t of tests) {
     assert.ok(typeof t.description === 'string' && /^[^\r\n]+$/.test(t.description), t.where);
