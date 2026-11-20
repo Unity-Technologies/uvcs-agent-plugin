@@ -343,8 +343,10 @@ alias of `cm shelveset`, so the spelling is not the distinction; the conflict pa
    it more: a changed test file runs every test in it, and anything under `evals/` but the test
    files and docs (the runner, the assertions, the install, the selection itself) runs the whole
 
-   Run through **`evals/run-evals.sh`**, which is what CI runs and takes any `promptfoo eval`
-   flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
+   Run **`evals/run-evals.sh --reachable`** before you push: it selects the tests your work
+   reaches against `origin/main` (committed or not) with the same `reachable-tests.cjs` and the
+   same gate CI applies, so a local run predicts the PR's. `run-evals.sh` is what CI runs and
+   takes any `promptfoo eval` flag. It names each failing test (promptfoo's own table truncates at 25 rows and reports only
    a count) and retries each failure up to 3 times with `--no-cache`: one pass settles it, and
    only a test that fails every time fails the job. **The gate's goal is a CI that is green unless
    something is really broken**, so it asks whether a test *can* pass, never for a pass rate. A
@@ -387,8 +389,19 @@ first-try reliable only when **every reasonable answer passes it and only a wron
 adding a test, imagine three good answers worded differently: if any of them fails an assertion,
 the test is wrong, not the model. Then:
 
-- **When a test shows up as unstable** (CI's warning on a PR), fix it in a
-  PR of its own; do not leave it for the next author whose change happens to reach it.
+- **Maintain the evals as you run them.** Every test a run reports **unstable** (failed, then
+  passed a retry) or **failed** (failed its first run and all 3 retries) is refined before you
+  push, wherever you see it — a local `--reachable` run or CI's warning on a PR:
+  1. A failed test whose skill text you just edited is a **regression**: fix your change, not
+     the test.
+  2. Anything else goes to an agent of its own, with a clean context, one per test: the test's
+     entry, its failing answers and reasons from `evals/output/results.json` and `retry.json`,
+     the files it loads, and this section. Its job is to move the scenario off the boundary by
+     the rules below — never to edit the skill, and never to loosen an assertion until a wrong
+     answer passes. It proves the fix with
+     `./run-evals.sh --filter-pattern '^<description>$' --repeat 4 --no-cache` (4 of 4) and
+     returns the diff. Where the client cannot start an agent, do the same inline.
+  3. Commit each refined test on its own, saying in the body why it flaked.
 - **Fix the scenario, not the skill wording.** Word-golfing the skill until the test flips back
   tunes the suite to one model — the 2026-10 move from Haiku 4.5 to 5.5 broke a dozen tests tuned
   that way. Move the scenario away from the boundary instead.
@@ -453,8 +466,9 @@ The rules below each come from a test that flaked for exactly that reason:
   on your branch and on `main` the same way:
   `gh workflow run skill-evals.yml --ref <branch> -f tests='^(?:<description>)$'`. A test worse
   than on `main` means the edit moved it — revert that edit rather than adjusting the test to fit.
-  **Do not trust a local measurement**: promptfoo signs in through Claude Code locally and
-  inherits a system prompt CI does not have; it scored 8/8 a test CI scored 2/4.
+  **A local run predicts, CI decides**: promptfoo signs in through Claude Code locally and
+  inherits a system prompt CI does not have; it once scored 8/8 a test CI scored 2/4. A test
+  refined locally that still needs a retry in CI goes through the loop again.
   Either way the fix is the scenario or the skill wording, never a re-run.
 - **The mechanical rules are linted** (`evals/suite-rules.test.cjs`, no API calls, first thing
   in CI): unique one-line descriptions, a command forbidden with `notRun` and not `not-icontains`,

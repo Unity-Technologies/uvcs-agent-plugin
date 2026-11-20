@@ -77,6 +77,7 @@ times** with `--no-cache`, so a one-off miss does not fail the run. It takes any
 flag:
 
 ```bash
+./run-evals.sh --reachable                            # what CI would run for your work
 ./run-evals.sh                                        # whole suite
 ./run-evals.sh --filter-pattern "An approved report"  # one test, same reporting
 ```

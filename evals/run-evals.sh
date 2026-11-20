@@ -32,8 +32,13 @@
 # reported as UNSTABLE, a defect in the test to fix in a PR of its own. It does not
 # fail this job, so an author is never blocked by a test their change did not break.
 #
-# Usage:  evals/run-evals.sh [extra promptfoo eval flags]
-# e.g.    evals/run-evals.sh --filter-pattern "An approved report is filed"
+# Usage:  evals/run-evals.sh [--reachable[=<rev>]] [extra promptfoo eval flags]
+# e.g.    evals/run-evals.sh --reachable
+#         evals/run-evals.sh --filter-pattern "An approved report is filed"
+#
+# --reachable runs what CI would run for your work: the tests reachable from every file
+# changed since the merge base with <rev> (default origin/main), committed or not, chosen
+# by reachable-tests.cjs exactly as the workflow chooses them.
 #
 set -euo pipefail
 
@@ -49,6 +54,29 @@ RETRIES="${EVAL_RETRIES:-3}"
 CONCURRENCY="${EVAL_CONCURRENCY:-4}"
 CONFIG=promptfooconfig.yaml
 mkdir -p output
+
+case "${1:-}" in
+  --reachable|--reachable=*)
+    REF="${1#--reachable}"; REF="${REF#=}"; REF="${REF:-origin/main}"
+    shift
+    ROOT=$(git rev-parse --show-toplevel)
+    BASE=$(git merge-base "$REF" HEAD)
+    CHANGED=()
+    while IFS= read -r f; do [ -n "$f" ] && CHANGED+=("$f"); done < <(
+      { git -C "$ROOT" -c core.quotePath=false diff --name-only --no-renames "$BASE"
+        git -C "$ROOT" -c core.quotePath=false ls-files --others --exclude-standard; } | sort -u)
+    if [ "${#CHANGED[@]}" -eq 0 ]; then
+      echo "Nothing changed since $REF; no eval to run."
+      exit 0
+    fi
+    SELECTED=$(node reachable-tests.cjs "${CHANGED[@]}")
+    case "$SELECTED" in
+      none) echo "No eval loads a file changed since $REF; none to run."; exit 0 ;;
+      all)  echo "The change reaches every test: running the whole suite." ;;
+      *)    set -- --filter-pattern "$SELECTED" "$@" ;;
+    esac
+    ;;
+esac
 
 run_suite() {
   local out="$1"; shift
