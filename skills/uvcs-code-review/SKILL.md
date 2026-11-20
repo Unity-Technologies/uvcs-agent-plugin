@@ -219,7 +219,7 @@ cm mr comment add <id> -commentsfile=<file>       # the review as a whole, or a 
 cm codereview comment add <id> --path=<path in the cm diff rows> --line=<n> --type=Change -commentsfile=<file>
 ```
 
-Every finding — blocker, important, suggestion, nit — is `--type=Change`: it names something
+Every finding — blocker, important, suggestion, nit — is `--type=Change`, never `Comment`: it names something
 wrong and tells the author what to fix. `--type=Question` is only for the report's `[Q]` items,
 which ask the author something instead. On a code review every subcommand is spelled
 `cm codereview ...`, never `cm mr` — there is no merge request there.
