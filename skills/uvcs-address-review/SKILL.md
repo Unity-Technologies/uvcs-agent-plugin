@@ -29,7 +29,7 @@ cm status                   # pending changes
 ```
 
 - **Pending changes: stop and ask.** The user checks them in or shelves them — their call, never
-  yours, and nothing else runs until they have: every fix below checks in or undoes per file, and
+  yours, and nothing else runs until they have: every fix below checks in per file, and
   would sweep in or throw away unrelated edits. No workaround.
 - **On a branch** — that branch is the target. Continue silently.
 - **Pinned to a changeset** — unusual, and check-in is not the natural flow. Say so and ask first.
@@ -109,8 +109,8 @@ Show the plan — id, file, line, request, any verdict — then ask which way to
 
 - **Interactive** — you walk the plan one item at a time, and every fix, check-in, reply and
   discard waits for the user's "ok". Nothing reaches the server that they have not approved.
-- **Unattended** — every clear item is worked without stopping, each fix in its own shelve and
-  nothing checked in; the user reviews the shelves at the end. Default to Interactive.
+- **Unattended** — every clear change is fixed and checked in without stopping; replies,
+  discards and the re-request wait for one approval at the end. Default to Interactive.
 
 ## 5. Interactive — one item at a time, every step approved
 
@@ -165,47 +165,34 @@ Last item done: re-request, unless every item was skipped (then nothing changed)
 cm mr review 311 --re-request --all
 ```
 
-## 6. Unattended — one shelve per item
+## 6. Unattended — check in every fix, hold what people read
 
-Do not ask per item. Every fix lands in its **own** shelve, and nothing is checked in — the review
-only changes when the user checks the shelves in.
+Do not ask per item. Take the changes in plan order and, for each, apply the fix and check it in
+with its tag at once, exactly as in step 5 — so every fix builds on the one before it:
 
 ```
-cm shelveset create src/InventoryManager.cs --all \
-    -c "[apply-change:8123d65a] Null-check the slot before use" --summaryformat
-cm undo src/InventoryManager.cs
+cm checkin src/InventoryManager.cs -c "[apply-change:8123d65a] Null-check the slot before use"
 ```
 
-The `undo` keeps the next shelve to its own fix, and is safe only because step 1 left the workspace
-clean: undo **exactly the paths you edited, named**, never `-r`, never without a shelve first.
+A question or comment pointing at a sensible change: fix it, check it in *without* the tag, and
+draft "Fixed in cs:<id>." as its reply. If a fix or check-in fails, stop and report, its edits left in place.
 
-Answer questions and comments as in Interactive mode without the approval round trip, after the
-changes. Leave **unclear** and **disagree** items, and any answer that needs a fix, for the user.
-If a fix or shelve fails, undo its paths, mark it skipped and **carry on**.
+**Post nothing yet.** Replies notify a human, so draft the reply to every question and comment,
+the discard for every **disagree** item, and your question on every **unclear** one. Then show
+them all at once and **wait**; on the user's "ok", with any edits, post them as in step 5 and
+re-request — the re-request is part of that approval, never run before it.
 
 ## 7. Wrap up
 
-Show what happened to every item — applied, discarded, answered, skipped — with the changeset or
-shelve it produced and the review, each a markdown link on its own `cs:<id>` / `sh:<id>` name
-(`uvcs-core/references/deep-links.md`). What comes next depends on the mode:
-
-- **Unattended** — nothing is in yet, so **do not re-request.** Hand the user the commands that
-  land each shelve — its comment is the check-in comment, so the `[apply-change:]` tag fires —
-  ending at the last check-in, with no re-request; tell them to ask you for it once they land:
-
-  ```
-  cm shelveset apply sh:101 --preview
-  cm shelveset apply sh:101
-  cm checkin --all -c "[apply-change:8123d65a] Null-check the slot before use"
-  ```
-
-- **Interactive** — the fixes are in, and the re-request closing step 5 is the last command.
+Show what happened to every item — applied, discarded, answered, skipped — with the changeset it
+produced and the review, each a markdown link on its own `cs:<id>` name
+(`uvcs-core/references/deep-links.md`). The re-request is the last command in either mode.
 
 ## Mutating, irreversible, visible to other people
 
-Steps 1–4 are read-only. From step 5 on: no `cm` command deletes a changeset, so confirm each
-check-in in Interactive mode; every reply and discard notifies a human, so never post text the user
-has not seen; `cm undo` is irreversible, so only on named paths, right after their shelve.
+Steps 1–4 are read-only. From step 5 on: no `cm` command deletes a changeset, so check in only on the
+workspace's own branch, and confirm each one in Interactive mode; every reply, discard and
+re-request notifies a human, so in either mode never post one the user has not seen.
 
 ## Not this skill's job
 
