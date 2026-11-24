@@ -221,83 +221,72 @@
       value: file://assertions/commands.cjs:runs
       config: { pattern: 'cm changeset editcomment cs:4210\S* .*\[apply-change:8123d65a\]' }
 
-- description: "Unattended mode shelves each fix and undoes only the paths it edited"
+- description: "Unattended mode checks in each fix with its own tag, without shelving"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Unattended mode, review 311. Two pending change requests: B1 in /src/Player.cs (guid
-      8123d65a-620d-49ee-bf51-f526741a3341) and S1 in /src/ItemData.cs (guid
-      a4e7f012-1234-5678-abcd-ef0123456789). Both fixes are clear and each touches only its own
-      file. Give only the commands you run, in order. I land your work myself afterwards, so leave
-      my commands out.
+      Unattended mode, review 311, on a clean workspace on its branch. Two pending change
+      requests, both clear, independent, each touching only its own file: B1 in src/Player.cs
+      (guid 8123d65a-620d-49ee-bf51-f526741a3341, clamp the stack size to the slot limit) and S1
+      in src/ItemData.cs (guid a4e7f012-1234-5678-abcd-ef0123456789, log the save path once).
+      There are no questions or comments. Assume both edits are made; give the cm commands you
+      run for them, in order.
   assert:
     - type: javascript
       value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm shelveset create .*Player\.cs' }
+      config: { pattern: '^cm (ci|checkin) (?=.*Player\.cs)(?=.*\[apply-change:8123d65a\])' }
     - type: javascript
       value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm shelveset create .*ItemData\.cs' }
-    # One shelve per fix: a single shelve holding both files would pass the two checks above.
+      config: { pattern: '^cm (ci|checkin) (?=.*ItemData\.cs)(?=.*\[apply-change:a4e7f012\])' }
+    # One changeset per comment: the fixes are independent.
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm shelveset create (?=.*Player\.cs)(?=.*ItemData\.cs)' }
-    - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm undo .*Player\.cs' }
-    - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm undo .*ItemData\.cs' }
-    # Never a workspace-wide undo: `-r`, `.`, `--all`, or no path at all.
+      config: { pattern: '^cm (ci|checkin) (?=.*8123d65a)(?=.*a4e7f012)' }
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm undo(\s*$|.*\s(-r|--all|\.)(\s|$))' }
-    # No check-in *command line*; telling the user to check the shelves in afterwards is fine.
+      config: { pattern: '^cm (shelve|shelveset)\b' }
     - type: javascript
       value: file://assertions/commands.cjs:notRun
-      config: { pattern: '^cm checkin' }
+      config: { pattern: '^cm undo\b' }
+
+- description: "Unattended mode drafts a question's reply and holds it with the re-request"
+  vars:
+    skill_content: file://../skills/uvcs-address-review/SKILL.md
+    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
+    user_message: >-
+      Unattended mode on review 311: B1 and S1 are fixed and checked in as cs:4210 and cs:4211.
+      One item is left, Q1, a question (guid b5f8e123-9999-aaaa-bbbb-ccccddddeeee) asking why the
+      slot limit is 64; the answer is that it matches the inventory grid, 8 by 8. I have not seen
+      anything yet. Write the reply to a file with a heredoc, then tell me what happens next.
+  assert:
     - type: llm-rubric
       value: >-
-        One behavior is judged: the order. Each fix's cm shelveset create is followed by the cm
-        undo of its own path before the next fix is shelved, so each shelve holds only its own
-        fix. Nothing else is judged.
+        One behavior is judged: the response drafts the reply to Q1 and stops for the user's
+        approval before posting it or re-requesting review. Listing the reply command and the
+        re-request as steps that run after the user approves is correct. Presenting either as
+        run now, or as running without waiting for approval, is a failure. Nothing else is judged.
 
-- description: "Unattended wrap-up does not re-request the review"
+- description: "Unattended mode posts the approved replies, then re-requests"
   vars:
     skill_content: file://../skills/uvcs-address-review/SKILL.md
     reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
     user_message: >-
-      Unattended mode on review 311 is finished: B1 shelved as sh:101 with the comment
-      "[apply-change:4c1e9a07] Clamp the stack size to the slot limit", S1 shelved as sh:102 with
-      the comment "[apply-change:9d02b7e5] Log the save path once", Q1 answered. Nothing is checked
-      in yet. Write the wrap-up and give me only the commands I run myself in this sitting; leave
-      out anything you would run for me in a later turn.
+      Unattended mode on review 311: both change requests are already checked in, as cs:4210 and
+      cs:4211, and I have just approved, as drafted, the one held reply, to Q1 (guid b5f8e123-9999-aaaa-bbbb-ccccddddeeee), already
+      written to q1-reply.txt. Give every cm command you run now, in order, to the end.
   assert:
-    - type: icontains
-      value: "cm shelveset apply sh:101"
-    # The behavior is the order: no re-request before the last check-in. Listing it as the step
-    # after the check-ins, or leaving it out for the user to ask for later, both pass.
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) comment reply b5f8e123-9999-aaaa-bbbb-ccccddddeeee' }
+    - type: javascript
+      value: file://assertions/commands.cjs:runs
+      config: { pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--re-request' }
     - type: javascript
       value: file://assertions/commands.cjs:onlyAfter
       config:
         pattern: '^cm (mr|mergerequest|cr|codereview) review 311 .*--re-request'
-        after: '^cm (ci|checkin)\b'
-
-- description: "An unattended shelve is checked in with its own comment, so the apply-change tag fires"
-  vars:
-    skill_content: file://../skills/uvcs-address-review/SKILL.md
-    reference_content: file://../skills/uvcs-core/references/reviews-and-merge-requests.md
-    user_message: >-
-      Unattended mode on review 311 is finished: B1 shelved as sh:101 with the comment
-      "[apply-change:4c1e9a07] Clamp the stack size to the slot limit". Nothing is checked in yet,
-      and the workspace has no other pending changes. Give me the commands that land sh:101.
-  assert:
-    - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm shelveset apply sh:101(\s|$)' }
-    - type: javascript
-      value: file://assertions/commands.cjs:runs
-      config: { pattern: '^cm (ci|checkin) .*\[apply-change:4c1e9a07\] Clamp the stack size to the slot limit' }
+        after: '^cm (mr|mergerequest|cr|codereview) comment reply'
 
 - description: "A reply is posted against the comment GUID, and a question is never discarded"
   vars:
