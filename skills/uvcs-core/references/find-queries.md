@@ -90,7 +90,7 @@ Useful `--format` tokens (per object; unknown tokens print literally, so verify)
 branch `{name} {date} {owner} {comment} {parent}` · changeset `{changesetid} {branch} {date}
 {owner} {comment} {guid} {parent}` · label `{name} {date} {owner} {changeset} {comment}` ·
 shelve `{shelveid} {date} {owner} {comment} {parent}` · review/mergerequest `{id} {title}
-{status} {codereviewstatus} {mergerequeststatus} {assignee} {target} {targettype} {destination}
+{codereviewstatus} {mergerequeststatus} {assignee} {target} {targettype} {destination}
 {owner} {date}` · changereviewcomment `{id} {guid} {reviewid} {type} {line} {location} {parent}
 {changeset} {appliedinchangeset} {revisionid} {comment} {owner} {date}` · revision `{id} {item}
 {changeset} {branch} {size} {type}`.
@@ -99,8 +99,10 @@ shelve `{shelveid} {date} {owner} {comment} {parent}` · review/mergerequest `{i
 
 - `mergerequest` is the **same object** as `review`, filtered to the reviews that are merge
   requests. Everything above applies to both names.
-- `{mergerequeststatus}` and `{status}` print their field name inline — `MergeRequestStatus Open`,
-  `Status Reviewed` — not a bare value. Strip the prefix when parsing.
+- Read a status from `{codereviewstatus}` (`Under review`, `Reviewed`, `Rework required`) and
+  `{mergerequeststatus}` (`None`, `Draft`, `Open`, `Closed`, `Merged`): `cm` 11.0.16.10740 prints
+  both as the bare English value. Earlier builds prefix them (`CodeReviewStatus Under review`).
+  `{status}` prints a translated value after its field name (`Status Reviewed`): never parse it.
 - `{target}` prints an internal `id:<n>`, **not** a branch name or spec, so it is useless as
   output; as a *filter* it takes a normal spec (`target='br:/main/task001'`) and is the reliable
   way to find the merge request for a branch.

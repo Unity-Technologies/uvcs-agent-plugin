@@ -256,7 +256,7 @@ cm find mergerequest "where assignee='me' and status='Under review'" --format="{
 
 # The review or MR on a branch — the reliable lookup from the author's side
 cm find review "where target='br:/main/task001'" \
-    --format="{id}|{title}|{targettype}|{status}|{owner}" --nototal
+    --format="{id}|{title}|{targettype}|{codereviewstatus}|{owner}" --nototal
 
 # Read a review's whole thread (conversation + inline + replies + timeline)
 cm find changereviewcomment "where reviewid=<id>" --xml --nototal
@@ -277,9 +277,9 @@ cm find changereviewcomment "where reviewid=<id> and type='change'" --nototal
 - `cm find mergerequest` returns only reviews that are MRs; `cm find review` returns both — and a
   branch can carry a plain code review rather than an MR, so **query `review` when you need
   whatever review exists** on a branch and `mergerequest` only when you specifically need MRs.
-- Format-token quirks of `review` / `mergerequest` (`{status}` prints its field name, `{target}`
-  prints an internal id, `{guid}` is not a token) are under *Review and merge request quirks* in
-  `find-queries.md`.
+- Format-token quirks of `review` / `mergerequest` (read `{codereviewstatus}`, never `{status}`;
+  `{target}` prints an internal id; `{guid}` is not a token) are under *Review and merge request
+  quirks* in `find-queries.md`.
 
 ## Deep links
 
