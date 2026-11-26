@@ -64,3 +64,16 @@
         the double-quoted query string passed to cm find, not as a separate shell argument
         after the closing quote. Fail if the on-repository clause appears outside the
         quoted query.
+
+- description: "A review's status is read from {codereviewstatus}, not the prefixed {status}"
+  vars:
+    user_message: >-
+      Write the cm command a script will run to list every review on branch /main/task001 as
+      one line each: its id and its review status (Under review, Reviewed or Rework required).
+    reference_content: file://../skills/uvcs-core/references/find-queries.md
+  assert:
+    - type: icontains
+      value: "{codereviewstatus}"
+    - type: javascript
+      value: file://assertions/commands.cjs:notRun
+      config: { pattern: '--format[^\n]*\{status\}' }

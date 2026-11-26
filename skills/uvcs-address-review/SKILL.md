@@ -43,7 +43,7 @@ review there, or nothing pending on it, means there is nothing to do — say so 
 ## 2. Find the review
 
 ```
-cm find review "where target='br:/main/task001'" --format="{id}|{title}|{status}|{owner}" --nototal
+cm find review "where target='br:/main/task001'" --format="{id}|{title}|{codereviewstatus}|{owner}" --nototal
 ```
 
 `review` and not `mergerequest`: a branch may carry a plain code review instead of an MR; on
